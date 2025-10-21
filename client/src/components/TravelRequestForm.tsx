@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { LocationAutocomplete } from "./LocationAutocomplete";
 import { PerDiemPanel } from "./PerDiemPanel";
 import { VisaCheckPanel } from "./VisaCheckPanel";
@@ -19,6 +20,10 @@ const formSchema = z.object({
   purpose: z.string().min(10, "Purpose must be at least 10 characters"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
+  needsFlights: z.boolean().default(false),
+  needsAccommodation: z.boolean().default(false),
+  needsVisa: z.boolean().default(false),
+  needsTransport: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -43,6 +48,10 @@ export function TravelRequestForm({ onSubmit }: TravelRequestFormProps) {
       purpose: "",
       startDate: "",
       endDate: "",
+      needsFlights: false,
+      needsAccommodation: false,
+      needsVisa: false,
+      needsTransport: false,
     },
   });
 
@@ -277,6 +286,84 @@ export function TravelRequestForm({ onSubmit }: TravelRequestFormProps) {
             {visaCheck && <VisaCheckPanel result={visaCheck} />}
 
             <PerDiemPanel calculation={perDiem} loading={isCalculating} />
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Services Required</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="needsFlights"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="checkbox-needs-flights"
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">
+                        Flight Booking
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="needsAccommodation"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="checkbox-needs-accommodation"
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">
+                        Accommodation
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="needsVisa"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="checkbox-needs-visa"
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">
+                        Visa Assistance
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="needsTransport"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="checkbox-needs-transport"
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">
+                        Ground Transport
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
