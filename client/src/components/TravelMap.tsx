@@ -18,6 +18,7 @@ interface MapMarker {
 export function TravelMap({ trips }: TravelMapProps) {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
 
   useEffect(() => {
     async function loadCoordinates() {
@@ -63,6 +64,20 @@ export function TravelMap({ trips }: TravelMapProps) {
     }
   };
 
+  const handleMarkerInteraction = (marker: MapMarker) => {
+    // Toggle selection on click/tap
+    setSelectedMarker(prev => prev === marker ? null : marker);
+  };
+
+  const handleMarkerKeyDown = (e: React.KeyboardEvent, marker: MapMarker) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleMarkerInteraction(marker);
+    }
+  };
+
+  const displayedMarker = selectedMarker || hoveredMarker;
+
   return (
     <div className="relative">
       <Card className="p-4">
@@ -76,12 +91,15 @@ export function TravelMap({ trips }: TravelMapProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>Upcoming (7 days)</span>
+              <span>Upcoming (30 days)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-gray-400"></div>
               <span>Completed</span>
             </div>
+          </div>
+          <div className="mt-3 pt-2 border-t text-xs text-muted-foreground">
+            Click or tap markers for details
           </div>
         </div>
 
@@ -147,6 +165,8 @@ export function TravelMap({ trips }: TravelMapProps) {
           {markers.map((marker, idx) => {
             const { x, y } = projectToSVG(marker.coords.lat, marker.coords.lng);
             const isHovered = hoveredMarker === marker;
+            const isSelected = selectedMarker === marker;
+            const isActive = isHovered || isSelected;
             
             return (
               <g
@@ -154,25 +174,40 @@ export function TravelMap({ trips }: TravelMapProps) {
                 transform={`translate(${x}, ${y})`}
                 onMouseEnter={() => setHoveredMarker(marker)}
                 onMouseLeave={() => setHoveredMarker(null)}
-                className="cursor-pointer transition-transform hover:scale-125"
+                onClick={() => handleMarkerInteraction(marker)}
+                onKeyDown={(e) => handleMarkerKeyDown(e, marker)}
+                onFocus={() => setHoveredMarker(marker)}
+                onBlur={() => setHoveredMarker(null)}
+                className="cursor-pointer transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 role="button"
                 tabIndex={0}
-                aria-label={`${marker.trip.employeeName} traveling to ${marker.trip.destination.city}`}
+                aria-label={`${marker.trip.employeeName} traveling to ${marker.trip.destination.city}. Press Enter to toggle details.`}
+                aria-pressed={isSelected}
               >
                 <circle
-                  r={isHovered ? "8" : "6"}
+                  r={isActive ? "8" : "6"}
                   fill={getMarkerColor(marker.trip.tripStatus)}
                   stroke="white"
                   strokeWidth="2"
                   className="transition-all"
                 />
-                {isHovered && (
+                {isActive && (
                   <circle
                     r="12"
                     fill="none"
                     stroke={getMarkerColor(marker.trip.tripStatus)}
                     strokeWidth="2"
                     opacity="0.5"
+                  />
+                )}
+                {isSelected && (
+                  <circle
+                    r="16"
+                    fill="none"
+                    stroke={getMarkerColor(marker.trip.tripStatus)}
+                    strokeWidth="3"
+                    opacity="0.7"
+                    strokeDasharray="2,2"
                   />
                 )}
               </g>
@@ -199,40 +234,45 @@ export function TravelMap({ trips }: TravelMapProps) {
           </g>
         </svg>
 
-        {/* Hover Popup */}
-        {hoveredMarker && (
+        {/* Trip Details Popup (hover or selected) */}
+        {displayedMarker && (
           <div className="absolute top-4 left-4 z-20 max-w-xs">
             <Card className="p-4 shadow-xl border-2">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-primary" />
-                  <h3 className="font-semibold">{hoveredMarker.trip.employeeName}</h3>
+                  <h3 className="font-semibold">{displayedMarker.trip.employeeName}</h3>
                 </div>
                 <Badge
-                  variant={hoveredMarker.trip.tripStatus === 'current' ? 'default' : 'secondary'}
+                  variant={displayedMarker.trip.tripStatus === 'current' ? 'default' : 'secondary'}
                 >
-                  {hoveredMarker.trip.tripStatus === 'current' ? 'In Progress' : 'Upcoming'}
+                  {displayedMarker.trip.tripStatus === 'current' ? 'In Progress' : 'Upcoming'}
                 </Badge>
               </div>
               <div className="space-y-1 text-sm">
                 <div>
                   <span className="text-muted-foreground">Destination:</span>{' '}
-                  {hoveredMarker.trip.destination.city}, {hoveredMarker.trip.destination.country}
+                  {displayedMarker.trip.destination.city}, {displayedMarker.trip.destination.country}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Dates:</span>{' '}
-                  {format(new Date(hoveredMarker.trip.startDate), 'dd MMM')} –{' '}
-                  {format(new Date(hoveredMarker.trip.endDate), 'dd MMM yyyy')}
+                  {format(new Date(displayedMarker.trip.startDate), 'dd MMM')} –{' '}
+                  {format(new Date(displayedMarker.trip.endDate), 'dd MMM yyyy')}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Department:</span>{' '}
-                  {hoveredMarker.trip.department}
+                  {displayedMarker.trip.department}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Cost Centre:</span>{' '}
-                  {hoveredMarker.trip.costCentre.code}
+                  {displayedMarker.trip.costCentre.code}
                 </div>
               </div>
+              {selectedMarker === displayedMarker && (
+                <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
+                  Click marker again to close
+                </div>
+              )}
             </Card>
           </div>
         )}
