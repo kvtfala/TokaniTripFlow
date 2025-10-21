@@ -1,0 +1,217 @@
+# Replit AI Prompt — Generate I-Approver Fiji MVP with Per Diem, Amadeus Airport Codes, and Visa Checker (Frontend & Logic Only)
+
+Copy‑paste this into **Replit AI** to scaffold a secure, low‑bandwidth MVP tailored for Fiji with Firebase + Cloudflare + Amadeus integration, and a Visa Checker that warns users immediately. The **database section has been removed**, assuming backend data models and Firestore setup will be handled separately.
+
+---
+
+You are an expert full‑stack engineer. Build a production‑ready MVP called **I-Approver Fiji** (Travel Request / Approval / Expense Management) for Fijian clients with the following modules:
+
+* **Per Diem Management (NEW)** integrated end‑to‑end
+* **Amadeus Airport Codes** for accurate inputs (autocomplete)
+* **Visa Checker (NEW)** using stored rules + live warning/status banners
+
+## Goals
+
+* Ultra‑lean, fast UI that works on low bandwidth (Fiji context).
+* ISO/IEC 25010: Functional Correctness, Maintainability, Usability (Operability), Security (Integrity/Accountability), Performance Efficiency.
+* FRCS‑friendly records & immutable audit trail on approvals.
+
+## Stack
+
+* **Frontend:** React + TypeScript + TailwindCSS, Firebase Hosting
+* **Auth:** Firebase Authentication
+* **Serverless Logic:** Cloudflare Workers (preferred) or Firebase Functions
+* **Edge/CDN:** Cloudflare (DNS+CDN)
+* **3P API:** Amadeus (Self‑Service) for airport/city codes
+
+## Core User Flows
+
+1. **Request**: Employee enters destination (city/airport), dates; system autocalculates per diem + runs visa check; estimated cost updates live.
+2. **Approval**: Manager reviews and approves/rejects; on approval, per diem amounts are locked to request for audit.
+3. **Expense**: Employee uploads receipts and claims the locked per diem as a line item; totals reconciled.
+
+## UI Requirements
+
+* Mobile‑first, accessible (WCAG AA), large taps, offline‑friendly UX.
+* **Airport Input** with Amadeus autocomplete (city/airport code, country).
+* **Per Diem Panel** shows daily M&IE, travel‑day 75% rule, meal deductions, and total FJD—updates in real time.
+* **Visa Checker Panel** shows **status badge** (OK / Warning / Action Required) with concise reason and a link to policy notes.
+* **Approver View** highlights changes since last submit and includes a one‑tap approve/reject with mandatory comment on reject.
+
+---
+
+## Folder Structure
+
+```
+/trem-app
+ ├─ /workers                      # Cloudflare Workers
+ │   ├─ utils/firestore.ts (placeholder for later integration)
+ │   ├─ perDiem.ts                # NEW: Per diem logic API
+ │   ├─ visaCheck.ts              # NEW: Visa checker API
+ │   └─ amadeus.ts                # NEW: Amadeus proxy (locations)
+ ├─ /src
+ │   ├─ /api
+ │   │   └─ http.ts
+ │   ├─ /components
+ │   │   ├─ /forms
+ │   │   │   └─ TravelRequestForm.tsx
+ │   │   ├─ PerDiemCalculator.tsx
+ │   │   └─ VisaChecker.tsx
+ │   ├─ /pages
+ │   │   ├─ /Admin
+ │   │   │   └─ PerDiemRates.tsx
+ │   │   ├─ Dashboard.tsx
+ │   │   └─ RequestNew.tsx
+ │   ├─ /data
+ │   │   ├─ hooks.ts
+ │   │   ├─ constants.ts
+ │   │   └─ types.ts
+ │   └─ main.tsx / App.tsx
+ └─ /config
+     └─ env.sample.json
+```
+
+---
+
+## Cloudflare Worker — `workers/perDiem.ts`
+
+Handles calculation logic and returns computed per diem values.
+
+```ts
+export default {
+  async fetch(req: Request): Promise<Response> {
+    if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+    const { country, city, startDate, endDate } = await req.json();
+    const sd = new Date(startDate);
+    const ed = new Date(endDate);
+    const days = Math.max(1, Math.ceil((ed.getTime() - sd.getTime()) / 86400000) + 1);
+    const mieFJD = 100; // placeholder rate
+    const first = mieFJD * 0.75;
+    const middleDays = Math.max(0, days - 2) * mieFJD;
+    const last = days > 1 ? mieFJD * 0.75 : 0;
+    const total = first + middleDays + last;
+    return new Response(JSON.stringify({ totalFJD: total, days, mieFJD }), { headers: { 'content-type': 'application/json' }});
+  }
+}
+```
+
+---
+
+## Cloudflare Worker — `workers/visaCheck.ts`
+
+Simulates visa status response.
+
+```ts
+export default {
+  async fetch(req: Request): Promise<Response> {
+    const { passportCountry, destinationCountry } = await req.json();
+    if (passportCountry === 'Fiji' && destinationCountry === 'Australia') {
+      return new Response(JSON.stringify({ status: 'ACTION', message: 'Visa required for Australia.' }), { headers: { 'content-type': 'application/json' }});
+    }
+    return new Response(JSON.stringify({ status: 'OK', message: 'No visa required.' }), { headers: { 'content-type': 'application/json' }});
+  }
+}
+```
+
+---
+
+## Cloudflare Worker — `workers/amadeus.ts`
+
+Proxy for Amadeus autocomplete.
+
+```ts
+export default {
+  async fetch(req: Request): Promise<Response> {
+    const url = new URL(req.url);
+    const q = url.searchParams.get('q');
+    if (!q) return new Response(JSON.stringify([]), { headers: { 'content-type': 'application/json' }});
+    return new Response(JSON.stringify([
+      { code: 'NAN', city: 'Nadi', country: 'Fiji' },
+      { code: 'SUV', city: 'Suva', country: 'Fiji' }
+    ]), { headers: { 'content-type': 'application/json' }});
+  }
+}
+```
+
+---
+
+## React Components
+
+### `/src/components/PerDiemCalculator.tsx`
+
+```tsx
+import React, { useEffect, useState } from 'react';
+export default function PerDiemCalculator({ country, city, startDate, endDate, onUpdate }:{ country:string; city:string; startDate:string; endDate:string; onUpdate:(data:any)=>void; }){
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  useEffect(()=>{
+    const ready = country && startDate && endDate;
+    if(!ready) return;
+    setLoading(true);
+    fetch('/api/perDiem',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country,city,startDate,endDate})})
+      .then(r=>r.json())
+      .then(data=>{ setTotal(data.totalFJD); onUpdate(data); })
+      .finally(()=>setLoading(false));
+  },[country,city,startDate,endDate]);
+  return (<div className="p-4 rounded-xl shadow bg-white space-y-2">
+    <div className="text-sm font-medium">Per Diem Calculation</div>
+    {loading? <p>Calculating...</p>:<p className="text-lg font-semibold">Total: FJD {total.toFixed(2)}</p>}
+  </div>);
+}
+```
+
+### `/src/components/VisaChecker.tsx`
+
+```tsx
+import React, { useEffect, useState } from 'react';
+export default function VisaChecker({ passportCountry, destinationCountry }:{ passportCountry:string; destinationCountry:string; }){
+  const [status, setStatus] = useState<any>(null);
+  useEffect(()=>{
+    if(!passportCountry||!destinationCountry) return;
+    fetch('/api/visaCheck',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({passportCountry,destinationCountry})})
+      .then(r=>r.json()).then(setStatus);
+  },[passportCountry,destinationCountry]);
+  if(!status) return null;
+  const cls = status.status==='OK'?'bg-green-100 text-green-800':status.status==='WARNING'?'bg-yellow-100 text-yellow-800':'bg-red-100 text-red-800';
+  return <div className={`rounded-xl px-3 py-2 text-sm font-medium ${cls}`}>Visa: {status.status} — {status.message}</div>;
+}
+```
+
+### `/src/components/forms/TravelRequestForm.tsx`
+
+```tsx
+import React, { useState } from 'react';
+import PerDiemCalculator from '../PerDiemCalculator';
+import VisaChecker from '../VisaChecker';
+export default function TravelRequestForm(){
+  const [destination,setDestination]=useState('');
+  const [country,setCountry]=useState('');
+  const [start,setStart]=useState('');
+  const [end,setEnd]=useState('');
+  const [perDiem,setPerDiem]=useState<any>(null);
+  return (<div className="space-y-4">
+    <input className="input" placeholder="Destination City" value={destination} onChange={e=>setDestination(e.target.value)}/>
+    <input className="input" placeholder="Country" value={country} onChange={e=>setCountry(e.target.value)}/>
+    <div className="grid grid-cols-2 gap-2">
+      <input type="date" className="input" value={start} onChange={e=>setStart(e.target.value)}/>
+      <input type="date" className="input" value={end} onChange={e=>setEnd(e.target.value)}/>
+    </div>
+    <PerDiemCalculator country={country} city={destination} startDate={start} endDate={end} onUpdate={setPerDiem}/>
+    <VisaChecker passportCountry="Fiji" destinationCountry={country}/>
+    {perDiem && <p className="text-sm text-gray-700">Per Diem: FJD {perDiem.totalFJD}</p>}
+    <button className="btn-primary">Submit Request</button>
+  </div>);
+}
+```
+
+---
+
+## Deployment
+
+* Use Cloudflare Workers for logic endpoints.
+* Firebase Hosting for static frontend.
+* Set Replit environment secrets for Amadeus API and Firebase config.
+
+---
+
+This version excludes **all database schema and Firestore setup**, allowing your backend specialist to handle that separately.
