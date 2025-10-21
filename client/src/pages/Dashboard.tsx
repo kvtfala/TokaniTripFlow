@@ -88,47 +88,55 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Requests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              <span className="text-2xl font-bold" data-testid="text-stat-total">{stats.total}</span>
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Requests</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-total">{stats.total}</p>
+              </div>
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-primary-foreground" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-yellow-600" />
-              <span className="text-2xl font-bold" data-testid="text-stat-pending">{stats.pending}</span>
+        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Pending</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-pending">{stats.pending}</p>
+              </div>
+              <div className="w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Approved</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-2xl font-bold" data-testid="text-stat-approved">{stats.approved}</span>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Approved</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-approved">{stats.approved}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Rejected</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-600" />
-              <span className="text-2xl font-bold" data-testid="text-stat-rejected">{stats.rejected}</span>
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Rejected</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-rejected">{stats.rejected}</p>
+              </div>
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                <XCircle className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
