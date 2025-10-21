@@ -1,6 +1,8 @@
-export type RequestStatus = "pending" | "approved" | "rejected";
+export type RequestStatus = "draft" | "submitted" | "in_review" | "approved" | "rejected";
 export type VisaStatus = "OK" | "WARNING" | "ACTION";
-export type UserRole = "employee" | "manager" | "admin";
+export type UserRole = "employee" | "approver" | "finance_admin" | "travel_admin";
+export type FundingType = "advance" | "reimbursement";
+export type HistoryAction = "SUBMIT" | "APPROVE" | "REJECT" | "ESCALATE" | "COMMENT";
 
 export interface Location {
   code: string;
@@ -23,9 +25,24 @@ export interface VisaCheckResult {
   policyLink?: string;
 }
 
+export interface CostCentre {
+  code: string;
+  name: string;
+}
+
+export interface HistoryEntry {
+  ts: string;
+  actor: string;
+  action: HistoryAction;
+  note?: string;
+}
+
 export interface TravelRequest {
   id: string;
   employeeName: string;
+  employeeNumber: string;
+  position: string;
+  department: string;
   employeeId: string;
   destination: Location;
   startDate: string;
@@ -38,6 +55,21 @@ export interface TravelRequest {
   reviewedAt?: string;
   reviewedBy?: string;
   reviewComment?: string;
+  
+  // Phase 2 fields
+  costCentre: CostCentre;
+  fundingType: FundingType;
+  approverFlow: string[];
+  approverIndex: number;
+  history: HistoryEntry[];
+  auditFlag?: boolean;
+  auditNote?: string;
+  
+  // Services required
+  needsFlights?: boolean;
+  needsAccommodation?: boolean;
+  needsVisa?: boolean;
+  needsTransport?: boolean;
 }
 
 export interface ExpenseClaim {
@@ -49,4 +81,13 @@ export interface ExpenseClaim {
   receiptUrl?: string;
   claimedAt: string;
   status: RequestStatus;
+}
+
+export interface DelegateAssignment {
+  id: string;
+  userId: string;
+  actingFor: string;
+  startDate: string;
+  endDate: string;
+  active: boolean;
 }

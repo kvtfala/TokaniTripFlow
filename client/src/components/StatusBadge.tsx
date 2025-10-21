@@ -1,60 +1,40 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, AlertTriangle, Shield } from "lucide-react";
-import { type RequestStatus, type VisaStatus } from "@shared/types";
+import type { RequestStatus } from "@shared/types";
 
 interface StatusBadgeProps {
-  status: RequestStatus | VisaStatus;
-  type?: "request" | "visa";
+  status: RequestStatus;
+  type?: "request" | "claim";
 }
 
 export function StatusBadge({ status, type = "request" }: StatusBadgeProps) {
-  if (type === "visa") {
-    const visaStatus = status as VisaStatus;
-    if (visaStatus === "OK") {
-      return (
-        <Badge className="bg-green-100 text-green-800 border-green-200 hover-elevate" data-testid={`badge-visa-${status.toLowerCase()}`}>
-          <Shield className="w-3 h-3 mr-1" />
-          Visa OK
-        </Badge>
-      );
-    }
-    if (visaStatus === "WARNING") {
-      return (
-        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 hover-elevate" data-testid={`badge-visa-${status.toLowerCase()}`}>
-          <AlertTriangle className="w-3 h-3 mr-1" />
-          Visa Warning
-        </Badge>
-      );
-    }
-    return (
-      <Badge className="bg-red-100 text-red-800 border-red-200 hover-elevate" data-testid={`badge-visa-${status.toLowerCase()}`}>
-        <AlertTriangle className="w-3 h-3 mr-1" />
-          Action Required
-      </Badge>
-    );
-  }
+  const statusConfig = {
+    draft: {
+      label: "Draft",
+      className: "bg-slate-100 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300",
+    },
+    submitted: {
+      label: "Submitted",
+      className: "bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-300",
+    },
+    in_review: {
+      label: "In Review",
+      className: "bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-300",
+    },
+    approved: {
+      label: "Approved",
+      className: "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900 dark:text-green-300",
+    },
+    rejected: {
+      label: "Rejected",
+      className: "bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900 dark:text-red-300",
+    },
+  };
 
-  const requestStatus = status as RequestStatus;
-  if (requestStatus === "approved") {
-    return (
-      <Badge className="bg-green-100 text-green-800 border-green-200 hover-elevate" data-testid={`badge-status-${status}`}>
-        <CheckCircle className="w-3 h-3 mr-1" />
-        Approved
-      </Badge>
-    );
-  }
-  if (requestStatus === "rejected") {
-    return (
-      <Badge className="bg-red-100 text-red-800 border-red-200 hover-elevate" data-testid={`badge-status-${status}`}>
-        <XCircle className="w-3 h-3 mr-1" />
-        Rejected
-      </Badge>
-    );
-  }
+  const config = statusConfig[status] || statusConfig.draft;
+
   return (
-    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 hover-elevate" data-testid={`badge-status-${status}`}>
-      <Clock className="w-3 h-3 mr-1" />
-      Pending
+    <Badge className={config.className} data-testid={`badge-status-${status}`}>
+      {config.label}
     </Badge>
   );
 }

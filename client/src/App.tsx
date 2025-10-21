@@ -1,42 +1,140 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation, Link } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { 
+  LayoutDashboard, 
+  PlaneTakeoff, 
+  CheckSquare, 
+  History, 
+  FileSpreadsheet, 
+  BarChart3, 
+  UserCog,
+  Menu
+} from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import NewRequest from "@/pages/NewRequest";
-import { Plane } from "lucide-react";
+import Approvals from "@/pages/Approvals";
+import MyTrips from "@/pages/MyTrips";
+import FinanceExport from "@/pages/FinanceExport";
+import Analytics from "@/pages/Analytics";
+import DelegateSettings from "@/pages/DelegateSettings";
+
+const menuItems = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "New Request",
+    url: "/request/new",
+    icon: PlaneTakeoff,
+  },
+  {
+    title: "My Trips",
+    url: "/my-trips",
+    icon: History,
+  },
+  {
+    title: "Approvals",
+    url: "/approvals",
+    icon: CheckSquare,
+  },
+  {
+    title: "Finance Export",
+    url: "/finance",
+    icon: FileSpreadsheet,
+  },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: BarChart3,
+  },
+  {
+    title: "Delegations",
+    url: "/delegations",
+    icon: UserCog,
+  },
+];
+
+function AppSidebar() {
+  const [location] = useLocation();
+
+  return (
+    <Sidebar>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={location === item.url}>
+                    <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "dashboard"}`}>
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
 
 function Router() {
+  const style = {
+    "--sidebar-width": "16rem",
+    "--sidebar-width-icon": "3rem",
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1">
+          <header className="flex items-center justify-between p-2 border-b sticky top-0 z-50 bg-background">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Plane className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">I-Approver Fiji</h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">Travel Management</p>
-              </div>
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <h1 className="text-lg font-semibold">I-Approver Fiji</h1>
             </div>
             <ThemeToggle />
-          </div>
+          </header>
+          <main className="flex-1 overflow-auto">
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/request/new" component={NewRequest} />
+              <Route path="/approvals" component={Approvals} />
+              <Route path="/my-trips" component={MyTrips} />
+              <Route path="/finance" component={FinanceExport} />
+              <Route path="/analytics" component={Analytics} />
+              <Route path="/delegations" component={DelegateSettings} />
+              <Route component={NotFound} />
+            </Switch>
+          </main>
         </div>
-      </header>
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/request/new" component={NewRequest} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }
 

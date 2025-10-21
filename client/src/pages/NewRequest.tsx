@@ -1,11 +1,42 @@
 import { useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TravelRequestForm } from "@/components/TravelRequestForm";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function NewRequest() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const requestData = {
+        ...data,
+        employeeId: "employee", // In production, use actual user ID from auth
+        approverFlow: ["manager", "finance_admin"], // In production, determine from org structure
+        status: "submitted",
+      };
+      return apiRequest("POST", "/api/requests", requestData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      toast({
+        title: "Success!",
+        description: "Your travel request has been submitted for approval.",
+      });
+      setLocation("/my-trips");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to submit travel request. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -33,11 +64,7 @@ export default function NewRequest() {
         </CardHeader>
         <CardContent>
           <TravelRequestForm
-            onSubmit={(data) => {
-              console.log("Submitted:", data);
-              alert("Travel request submitted successfully!");
-              setLocation("/");
-            }}
+            onSubmit={(data) => createMutation.mutate(data)}
           />
         </CardContent>
       </Card>

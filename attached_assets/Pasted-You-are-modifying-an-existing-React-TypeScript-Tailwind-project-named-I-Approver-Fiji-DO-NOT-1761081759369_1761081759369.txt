@@ -1,0 +1,189 @@
+You are modifying an existing React + TypeScript + Tailwind project named “I-Approver Fiji”.
+DO NOT change hosting, auth, or database layers.
+DO NOT add Tokani references.
+Keep all persistence behind an adapter interface so a backend/dev can wire it later.
+If a DB call is needed, create a stub in /src/data/adapters/*.ts and mock with in-memory data.
+
+GOAL
+Add the following Phase-2 features to the current app without breaking existing flows:
+1) Cost Centre field & finance export
+2) Multi-level approvals with delegate & escalation
+3) Budget checks & funding type
+4) Expense audit flags
+5) Trip history & trip summary PDF
+6) Notifications (stubbed)
+7) Role-based views + immutable audit trail
+8) Analytics dashboard (basic KPIs)
+9) Accessibility & UX polishing
+10) CSV/Excel export of approvals by cost centre
+
+GENERAL RULES
+- Keep components small, typed, and tested.
+- Expose new config via /src/data/constants.ts
+- Add feature flags where sensible in /src/data/constants.ts
+- Create adapter interfaces in /src/data/adapters/*.ts (DB-agnostic).
+- Provide minimal unit tests for pure logic (date math, approval sequencing).
+- Preserve existing per-diem, visa, and Amadeus autocomplete behavior.
+
+-------------------------------------------------------
+FEATURE 1 — COST CENTRE & FINANCE EXPORT
+-------------------------------------------------------
+A. Request Form:
+- In /src/components/forms/TravelRequestForm.tsx add:
+  - <select name="costCentre" required> populated from CostCentreAdapter.list()
+  - <select name="fundingType" required> options: "advance" | "reimbursement"
+- Show inline helper text: “Used for budget tracking and finance reconciliation.”
+
+B. Types:
+- In /src/data/types.ts extend request type:
+  costCentre: { code: string; name: string }
+  fundingType: 'advance' | 'reimbursement'
+
+C. Adapters:
+- /src/data/adapters/CostCentreAdapter.ts
+  export interface CostCentre { code: string; name: string; active: boolean }
+  export interface ICostCentreAdapter { list(): Promise<CostCentre[]> }
+  export const CostCentreAdapter: ICostCentreAdapter = { list: async () => [ {code:'300-CORP',name:'Corporate Sales',active:true}, {code:'400-OPS',name:'Operations',active:true}, {code:'500-TRN',name:'Training',active:true} ] }
+
+D. Finance Export:
+- New page /src/pages/FinanceExport.tsx
+  - Filters: date range, department, costCentre
+  - Button: “Export CSV” and “Export Excel”
+  - Implement CSV/Excel generation with client-side library; file name: approvals_<YYYYMMDD>.{csv|xlsx}
+  - Columns: RequestID, Employee, Dept, CostCentre, Status, TotalPerDiemFJD, FundingType, ApprovedOn
+
+-------------------------------------------------------
+FEATURE 2 — MULTI-LEVEL APPROVALS, DELEGATE, ESCALATION
+-------------------------------------------------------
+A. Types (/src/data/types.ts):
+- Extend request:
+  approverFlow: string[]           // array of userIds/emails
+  approverIndex: number            // current index
+  status: 'DRAFT'|'SUBMITTED'|'IN_REVIEW'|'APPROVED'|'REJECTED'
+  history: Array<{ ts:string; actor:string; action:'SUBMIT'|'APPROVE'|'REJECT'|'ESCALATE'|'COMMENT'; note?:string }>
+
+B. Manager Review UI:
+- In existing approval page (or create /src/pages/Approvals.tsx):
+  - Show current approver badge: “Awaiting: John Doe”
+  - Buttons: Approve, Reject (reject requires note)
+  - On Approve: increment approverIndex; if final → set status='APPROVED' and lock (see Feature 7)
+  - On Reject: set status='REJECTED' and require note; append to history
+
+C. Delegate / Acting For:
+- New setting page /src/pages/DelegateSettings.tsx:
+  - Field: actingFor (userId) + start/end dates
+  - Approval inbox uses getEffectiveApprover(userId, now) to include delegates
+- Add helper util /src/utils/approver.ts:
+  export function nextApprover(req): string | null
+  export function isUserAuthorizedToApprove(req, user, delegateMap, now): boolean
+
+D. Escalation:
+- Add a lightweight “escalate if pending > 3 days” check:
+  - Create /src/utils/escalation.ts with a function checkEscalations(now, pendingRequests) that marks a history entry “ESCALATE” and emits a stub notification.
+  - Wire it to run when approver list page mounts (best-effort, no cron).
+
+-------------------------------------------------------
+FEATURE 3 — BUDGET CHECK & FUNDING TYPE
+-------------------------------------------------------
+A. Budget Check (client-side stub):
+- /src/data/adapters/BudgetAdapter.ts
+  export interface IBudgetAdapter {
+    getAvailableFor(costCentreCode:string): Promise<number> // FJD
+  }
+  Mock: return 10000 for “300-CORP”, 5000 for “400-OPS”, 2500 for “500-TRN”.
+- On form submit, compute estimatedTotal (use existing per-diem + estimated fares if present).
+- If estimatedTotal > available, show non-blocking warning banner: “Over budget for CC 300-CORP (Available: FJD X).”
+
+B. Funding Type:
+- Already added in Feature 1; display on approvals card and in exports.
+
+-------------------------------------------------------
+FEATURE 4 — EXPENSE AUDIT FLAG
+-------------------------------------------------------
+- Extend request type: auditFlag?: boolean; auditNote?: string
+- Approver/Finance UI: toggle “Flag for Audit” with optional note; visible badge on list cards.
+
+-------------------------------------------------------
+FEATURE 5 — TRIP HISTORY & SUMMARY PDF
+-------------------------------------------------------
+A. My Trips:
+- New page /src/pages/MyTrips.tsx: list the user’s requests with status chips and quick filters.
+
+B. Summary PDF:
+- /src/utils/pdf.ts implement generateTripSummaryPDF(request) using client-side PDF lib.
+  Include: employee, dates, route, costCentre, fundingType, per-diem breakdown, visa status, approvals trail.
+- Add “Download Summary” button on request detail page.
+
+-------------------------------------------------------
+FEATURE 6 — NOTIFICATIONS (STUB)
+-------------------------------------------------------
+- /src/data/adapters/NotifyAdapter.ts
+  export interface INotifyAdapter { send(to:string, subject:string, body:string): Promise<void> }
+  Provide stub: console.log.
+- Trigger on SUBMIT (to first approver), APPROVE (to next approver or requester on final), REJECT (to requester), ESCALATE (to current approver).
+
+-------------------------------------------------------
+FEATURE 7 — ROLE-BASED VIEWS & IMMUTABLE AUDIT
+-------------------------------------------------------
+- Role constants in /src/data/constants.ts: roles = ['employee','approver','finance_admin','travel_admin']
+- Gate UI routes by role (simple front-end check).
+- When status becomes APPROVED:
+  - lock fields in the detail page (disable edits)
+  - append “APPROVED” to history with timestamp and actor
+  - show read-only per-diem and visa sections
+
+-------------------------------------------------------
+FEATURE 8 — ANALYTICS DASHBOARD
+-------------------------------------------------------
+- New page /src/pages/Analytics.tsx with cards:
+  - Avg approval time (compute from history SUBMIT → APPROVED)
+  - Spend by cost centre (sum of calculatedPerDiemFJD)
+  - Top destinations (count by To.city)
+- Charts: simple bar/pie via lightweight chart lib; provide table fallback.
+
+-------------------------------------------------------
+FEATURE 9 — ACCESSIBILITY & UX POLISH
+-------------------------------------------------------
+- Ensure form controls have labels and aria-describedby.
+- Increase hit areas for primary actions on mobile.
+- Add status color tokens and legend: Pending(amber), Approved(green), Rejected(red), In-Review(blue).
+- Sticky footer on request form: “Estimated Total” + “Visa Status” + Submit button.
+
+-------------------------------------------------------
+FEATURE 10 — EXPORTS
+-------------------------------------------------------
+- From FinanceExport page, implement CSV & XLSX exports with UTF-8 BOM.
+- Include filters in exported filename.
+- Validate at least one column uses costCentre.code for pivoting.
+
+-------------------------------------------------------
+FILES TO ADD / TOUCH (GUIDE)
+- /src/data/types.ts (extend Request types)
+- /src/data/constants.ts (roles, flags, color tokens)
+- /src/data/adapters/CostCentreAdapter.ts (mock list)
+- /src/data/adapters/BudgetAdapter.ts (mock available)
+- /src/data/adapters/NotifyAdapter.ts (stub)
+- /src/utils/approver.ts (approval helpers)
+- /src/utils/escalation.ts (pending > 3 days → ESCALATE)
+- /src/utils/pdf.ts (generateTripSummaryPDF)
+- /src/pages/Approvals.tsx (or enhance existing)
+- /src/pages/DelegateSettings.tsx
+- /src/pages/FinanceExport.tsx
+- /src/pages/MyTrips.tsx
+- /src/pages/Analytics.tsx
+- /src/components/forms/TravelRequestForm.tsx (add costCentre, fundingType, warnings)
+- Existing detail view page: lock on APPROVED, add summary PDF button.
+
+-------------------------------------------------------
+TESTS (LOGIC-ONLY)
+Add minimal unit tests (Jest) for:
+- approver sequencing (two, three approvers)
+- isUserAuthorizedToApprove with delegate windows
+- escalation rule after 3 days pending
+- budget warning logic thresholds
+
+OUTPUT
+- Compile-ready changes.
+- Stubs that run without a backend.
+- No DB writes; adapters return mocked data.
+- Keep current per-diem, visa, Amadeus functionality intact.
