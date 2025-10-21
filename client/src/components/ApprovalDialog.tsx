@@ -20,9 +20,8 @@ export function ApprovalDialog({ request, open, onOpenChange, onApprove, onRejec
   const [action, setAction] = useState<"approve" | "reject" | null>(null);
   const [comment, setComment] = useState("");
 
-  if (!request) return null;
-
   const handleConfirm = () => {
+    if (!request) return;
     if (action === "approve") {
       onApprove(request.id);
     } else if (action === "reject" && comment.trim()) {
@@ -32,6 +31,10 @@ export function ApprovalDialog({ request, open, onOpenChange, onApprove, onRejec
     setComment("");
     onOpenChange(false);
   };
+
+  if (!request) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
