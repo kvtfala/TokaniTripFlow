@@ -1,0 +1,103 @@
+-------------------------------------------------------
+FEATURE 11 — TRAVEL WATCH DASHBOARD (Traveler Care)
+-------------------------------------------------------
+Add a new page: /src/pages/TravelWatch.tsx
+This page displays all upcoming and active trips on a world map with hover summaries.
+
+A. Purpose:
+Give management and HR real-time visibility of who is traveling, where, and when.
+Two sections:
+  - “Upcoming Trips” list view (next 30 days)
+  - “Live Trips Map” (trips currently underway)
+
+B. Data Source:
+Use the existing requests data (status='APPROVED' and startDate/endDate in relevant range).
+Create a small hook in /src/data/hooks.ts:
+  export function useTripsNowAndUpcoming(): { current: Trip[]; upcoming: Trip[] }
+Stub returns mock data if backend not connected.
+
+C. UI Layout:
+Use a responsive split view:
+  Left: list of upcoming trips (card layout)
+  Right: interactive world map (Leaflet or Mapbox GL)
+Each card shows:
+  - Traveler name
+  - Department
+  - Cost Centre
+  - Destination (city/country)
+  - Dates (start–end)
+  - Status chip (“Upcoming” / “In Progress”)
+
+D. Map Integration:
+Use Leaflet (preferred) for simplicity.
+Add dependency if missing:
+  npm i leaflet react-leaflet
+Component: /src/components/TravelMap.tsx
+  - Center map over Fiji by default.
+  - Plot pins for current trips only.
+  - Each pin uses destination coordinates (mock if missing).
+  - On hover, show popup:
+      Traveler Name
+      Destination
+      Dates
+      Short note (optional).
+
+Sample coordinates adapter:
+  /src/data/adapters/GeoAdapter.ts
+  export async function geocodeCity(city:string,country:string):Promise<{lat:number;lng:number}> {
+    // Mock fallback for known routes
+    const map = {
+      'Nadi,Fiji': {lat:-17.75, lng:177.45},
+      'Suva,Fiji': {lat:-18.14, lng:178.44},
+      'Sydney,Australia': {lat:-33.86,lng:151.20},
+      'Auckland,New Zealand': {lat:-36.85,lng:174.76},
+    };
+    return map[`${city},${country}`] || {lat:-17.8,lng:178.0};
+  }
+
+E. Traveler Summary Popup Example:
+Display within popup or tooltip:
+  Name: Ratu Luke Bale
+  Destination: Sydney, Australia
+  Dates: 02 Nov – 08 Nov 2025
+  Status: In Progress
+
+F. Map Legend:
+Top-right overlay legend:
+  🟢 = In Progress
+  🟡 = Upcoming (within 7 days)
+  ⚪ = Completed (past, optional toggle)
+
+G. Filters:
+Add dropdown filters above list:
+  [All Departments] [All Cost Centres]
+  [Show: Upcoming | In Progress | Completed]
+
+H. Accessibility:
+- Tooltips must be keyboard-accessible (tab focus).
+- Use descriptive ARIA labels for map controls and trip markers.
+
+I. Integration:
+- Add “Travel Watch” link in the main sidebar or navbar.
+- Connect to existing role-based routing (roles: approver, finance_admin, travel_admin).
+- Limit visibility to manager and admin roles.
+
+J. Performance:
+- Cache coordinates locally (IndexedDB or localStorage) to minimize map API lookups.
+- Load map tiles lazily; display skeleton loader during initialization.
+
+K. Optional Enhancement:
+- Add “Download Itinerary Summary” button beside each trip card that calls generateTripSummaryPDF(request).
+
+-------------------------------------------------------
+FILES TO ADD / TOUCH
+-------------------------------------------------------
+- /src/pages/TravelWatch.tsx (main page)
+- /src/components/TravelMap.tsx (map component)
+- /src/data/hooks.ts (add useTripsNowAndUpcoming)
+- /src/data/adapters/GeoAdapter.ts (mock geocoding)
+- /src/styles/TravelWatch.css (optional)
+-------------------------------------------------------
+
+Ensure this integrates seamlessly with existing routing and style conventions.
+The rest of I-Approver Fiji (approvals, per diem, visa) must remain unchanged.

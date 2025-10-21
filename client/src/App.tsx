@@ -25,7 +25,8 @@ import {
   FileSpreadsheet, 
   BarChart3, 
   UserCog,
-  Menu
+  Menu,
+  Map
 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -35,6 +36,7 @@ import MyTrips from "@/pages/MyTrips";
 import FinanceExport from "@/pages/FinanceExport";
 import Analytics from "@/pages/Analytics";
 import DelegateSettings from "@/pages/DelegateSettings";
+import TravelWatch from "@/pages/TravelWatch";
 
 const menuItems = [
   {
@@ -66,6 +68,11 @@ const menuItems = [
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Travel Watch",
+    url: "/travel-watch",
+    icon: Map,
   },
   {
     title: "Delegations",
@@ -128,6 +135,7 @@ function Router() {
               <Route path="/my-trips" component={MyTrips} />
               <Route path="/finance" component={FinanceExport} />
               <Route path="/analytics" component={Analytics} />
+              <Route path="/travel-watch" component={TravelWatch} />
               <Route path="/delegations" component={DelegateSettings} />
               <Route component={NotFound} />
             </Switch>
