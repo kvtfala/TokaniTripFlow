@@ -1,0 +1,111 @@
+You are a senior front-end engineer and UX designer performing a **complete UI/UX and ISO compliance review** of the project **“I-Approver Fiji.”**
+
+GOAL  
+Refine the application’s visual style, accessibility, and usability in line with:
+- ISO 9241-210 (Human-centred design)
+- ISO/IEC 25010 (Usability, Operability, Performance Efficiency, Accessibility)
+- WCAG 2.1 AA accessibility
+while applying a culturally appropriate **Fiji/Pacific business theme** and fully responsive layout behavior across all devices.
+
+Keep all logic (approvals, per-diem, visa, etc.) intact — this is a front-end and UX refinement only.
+
+------------------------------------------------------------
+🎯 1️⃣ CONTEXT & DESIGN PHILOSOPHY
+------------------------------------------------------------
+- Product: I-Approver Fiji — travel request, per-diem & expense management.
+- Audience: Fijian corporate, NGO, and government users.
+- Style: professional tropical-modern (ocean & sand tones, clean sans-serif fonts).
+- UX priority: clarity, speed, friendliness, and low-bandwidth performance.
+
+------------------------------------------------------------
+🔍 2️⃣ AUDIT SCOPE
+------------------------------------------------------------
+Review and refine **all UI layers**:
+
+A. Layout consistency  
+• Standardize spacing, padding, and typography.  
+• Align primary buttons and headers consistently.  
+• Ensure a uniform sidebar/header layout across pages.
+
+B. Color & Theme  
+• Base palette — deep ocean #00547A, warm sand #F4E4C1, lagoon #009BAA, coral #EF6C57.  
+• Add Tailwind theme extension in tailwind.config.js.  
+• Provide dark-mode variant and contrast-safe text colors.  
+• Typography: Inter or Noto Sans, subtle rounded corners.
+
+C. Accessibility  
+• Label every input and control; maintain visible focus outlines.  
+• Contrast ratio ≥ 4.5 : 1.  
+• Fully keyboard-navigable.  
+• aria-labels for icons, tooltips, and map pins.
+
+D. Responsiveness & Performance  
+• Test breakpoints (mobile, tablet, laptop, desktop).  
+• Optimize for low bandwidth — lazy-load maps/charts, compress images.
+
+E. Feedback & Usability  
+• Add clear success/error alerts and subtle transitions ≤ 200 ms.  
+• Provide loading spinners & skeleton states on slow pages.  
+• Apply ISO 9241 usability metrics: effectiveness + efficiency + satisfaction.
+
+F. Localization  
+• Prepare UI text for localization (en-FJ, en-PG).  
+• Use friendly tone: “Vinaka — your request has been submitted!”
+
+------------------------------------------------------------
+🎨 3️⃣ VISUAL DESIGN BRIEF (TAILWIND THEME & COMPONENTS)
+------------------------------------------------------------
+**Tailwind config:**
+theme.extend.colors = {
+  ocean:{DEFAULT:'#00547A',50:'#E1F4FA',200:'#80CFE3',500:'#009BAA',700:'#006677'},
+  coral:{DEFAULT:'#EF6C57',100:'#FFD0C7',500:'#EF6C57',700:'#B33120'},
+  sand:{DEFAULT:'#F4E4C1',100:'#FAE7BF',500:'#F4E4C1',700:'#CCB060'},
+  lagoon:{DEFAULT:'#009BAA',100:'#B3F0F4',500:'#009BAA',700:'#007777'},
+  slate:{DEFAULT:'#1E293B'}
+}
+
+**Component examples**
+- Buttons:  
+  .btn-primary → ocean bg + white text, hover ocean-700.  
+  .btn-secondary → lagoon outline.  
+  .btn-danger → coral.
+
+- Card (Trip Summary)  
+  White rounded-xl shadow-sm, header in ocean-800, status chip in lagoon-100.
+
+- Header  
+  Ocean bar with greeting “Bula {Name}!” + profile avatar.
+
+- Alerts  
+  Info, success, warning, error variants; 4.5 : 1 contrast.
+
+- Backgrounds  
+  Subtle “Pacific wave” SVG overlay; faint sand-tint Fiji map watermark.
+
+------------------------------------------------------------
+♿ 4️⃣ ACCESSIBILITY & TESTING
+------------------------------------------------------------
+Run axe-core + Lighthouse accessibility audits; fix contrast, aria, and keyboard issues.  
+Confirm font scalability to 200 %.
+
+------------------------------------------------------------
+📱 5️⃣ RESPONSIVE BEHAVIOR & DYNAMIC SCREEN SIZE
+------------------------------------------------------------
+Create `/src/hooks/useDeviceType.ts`:
+```ts
+export function useDeviceType(){
+  const [device,setDevice]=useState<'mobile'|'tablet'|'laptop'|'desktop'>('desktop');
+  useEffect(()=>{
+    const update=()=>{
+      const w=window.innerWidth;
+      if(w<640) setDevice('mobile');
+      else if(w<1024) setDevice('tablet');
+      else if(w<1440) setDevice('laptop');
+      else setDevice('desktop');
+    };
+    update();
+    window.addEventListener('resize',update);
+    return ()=>window.removeEventListener('resize',update);
+  },[]);
+  return device;
+}
