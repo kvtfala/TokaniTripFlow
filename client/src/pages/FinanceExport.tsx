@@ -58,8 +58,8 @@ export default function FinanceExport() {
     exportToExcel(filteredRequests, filename);
   };
 
-  const totalPerDiem = filteredRequests.reduce(
-    (sum, req) => sum + req.perDiem.totalFJD,
+  const totalCost = filteredRequests.reduce(
+    (sum, req) => sum + (req.costBreakdown?.totalCost || req.perDiem.totalFJD),
     0
   );
 
@@ -175,10 +175,10 @@ export default function FinanceExport() {
             <Card>
               <CardContent className="p-6">
                 <div className="text-sm text-muted-foreground mb-1">
-                  Total Per Diem
+                  Total Cost
                 </div>
                 <div className="text-3xl font-bold text-primary">
-                  FJD {totalPerDiem.toFixed(2)}
+                  FJD {totalCost.toFixed(2)}
                 </div>
               </CardContent>
             </Card>
@@ -235,8 +235,9 @@ export default function FinanceExport() {
                   <li>Department, Cost Centre, Cost Centre Name</li>
                   <li>Status, Destination</li>
                   <li>Start Date, End Date, Days</li>
-                  <li>Total Per Diem (FJD), Funding Type</li>
-                  <li>Submitted On, Approved On</li>
+                  <li>Flights, Accommodation, Ground Transfers, Visa Fees</li>
+                  <li>Per Diem (FJD), Total Cost (FJD)</li>
+                  <li>Funding Type, Submitted On, Approved On</li>
                 </ul>
               </div>
             </CardContent>
@@ -270,7 +271,7 @@ export default function FinanceExport() {
                       </div>
                       <div className="text-right">
                         <div className="font-semibold text-primary">
-                          FJD {req.perDiem.totalFJD.toFixed(2)}
+                          FJD {(req.costBreakdown?.totalCost || req.perDiem.totalFJD).toFixed(2)}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {req.fundingType}

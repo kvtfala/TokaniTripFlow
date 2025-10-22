@@ -28,7 +28,7 @@ export default function Dashboard() {
   const stats = useMemo(() => {
     const totalSpend = requests
       .filter(r => r.status === "approved")
-      .reduce((sum, r) => sum + r.perDiem.totalFJD, 0);
+      .reduce((sum, r) => sum + (r.costBreakdown?.totalCost || r.perDiem.totalFJD), 0);
     
     const approvedCount = requests.filter(r => r.status === "approved").length;
     const avgPerDiem = approvedCount > 0 ? totalSpend / approvedCount : 0;
@@ -59,13 +59,14 @@ export default function Dashboard() {
         const monthStart = startOfMonth(parseISO(req.submittedAt));
         const monthKey = format(monthStart, "MMM yyyy");
         const existing = monthlySpendMap.get(monthKey);
+        const cost = req.costBreakdown?.totalCost || req.perDiem.totalFJD;
         
         if (existing) {
-          existing.spend += req.perDiem.totalFJD;
+          existing.spend += cost;
         } else {
           monthlySpendMap.set(monthKey, {
             timestamp: monthStart,
-            spend: req.perDiem.totalFJD
+            spend: cost
           });
         }
       }
@@ -84,7 +85,8 @@ export default function Dashboard() {
     // Department spend comparison
     const departmentSpend = requests.reduce((acc, req) => {
       if (req.status === "approved") {
-        acc[req.department] = (acc[req.department] || 0) + req.perDiem.totalFJD;
+        const cost = req.costBreakdown?.totalCost || req.perDiem.totalFJD;
+        acc[req.department] = (acc[req.department] || 0) + cost;
       }
       return acc;
     }, {} as Record<string, number>);
@@ -141,7 +143,7 @@ export default function Dashboard() {
                   <TableHead>Department</TableHead>
                   <TableHead>Purpose</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Per Diem</TableHead>
+                  <TableHead className="text-right">Total Cost</TableHead>
                   <TableHead>Submitted</TableHead>
                 </TableRow>
               </TableHeader>
@@ -164,7 +166,7 @@ export default function Dashboard() {
                     <TableCell className="max-w-xs truncate">{request.purpose}</TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
                     <TableCell className="text-right">
-                      FJD {request.perDiem.totalFJD.toFixed(2)}
+                      FJD {(request.costBreakdown?.totalCost || request.perDiem.totalFJD).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(request.submittedAt), 'dd MMM yyyy')}

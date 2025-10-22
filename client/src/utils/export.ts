@@ -15,7 +15,12 @@ export interface ExportRow {
   StartDate: string;
   EndDate: string;
   Days: number;
-  TotalPerDiemFJD: number;
+  FlightsFJD: number | string;
+  AccommodationFJD: number | string;
+  GroundTransfersFJD: number | string;
+  VisaFeesFJD: number | string;
+  PerDiemFJD: number;
+  TotalCostFJD: number;
   FundingType: string;
   SubmittedOn: string;
   ApprovedOn: string;
@@ -37,7 +42,12 @@ export function requestsToExportRows(requests: TravelRequest[]): ExportRow[] {
     StartDate: format(new Date(req.startDate), "yyyy-MM-dd"),
     EndDate: format(new Date(req.endDate), "yyyy-MM-dd"),
     Days: req.perDiem.days,
-    TotalPerDiemFJD: req.perDiem.totalFJD,
+    FlightsFJD: req.costBreakdown?.flights || "-",
+    AccommodationFJD: req.costBreakdown?.accommodation || "-",
+    GroundTransfersFJD: req.costBreakdown?.groundTransfers || "-",
+    VisaFeesFJD: req.costBreakdown?.visaFees || "-",
+    PerDiemFJD: req.costBreakdown?.perDiem || req.perDiem.totalFJD,
+    TotalCostFJD: req.costBreakdown?.totalCost || req.perDiem.totalFJD,
     FundingType: req.fundingType.charAt(0).toUpperCase() + req.fundingType.slice(1),
     SubmittedOn: format(new Date(req.submittedAt), "yyyy-MM-dd HH:mm"),
     ApprovedOn: req.reviewedAt ? format(new Date(req.reviewedAt), "yyyy-MM-dd HH:mm") : "",

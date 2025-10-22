@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -153,23 +152,22 @@ export default function MyTrips() {
                     const breakdown = request.costBreakdown;
                     
                     return (
-                      <Collapsible key={request.id} open={isExpanded} onOpenChange={() => toggleRow(request.id)}>
+                      <Fragment key={request.id}>
                         <TableRow data-testid={`row-trip-${request.id}`}>
                           <TableCell>
-                            <CollapsibleTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="p-0 h-auto"
-                                data-testid={`button-expand-${request.id}`}
-                              >
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4" />
-                                )}
-                              </Button>
-                            </CollapsibleTrigger>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-0 h-auto"
+                              onClick={() => toggleRow(request.id)}
+                              data-testid={`button-expand-${request.id}`}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </Button>
                           </TableCell>
                           <TableCell>
                             <div className="font-medium" data-testid={`text-destination-${request.id}`}>
@@ -220,52 +218,50 @@ export default function MyTrips() {
                             </Button>
                           </TableCell>
                         </TableRow>
-                        {breakdown && (
-                          <CollapsibleContent asChild>
-                            <TableRow className="bg-muted/50">
-                              <TableCell colSpan={8}>
-                                <div className="py-4 px-6">
-                                  <h4 className="font-semibold mb-3 text-sm">Cost Breakdown</h4>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {breakdown.flights && (
-                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-flights-${request.id}`}>
-                                        <span className="text-sm text-muted-foreground">Flights</span>
-                                        <span className="font-medium">FJD {breakdown.flights.toFixed(2)}</span>
-                                      </div>
-                                    )}
-                                    {breakdown.accommodation && (
-                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-accommodation-${request.id}`}>
-                                        <span className="text-sm text-muted-foreground">Accommodation</span>
-                                        <span className="font-medium">FJD {breakdown.accommodation.toFixed(2)}</span>
-                                      </div>
-                                    )}
-                                    {breakdown.groundTransfers && (
-                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-transfers-${request.id}`}>
-                                        <span className="text-sm text-muted-foreground">Ground Transfers</span>
-                                        <span className="font-medium">FJD {breakdown.groundTransfers.toFixed(2)}</span>
-                                      </div>
-                                    )}
-                                    {breakdown.visaFees && (
-                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-visa-${request.id}`}>
-                                        <span className="text-sm text-muted-foreground">Visa Fees</span>
-                                        <span className="font-medium">FJD {breakdown.visaFees.toFixed(2)}</span>
-                                      </div>
-                                    )}
-                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-perdiem-${request.id}`}>
-                                      <span className="text-sm text-muted-foreground">Per Diem ({request.perDiem.days} days)</span>
-                                      <span className="font-medium">FJD {breakdown.perDiem.toFixed(2)}</span>
+                        {breakdown && isExpanded && (
+                          <TableRow className="bg-muted/50">
+                            <TableCell colSpan={8}>
+                              <div className="py-4 px-6">
+                                <h4 className="font-semibold mb-3 text-sm">Cost Breakdown</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {breakdown.flights && (
+                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-flights-${request.id}`}>
+                                      <span className="text-sm text-muted-foreground">Flights</span>
+                                      <span className="font-medium">FJD {breakdown.flights.toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between items-center p-3 bg-primary/10 rounded-md border border-primary/20" data-testid={`cost-total-${request.id}`}>
-                                      <span className="text-sm font-semibold">Total Cost</span>
-                                      <span className="font-bold text-primary">FJD {breakdown.totalCost.toFixed(2)}</span>
+                                  )}
+                                  {breakdown.accommodation && (
+                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-accommodation-${request.id}`}>
+                                      <span className="text-sm text-muted-foreground">Accommodation</span>
+                                      <span className="font-medium">FJD {breakdown.accommodation.toFixed(2)}</span>
                                     </div>
+                                  )}
+                                  {breakdown.groundTransfers && (
+                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-transfers-${request.id}`}>
+                                      <span className="text-sm text-muted-foreground">Ground Transfers</span>
+                                      <span className="font-medium">FJD {breakdown.groundTransfers.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {breakdown.visaFees && (
+                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-visa-${request.id}`}>
+                                      <span className="text-sm text-muted-foreground">Visa Fees</span>
+                                      <span className="font-medium">FJD {breakdown.visaFees.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-perdiem-${request.id}`}>
+                                    <span className="text-sm text-muted-foreground">Per Diem ({request.perDiem.days} days)</span>
+                                    <span className="font-medium">FJD {breakdown.perDiem.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-3 bg-primary/10 rounded-md border border-primary/20" data-testid={`cost-total-${request.id}`}>
+                                    <span className="text-sm font-semibold">Total Cost</span>
+                                    <span className="font-bold text-primary">FJD {breakdown.totalCost.toFixed(2)}</span>
                                   </div>
                                 </div>
-                              </TableCell>
-                            </TableRow>
-                          </CollapsibleContent>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         )}
-                      </Collapsible>
+                      </Fragment>
                     );
                   })}
                 </TableBody>
