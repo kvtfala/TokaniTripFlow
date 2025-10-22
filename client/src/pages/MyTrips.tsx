@@ -11,7 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
@@ -19,6 +20,17 @@ import { generateTripSummaryPDF } from "@/utils/pdf";
 
 export default function MyTrips() {
   const [tabFilter, setTabFilter] = useState<"upcoming" | "past" | "drafts">("upcoming");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (requestId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(requestId)) {
+      newExpanded.delete(requestId);
+    } else {
+      newExpanded.add(requestId);
+    }
+    setExpandedRows(newExpanded);
+  };
 
   // Mock current user - in production this would come from auth
   const currentUserId = "employee";
@@ -125,63 +137,137 @@ export default function MyTrips() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12"></TableHead>
                     <TableHead>Destination</TableHead>
                     <TableHead>Travel Dates</TableHead>
                     <TableHead>Duration</TableHead>
-                    <TableHead>Per Diem</TableHead>
+                    <TableHead>Total Cost</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Purpose</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRequests.map((request) => (
-                    <TableRow key={request.id} data-testid={`row-trip-${request.id}`}>
-                      <TableCell>
-                        <div className="font-medium" data-testid={`text-destination-${request.id}`}>
-                          {request.destination.city}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {request.destination.country}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm" data-testid={`text-dates-${request.id}`}>
-                          {format(new Date(request.startDate), "MMM dd, yyyy")}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          to {format(new Date(request.endDate), "MMM dd, yyyy")}
-                        </div>
-                      </TableCell>
-                      <TableCell data-testid={`text-duration-${request.id}`}>
-                        {request.perDiem.days} days
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium" data-testid={`text-perdiem-${request.id}`}>
-                          FJD {request.perDiem.totalFJD.toFixed(2)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={request.status} type="request" />
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate text-sm text-muted-foreground" title={request.purpose}>
-                          {request.purpose}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadPDF(request)}
-                          data-testid={`button-download-pdf-${request.id}`}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          PDF
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredRequests.map((request) => {
+                    const isExpanded = expandedRows.has(request.id);
+                    const breakdown = request.costBreakdown;
+                    
+                    return (
+                      <Collapsible key={request.id} open={isExpanded} onOpenChange={() => toggleRow(request.id)}>
+                        <TableRow data-testid={`row-trip-${request.id}`}>
+                          <TableCell>
+                            <CollapsibleTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-0 h-auto"
+                                data-testid={`button-expand-${request.id}`}
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </CollapsibleTrigger>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium" data-testid={`text-destination-${request.id}`}>
+                              {request.destination.city}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {request.destination.country}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm" data-testid={`text-dates-${request.id}`}>
+                              {format(new Date(request.startDate), "MMM dd, yyyy")}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              to {format(new Date(request.endDate), "MMM dd, yyyy")}
+                            </div>
+                          </TableCell>
+                          <TableCell data-testid={`text-duration-${request.id}`}>
+                            {request.perDiem.days} days
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium" data-testid={`text-totalcost-${request.id}`}>
+                              FJD {breakdown ? breakdown.totalCost.toFixed(2) : request.perDiem.totalFJD.toFixed(2)}
+                            </div>
+                            {breakdown && (
+                              <div className="text-xs text-muted-foreground">
+                                Click to view breakdown
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={request.status} type="request" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs truncate text-sm text-muted-foreground" title={request.purpose}>
+                              {request.purpose}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadPDF(request)}
+                              data-testid={`button-download-pdf-${request.id}`}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              PDF
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                        {breakdown && (
+                          <CollapsibleContent asChild>
+                            <TableRow className="bg-muted/50">
+                              <TableCell colSpan={8}>
+                                <div className="py-4 px-6">
+                                  <h4 className="font-semibold mb-3 text-sm">Cost Breakdown</h4>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {breakdown.flights && (
+                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-flights-${request.id}`}>
+                                        <span className="text-sm text-muted-foreground">Flights</span>
+                                        <span className="font-medium">FJD {breakdown.flights.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                    {breakdown.accommodation && (
+                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-accommodation-${request.id}`}>
+                                        <span className="text-sm text-muted-foreground">Accommodation</span>
+                                        <span className="font-medium">FJD {breakdown.accommodation.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                    {breakdown.groundTransfers && (
+                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-transfers-${request.id}`}>
+                                        <span className="text-sm text-muted-foreground">Ground Transfers</span>
+                                        <span className="font-medium">FJD {breakdown.groundTransfers.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                    {breakdown.visaFees && (
+                                      <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-visa-${request.id}`}>
+                                        <span className="text-sm text-muted-foreground">Visa Fees</span>
+                                        <span className="font-medium">FJD {breakdown.visaFees.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-perdiem-${request.id}`}>
+                                      <span className="text-sm text-muted-foreground">Per Diem ({request.perDiem.days} days)</span>
+                                      <span className="font-medium">FJD {breakdown.perDiem.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 bg-primary/10 rounded-md border border-primary/20" data-testid={`cost-total-${request.id}`}>
+                                      <span className="text-sm font-semibold">Total Cost</span>
+                                      <span className="font-bold text-primary">FJD {breakdown.totalCost.toFixed(2)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          </CollapsibleContent>
+                        )}
+                      </Collapsible>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
