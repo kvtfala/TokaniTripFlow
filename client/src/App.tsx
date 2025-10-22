@@ -41,6 +41,7 @@ import TravelWatch from "@/pages/TravelWatch";
 const menuItems = [
   {
     title: "Dashboard",
+    subtitle: "Analytics",
     url: "/",
     icon: LayoutDashboard,
   },
@@ -51,6 +52,7 @@ const menuItems = [
   },
   {
     title: "My Trips",
+    subtitle: "Personal",
     url: "/my-trips",
     icon: History,
   },
@@ -71,6 +73,7 @@ const menuItems = [
   },
   {
     title: "Travel Watch",
+    subtitle: "Live Tracking",
     url: "/travel-watch",
     icon: Map,
   },
@@ -93,10 +96,18 @@ function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location === item.url}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={location === item.url}
+                  >
                     <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "dashboard"}`}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <div className="flex flex-col">
+                        <span>{item.title}</span>
+                        {item.subtitle && (
+                          <span className="text-xs text-muted-foreground">{item.subtitle}</span>
+                        )}
+                      </div>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
