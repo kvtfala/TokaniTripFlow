@@ -1,0 +1,45 @@
+You are working within Tokani TripFlow’s existing demo dataset.
+
+Do NOT create new files, arrays, or database structures.
+
+Instead, repopulate all existing booking and fare data fields with large-scale, enterprise-style sample data representing a corporate client called “Pacific Foods Group Pte Ltd (PFG)”.
+
+Maintain all existing variable names, schema structures, and references exactly as they are.
+
+Replace current small demo values with the following scaled metrics (used to populate total bookings, fares, invoices, and dashboards):
+
+Company Profile:
+- Company: Pacific Foods Group Pte Ltd (fictional)
+- Industry: Manufacturing / Export / Retail
+- Employees: 480
+- Departments: 10 main + subsidiaries
+- Annual Trips: 1,759
+- Avg Fare: FJD 1,850
+- Annual Spend: FJD 2.82M
+- Booking size: 3–4 travellers each
+- Top routes: NAN–SYD, NAN–AKL, NAN–SIN, SUV–NAN, NAN–APW
+- Approval flow: Dept Head → Executive → CEO
+
+Department Allocations:
+1. Board of Directors — 84 trips | Avg fare FJD 2,900 | Total FJD 243,600
+2. Executive Management — 185 trips | Avg fare FJD 2,300 | Total FJD 425,500
+3. Travel Operations — 270 trips | Avg fare FJD 1,250 | Total FJD 337,500
+4. Visa / Immigration Services — 115 trips | Avg fare FJD 1,100 | Total FJD 126,500
+5. Customer Service / Reservations — 205 trips | Avg fare FJD 950 | Total FJD 194,750
+6. Finance & Accounting — 115 trips | Avg fare FJD 1,700 | Total FJD 195,500
+7. Technology & Data — 150 trips | Avg fare FJD 1,800 | Total FJD 270,000
+8. Marketing & Sales — 250 trips | Avg fare FJD 1,950 | Total FJD 487,500
+9. Compliance, Audit, Risk — 105 trips | Avg fare FJD 1,600 | Total FJD 168,000
+10. Administration & HR — 95 trips | Avg fare FJD 1,200 | Total FJD 114,000
+11. Subsidiaries (Combined) — 190 trips | Avg fare FJD 1,350 | Total FJD 256,500
+
+Implementation Instructions:
+- Keep the current dataset structure intact.
+- Overwrite only the numerical and textual values.
+- Populate `fare`, `cost`, `department`, and `tripCount` fields with these updated figures.
+- Ensure dashboard cards, charts, and reports render these values correctly.
+- Keep date ranges (Jan–Dec 2025) consistent with your current date logic.
+- Ensure departmental filters, totals, and analytics align with these updated values.
+
+Goal:
+The live TripFlow interface should now appear to be servicing a large corporate client with high-volume travel, real-world spending, and complex department-level activity — without introducing any new fields or arrays.

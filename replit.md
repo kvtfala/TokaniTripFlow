@@ -17,20 +17,41 @@ Key features include automated per-diem calculations, visa requirement checking,
   - Ensuring all pages use proper `container mx-auto py-8 px-4` structure
 - **Double Scrollbar Resolution**: Fixed New Request page to prevent nested scrollable containers
 
-### Demo Data Enhancement
-- Added 10 realistic travel requests for presentation and testing:
-  - 6 approved requests (Finance, HR, IT, Operations departments)
-  - 2 submitted requests (Marketing, IT)
-  - 1 in-review request (Operations)
-  - 1 rejected request (HR)
-- Destinations include domestic Fiji (Suva, Nadi, Labasa) and international (Australia, New Zealand, Singapore, USA)
-- Total approved per diem: FJD 1,922 across 6 requests
-- All requests include proper visa checks, cost centre assignments, and approval history
+### Enterprise Dataset - Pacific Foods Group Pte Ltd
+- **Corporate Client Profile**: Demo represents a large-scale enterprise client
+  - Company: Pacific Foods Group Pte Ltd (PFG) - Manufacturing / Export / Retail
+  - Employees: 480
+  - Annual Trips: 1,759
+  - Annual Spend: FJD 2.82M
+  - Average Fare: FJD 1,850
+
+- **11 Department Structure**: All PFG departments represented in sample data:
+  1. Board of Directors (84 trips/yr | Avg FJD 2,900)
+  2. Executive Management (185 trips/yr | Avg FJD 2,300)
+  3. Travel Operations (270 trips/yr | Avg FJD 1,250)
+  4. Visa / Immigration Services (115 trips/yr | Avg FJD 1,100)
+  5. Customer Service / Reservations (205 trips/yr | Avg FJD 950)
+  6. Finance & Accounting (115 trips/yr | Avg FJD 1,700)
+  7. Technology & Data (150 trips/yr | Avg FJD 1,800)
+  8. Marketing & Sales (250 trips/yr | Avg FJD 1,950)
+  9. Compliance, Audit, Risk (105 trips/yr | Avg FJD 1,600)
+  10. Administration & HR (95 trips/yr | Avg FJD 1,200)
+  11. Subsidiaries (Combined) (190 trips/yr | Avg FJD 1,350)
+
+- **11 Sample Travel Requests** for demo/presentation:
+  - 7 approved requests (FJD 12,150 total per diem)
+  - 2 submitted requests awaiting approval
+  - 1 in-review request under evaluation
+  - 1 rejected request
+  
+- **Top Routes**: NAN–SYD, NAN–AKL, NAN–SIN, SUV–NAN, NAN–APW
+- **Enterprise Features**: All requests include executive-level travel purposes (M&A due diligence, strategic planning, compliance audits, subsidiary coordination), proper PFG employee numbering (PFG-BOD-001, PFG-EXE-012, etc.), and department-aligned cost centres
 
 ### Finance Export Functionality
-- Finance Export page now fully functional with 6 approved requests available for export
-- CSV and Excel export buttons enabled with real demo data
-- Preview section displays sample approved requests with employee names and per diem amounts
+- Finance Export page now fully functional with 7 approved requests available for export
+- Total approved per diem: FJD 12,150 across enterprise-level travel
+- CSV and Excel export buttons enabled with real PFG demo data
+- Preview section displays sample approved requests with employee names, departments, and per diem amounts
 
 ### Technical Improvements
 - Added visaCheck to all travel requests (including domestic trips marked as "OK - Domestic travel")
