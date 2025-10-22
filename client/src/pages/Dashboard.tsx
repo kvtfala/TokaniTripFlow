@@ -194,9 +194,9 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Analytics Stats - Pacific Theme (WCAG 2.1 AA Compliant) */}
+      {/* Analytics Stats - Red & Blue Theme (WCAG 2.1 AA Compliant) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-ocean-50 to-ocean-100 dark:from-ocean-900 dark:to-ocean-800 border-ocean-200 dark:border-ocean-700">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 border-blue-200 dark:border-blue-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -205,13 +205,13 @@ export default function Dashboard() {
                   FJD {stats.totalSpend.toFixed(0)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-ocean-700 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-lagoon-50 to-lagoon-100 dark:from-lagoon-900 dark:to-lagoon-800 border-lagoon-200 dark:border-lagoon-700">
+        <Card className="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900 dark:to-cyan-800 border-cyan-200 dark:border-cyan-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -220,13 +220,13 @@ export default function Dashboard() {
                   FJD {stats.avgPerDiem.toFixed(0)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-lagoon-700 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-sand-50 to-sand-100 dark:from-sand-900 dark:to-sand-800 border-sand-200 dark:border-sand-700">
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -235,20 +235,20 @@ export default function Dashboard() {
                   {stats.budgetUtilization.toFixed(1)}%
                 </p>
               </div>
-              <div className="w-12 h-12 bg-ocean-700 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-coral-50 to-coral-100 dark:from-coral-900 dark:to-coral-800 border-coral-200 dark:border-coral-700">
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900 dark:to-red-800 border-red-200 dark:border-red-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Pending Approvals</p>
                 <p className="text-3xl font-bold" data-testid="text-stat-pending-approvals">{stats.pendingApprovals}</p>
               </div>
-              <div className="w-12 h-12 bg-coral-700 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -266,7 +266,7 @@ export default function Dashboard() {
             <Link href="/request/new" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-new-request">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <Plus className="w-8 h-8 text-ocean-700" />
+                  <Plus className="w-8 h-8 text-primary" />
                   <div className="text-center">
                     <div className="font-semibold">Submit Request</div>
                     <div className="text-xs text-muted-foreground mt-1">Create new travel request</div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
             <Link href="/my-trips" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-my-trips">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <Plane className="w-8 h-8 text-lagoon-700" />
+                  <Plane className="w-8 h-8 text-primary" />
                   <div className="text-center">
                     <div className="font-semibold">My Trips</div>
                     <div className="text-xs text-muted-foreground mt-1">View your travel history</div>
@@ -290,7 +290,7 @@ export default function Dashboard() {
             <Link href="/travel-watch" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-travel-watch">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <MapPin className="w-8 h-8 text-coral-700" />
+                  <MapPin className="w-8 h-8 text-secondary" />
                   <div className="text-center">
                     <div className="font-semibold">Travel Watch</div>
                     <div className="text-xs text-muted-foreground mt-1">Track active travelers</div>
@@ -302,7 +302,7 @@ export default function Dashboard() {
             <Link href="/approvals" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-approvals">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <Users className="w-8 h-8 text-ocean-700" />
+                  <Users className="w-8 h-8 text-primary" />
                   <div className="text-center">
                     <div className="font-semibold">Approvals</div>
                     <div className="text-xs text-muted-foreground mt-1">Review pending requests</div>

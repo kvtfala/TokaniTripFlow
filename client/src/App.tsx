@@ -28,6 +28,7 @@ import {
   Menu,
   Map
 } from "lucide-react";
+import logoUrl from "@assets/Red and Blue Logo for Tokani Trip Flow_1761166715410.png";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import NewRequest from "@/pages/NewRequest";
@@ -131,9 +132,10 @@ function Router() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between px-4 py-3 border-b sticky top-0 z-50 bg-ocean text-white">
+          <header className="flex items-center justify-between px-4 py-3 border-b sticky top-0 z-50 bg-primary text-white">
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <img src={logoUrl} alt="Tokani TripFlow Logo" className="h-12 w-12 rounded-full" data-testid="img-logo" />
               <div className="flex flex-col">
                 <h1 className="text-lg font-semibold">Tokani TripFlow</h1>
                 <span className="text-sm text-white/90">Your Trusted Partner for Travel Approvals</span>

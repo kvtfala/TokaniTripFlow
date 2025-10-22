@@ -19,70 +19,70 @@ html, body {
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Pacific/Fiji Business Theme - Light Mode */
-  --background: 42 30% 97%;  /* Warm sand-tinted off-white */
+  /* Tokani TripFlow Brand Theme - Light Mode */
+  --background: 0 0% 98%;  /* Clean off-white background */
 
-  --foreground: 195 40% 12%;  /* Deep ocean for high contrast (WCAG AA) */
+  --foreground: 210 35% 20%;  /* Dark blue-gray for high contrast (WCAG AA) */
 
-  --border: 42 15% 88%;  /* Subtle sand-based borders */
+  --border: 210 15% 88%;  /* Subtle blue-gray borders */
 
   --card: 0 0% 100%;  /* Pure white cards */
 
-  --card-foreground: 195 40% 12%;  /* Deep ocean text */
+  --card-foreground: 210 35% 20%;  /* Dark blue-gray text */
 
-  --card-border: 42 12% 90%;  /* Subtle sand borders */
+  --card-border: 210 12% 90%;  /* Subtle borders */
 
-  --sidebar: 42 25% 95%;  /* Sand-50 warm sidebar */
+  --sidebar: 210 20% 96%;  /* Light blue-gray sidebar */
 
-  --sidebar-foreground: 195 40% 12%;  /* Ocean text */
+  --sidebar-foreground: 210 35% 20%;  /* Dark blue-gray text */
 
-  --sidebar-border: 42 15% 88%;  /* Sand borders */
+  --sidebar-border: 210 15% 88%;  /* Blue-gray borders */
 
-  --sidebar-primary: 195 100% 24%;  /* Ocean primary (#00547A) */
+  --sidebar-primary: 210 30% 37%;  /* Navy blue from logo (#3D5A80) */
 
-  --sidebar-primary-foreground: 42 20% 98%;  /* Sand-white */
+  --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
-  --sidebar-accent: 42 20% 91%;  /* Subtle sand accent */
+  --sidebar-accent: 210 20% 92%;  /* Subtle blue-gray accent */
 
-  --sidebar-accent-foreground: 195 40% 12%;  /* Ocean text */
+  --sidebar-accent-foreground: 210 35% 20%;  /* Dark text */
 
-  --sidebar-ring: 195 100% 24%;  /* Ocean ring */
+  --sidebar-ring: 210 30% 37%;  /* Navy blue ring */
 
   --popover: 0 0% 100%;  /* White popovers */
 
-  --popover-foreground: 195 40% 12%;  /* Ocean text */
+  --popover-foreground: 210 35% 20%;  /* Dark blue-gray text */
 
-  --popover-border: 42 12% 90%;  /* Sand border */
+  --popover-border: 210 12% 90%;  /* Blue-gray border */
 
-  --primary: 195 100% 24%;  /* Ocean (#00547A) - 8.2:1 contrast */
+  --primary: 210 30% 37%;  /* Navy blue from logo (#3D5A80) */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 185 100% 33%;  /* Lagoon (#009BAA) */
+  --secondary: 355 77% 45%;  /* Darker red for WCAG AA compliance (#CC2A39) */
 
   --secondary-foreground: 0 0% 100%;  /* White text */
 
-  --muted: 42 20% 94%;  /* Light sand muted */
+  --muted: 210 20% 94%;  /* Light blue-gray muted */
 
-  --muted-foreground: 195 20% 45%;  /* Medium ocean for labels */
+  --muted-foreground: 210 20% 45%;  /* Medium blue-gray for labels */
 
-  --accent: 42 20% 92%;  /* Sand accent */
+  --accent: 210 20% 92%;  /* Blue-gray accent */
 
-  --accent-foreground: 195 40% 12%;  /* Ocean text */
+  --accent-foreground: 210 35% 20%;  /* Dark text */
 
-  --destructive: 8 82% 64%;  /* Coral (#EF6C57) - 4.6:1 for large text */
+  --destructive: 355 77% 45%;  /* Darker red for WCAG AA compliance (#CC2A39) */
 
   --destructive-foreground: 0 0% 100%;  /* White text */
 
-  --input: 195 15% 70%;  /* Medium ocean for inputs */
-  --ring: 195 100% 24%;  /* Ocean ring for focus */
+  --input: 210 15% 70%;  /* Medium blue-gray for inputs */
+  --ring: 210 30% 37%;  /* Navy blue ring for focus */
   
-  /* Chart colors - Pacific theme */
-  --chart-1: 195 100% 24%;  /* Ocean */
-  --chart-2: 185 100% 33%;  /* Lagoon */
-  --chart-3: 8 82% 64%;    /* Coral */
-  --chart-4: 42 62% 70%;   /* Sand */
-  --chart-5: 195 80% 40%;  /* Medium ocean */
+  /* Chart colors - Red & Blue theme */
+  --chart-1: 210 30% 37%;  /* Navy blue */
+  --chart-2: 355 77% 58%;  /* Red */
+  --chart-3: 210 50% 55%;  /* Medium blue */
+  --chart-4: 355 60% 70%;  /* Light red */
+  --chart-5: 210 25% 60%;  /* Gray-blue */
 
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, serif;
@@ -140,70 +140,70 @@ html, body {
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* Pacific/Fiji Business Theme - Dark Mode */
-  --background: 195 30% 8%;  /* Deep ocean night */
+  /* Tokani TripFlow Brand Theme - Dark Mode */
+  --background: 210 30% 10%;  /* Deep navy background */
 
-  --foreground: 42 20% 95%;  /* Sand-white text */
+  --foreground: 0 0% 95%;  /* Off-white text */
 
-  --border: 195 20% 18%;  /* Ocean borders */
+  --border: 210 20% 20%;  /* Dark blue-gray borders */
 
-  --card: 195 25% 12%;  /* Slightly lighter ocean cards */
+  --card: 210 25% 14%;  /* Slightly lighter navy cards */
 
-  --card-foreground: 42 20% 95%;  /* Sand-white text */
+  --card-foreground: 0 0% 95%;  /* Off-white text */
 
-  --card-border: 195 20% 16%;  /* Ocean borders */
+  --card-border: 210 20% 18%;  /* Dark blue-gray borders */
 
-  --sidebar: 195 28% 10%;  /* Deep ocean sidebar */
+  --sidebar: 210 28% 12%;  /* Deep navy sidebar */
 
-  --sidebar-foreground: 42 20% 95%;  /* Sand-white text */
+  --sidebar-foreground: 0 0% 95%;  /* Off-white text */
 
-  --sidebar-border: 195 20% 14%;  /* Ocean borders */
+  --sidebar-border: 210 20% 16%;  /* Dark borders */
 
-  --sidebar-primary: 195 80% 50%;  /* Brighter ocean for dark bg */
+  --sidebar-primary: 210 50% 55%;  /* Brighter blue for dark bg */
 
   --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
-  --sidebar-accent: 195 18% 16%;  /* Dark ocean accent */
+  --sidebar-accent: 210 18% 18%;  /* Dark navy accent */
 
-  --sidebar-accent-foreground: 42 20% 95%;  /* Sand-white text */
+  --sidebar-accent-foreground: 0 0% 95%;  /* Off-white text */
 
-  --sidebar-ring: 195 80% 50%;  /* Bright ocean ring */
+  --sidebar-ring: 210 50% 55%;  /* Bright blue ring */
 
-  --popover: 195 25% 14%;  /* Dark ocean popover */
+  --popover: 210 25% 16%;  /* Dark navy popover */
 
-  --popover-foreground: 42 20% 95%;  /* Sand-white text */
+  --popover-foreground: 0 0% 95%;  /* Off-white text */
 
-  --popover-border: 195 20% 18%;  /* Ocean border */
+  --popover-border: 210 20% 20%;  /* Dark border */
 
-  --primary: 195 80% 50%;  /* Brighter ocean for visibility */
+  --primary: 210 50% 55%;  /* Brighter navy blue for visibility */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 185 85% 55%;  /* Brighter lagoon for dark mode */
+  --secondary: 355 77% 48%;  /* Darker red for WCAG AA in dark mode */
 
-  --secondary-foreground: 195 40% 12%;  /* Dark ocean text */
+  --secondary-foreground: 0 0% 100%;  /* White text */
 
-  --muted: 195 16% 15%;  /* Dark ocean muted */
+  --muted: 210 16% 18%;  /* Dark navy muted */
 
-  --muted-foreground: 42 15% 70%;  /* Medium sand for labels */
+  --muted-foreground: 0 0% 70%;  /* Light gray for labels */
 
-  --accent: 195 16% 16%;  /* Dark ocean accent */
+  --accent: 210 16% 18%;  /* Dark navy accent */
 
-  --accent-foreground: 42 20% 95%;  /* Sand-white text */
+  --accent-foreground: 0 0% 95%;  /* Off-white text */
 
-  --destructive: 8 85% 68%;  /* Brighter coral for dark mode */
+  --destructive: 355 77% 48%;  /* Darker red for WCAG AA in dark mode */
 
   --destructive-foreground: 0 0% 100%;  /* White text */
 
-  --input: 195 20% 30%;  /* Medium ocean inputs */
-  --ring: 195 80% 50%;  /* Bright ocean ring */
+  --input: 210 20% 30%;  /* Medium blue-gray inputs */
+  --ring: 210 50% 55%;  /* Bright blue ring */
   
-  /* Chart colors - Pacific theme (dark mode) */
-  --chart-1: 195 80% 55%;  /* Bright ocean */
-  --chart-2: 185 85% 60%;  /* Bright lagoon */
-  --chart-3: 8 85% 70%;    /* Bright coral */
-  --chart-4: 42 60% 75%;   /* Light sand */
-  --chart-5: 195 70% 65%;  /* Light ocean */
+  /* Chart colors - Red & Blue theme (dark mode) */
+  --chart-1: 210 50% 55%;  /* Bright navy blue */
+  --chart-2: 355 70% 65%;  /* Bright red */
+  --chart-3: 210 40% 65%;  /* Medium blue */
+  --chart-4: 355 60% 75%;  /* Light red */
+  --chart-5: 210 30% 50%;  /* Gray-blue */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.20);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);
