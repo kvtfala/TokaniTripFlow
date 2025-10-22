@@ -39,8 +39,8 @@ export default function NewRequest() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="container mx-auto py-8 px-4 max-w-4xl">
+      <div className="flex items-center gap-4 mb-6">
         <Button
           variant="ghost"
           size="icon"
@@ -55,7 +55,7 @@ export default function NewRequest() {
         </div>
       </div>
 
-      <Card className="max-w-2xl">
+      <Card>
         <CardHeader>
           <CardTitle>Travel Details</CardTitle>
           <CardDescription>
