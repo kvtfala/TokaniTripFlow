@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Calendar, MapPin, DollarSign } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Download } from "lucide-react";
 import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
@@ -24,16 +32,13 @@ export default function MyTrips() {
 
   const now = new Date();
 
-  // Categorize trips by time and status (industry standard)
-  // Upcoming: approved trips that haven't ended yet (includes active trips)
+  // Categorize trips by time and status
   const upcomingTrips = myRequests.filter(
     (r) => r.status === "approved" && new Date(r.endDate) >= now
   );
-  // Past: approved trips that have ended
   const pastTrips = myRequests.filter(
     (r) => r.status === "approved" && new Date(r.endDate) < now
   );
-  // In Progress: non-approved statuses (draft, pending review, rejected)
   const draftTrips = myRequests.filter(
     (r) => r.status === "draft" || r.status === "submitted" || r.status === "in_review" || r.status === "rejected"
   );
@@ -72,7 +77,7 @@ export default function MyTrips() {
         <p className="text-muted-foreground">View and manage your travel history</p>
       </div>
 
-      {/* Statistics Cards - Industry Standard */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
@@ -94,7 +99,7 @@ export default function MyTrips() {
         </Card>
       </div>
 
-      {/* Filter Tabs - Industry Standard */}
+      {/* Filter Tabs */}
       <Tabs value={tabFilter} onValueChange={(v) => setTabFilter(v as any)}>
         <TabsList className="mb-4">
           <TabsTrigger value="upcoming" data-testid="tab-upcoming">
@@ -109,68 +114,78 @@ export default function MyTrips() {
         </TabsList>
 
         <TabsContent value={tabFilter} className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredRequests.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="p-12 text-center text-muted-foreground">
-                  No {tabFilter} trips found
-                </CardContent>
-              </Card>
-            ) : (
-              filteredRequests.map((request) => (
-                <Card key={request.id} data-testid={`card-trip-${request.id}`}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
+          {filteredRequests.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center text-muted-foreground">
+                No {tabFilter} trips found
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Destination</TableHead>
+                    <TableHead>Travel Dates</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Per Diem</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Purpose</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRequests.map((request) => (
+                    <TableRow key={request.id} data-testid={`row-trip-${request.id}`}>
+                      <TableCell>
+                        <div className="font-medium" data-testid={`text-destination-${request.id}`}>
                           {request.destination.city}
-                        </CardTitle>
-                        <CardDescription>{request.destination.country}</CardDescription>
-                      </div>
-                      <StatusBadge status={request.status} type="request" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>
-                        {format(new Date(request.startDate), "MMM dd")} -{" "}
-                        {format(new Date(request.endDate), "MMM dd, yyyy")}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <DollarSign className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">
-                        FJD {request.perDiem.totalFJD.toFixed(2)}
-                      </span>
-                      <span className="text-muted-foreground">
-                        ({request.perDiem.days} days)
-                      </span>
-                    </div>
-
-                    <div className="text-sm text-muted-foreground">
-                      <div className="line-clamp-2">{request.purpose}</div>
-                    </div>
-
-                    <div className="pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full gap-2"
-                        onClick={() => handleDownloadPDF(request)}
-                        data-testid={`button-download-pdf-${request.id}`}
-                      >
-                        <Download className="w-4 h-4" />
-                        Download Summary PDF
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {request.destination.country}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm" data-testid={`text-dates-${request.id}`}>
+                          {format(new Date(request.startDate), "MMM dd, yyyy")}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          to {format(new Date(request.endDate), "MMM dd, yyyy")}
+                        </div>
+                      </TableCell>
+                      <TableCell data-testid={`text-duration-${request.id}`}>
+                        {request.perDiem.days} days
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium" data-testid={`text-perdiem-${request.id}`}>
+                          FJD {request.perDiem.totalFJD.toFixed(2)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={request.status} type="request" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate text-sm text-muted-foreground" title={request.purpose}>
+                          {request.purpose}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadPDF(request)}
+                          data-testid={`button-download-pdf-${request.id}`}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          PDF
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
