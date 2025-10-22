@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Download, MapPin, Calendar, Building2, DollarSign } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Download } from "lucide-react";
 import { useTripsNowAndUpcoming, type Trip } from "@/data/hooks";
 import { TravelMap } from "@/components/TravelMap";
 import { format } from "date-fns";
@@ -50,56 +49,6 @@ export default function TravelWatch() {
         return <Badge>Unknown</Badge>;
     }
   };
-
-  const TripCard = ({ trip }: { trip: Trip }) => (
-    <Card
-      className="hover-elevate"
-      data-testid={`card-trip-${trip.id}`}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <CardTitle className="text-lg">{trip.employeeName}</CardTitle>
-            <CardDescription className="flex items-center gap-1 mt-1">
-              <MapPin className="w-3 h-3" />
-              {trip.destination.city}, {trip.destination.country}
-            </CardDescription>
-          </div>
-          {getStatusBadge(trip.tripStatus)}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Calendar className="w-4 h-4" />
-          <span>
-            {format(new Date(trip.startDate), 'dd MMM')} –{' '}
-            {format(new Date(trip.endDate), 'dd MMM yyyy')}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Building2 className="w-4 h-4" />
-          <span>{trip.department}</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <DollarSign className="w-4 h-4" />
-          <span>
-            {trip.costCentre.code} • FJD {trip.perDiem.totalFJD.toFixed(2)}
-          </span>
-        </div>
-        <Separator className="my-2" />
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => generateTripSummaryPDF(trip)}
-          data-testid={`button-pdf-${trip.id}`}
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download Itinerary
-        </Button>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -174,50 +123,126 @@ export default function TravelWatch() {
         {/* Left: Trip Lists */}
         <div className="space-y-6">
           {/* In Progress Trips */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              In Progress ({displayedCurrent.length})
-            </h2>
-            {displayedCurrent.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                In Progress ({displayedCurrent.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {displayedCurrent.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
                   No trips currently in progress
-                </CardContent>
-              </Card>
-            ) : (
-              <ScrollArea className="h-[300px]">
-                <div className="space-y-3">
-                  {displayedCurrent.map((trip) => (
-                    <TripCard key={trip.id} trip={trip} />
-                  ))}
                 </div>
-              </ScrollArea>
-            )}
-          </div>
+              ) : (
+                <div className="overflow-auto max-h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Traveler</TableHead>
+                        <TableHead>Destination</TableHead>
+                        <TableHead>Dates</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Cost Centre</TableHead>
+                        <TableHead className="text-right">Per Diem</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {displayedCurrent.map((trip) => (
+                        <TableRow key={trip.id} data-testid={`row-trip-${trip.id}`}>
+                          <TableCell className="font-medium">{trip.employeeName}</TableCell>
+                          <TableCell>
+                            {trip.destination.city}, {trip.destination.country}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(trip.startDate), 'dd MMM')} – {format(new Date(trip.endDate), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell>{trip.department}</TableCell>
+                          <TableCell>{trip.costCentre.code}</TableCell>
+                          <TableCell className="text-right">
+                            FJD {trip.perDiem.totalFJD.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => generateTripSummaryPDF(trip)}
+                              data-testid={`button-pdf-${trip.id}`}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Upcoming Trips */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              Upcoming (Next 30 Days) ({displayedUpcoming.length})
-            </h2>
-            {displayedUpcoming.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                Upcoming (Next 30 Days) ({displayedUpcoming.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {displayedUpcoming.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
                   No upcoming trips in the next 30 days
-                </CardContent>
-              </Card>
-            ) : (
-              <ScrollArea className="h-[300px]">
-                <div className="space-y-3">
-                  {displayedUpcoming.map((trip) => (
-                    <TripCard key={trip.id} trip={trip} />
-                  ))}
                 </div>
-              </ScrollArea>
-            )}
-          </div>
+              ) : (
+                <div className="overflow-auto max-h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Traveler</TableHead>
+                        <TableHead>Destination</TableHead>
+                        <TableHead>Dates</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Cost Centre</TableHead>
+                        <TableHead className="text-right">Per Diem</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {displayedUpcoming.map((trip) => (
+                        <TableRow key={trip.id} data-testid={`row-trip-${trip.id}`}>
+                          <TableCell className="font-medium">{trip.employeeName}</TableCell>
+                          <TableCell>
+                            {trip.destination.city}, {trip.destination.country}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(trip.startDate), 'dd MMM')} – {format(new Date(trip.endDate), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell>{trip.department}</TableCell>
+                          <TableCell>{trip.costCentre.code}</TableCell>
+                          <TableCell className="text-right">
+                            FJD {trip.perDiem.totalFJD.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => generateTripSummaryPDF(trip)}
+                              data-testid={`button-pdf-${trip.id}`}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right: Live Map */}
