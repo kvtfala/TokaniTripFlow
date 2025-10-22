@@ -1,75 +1,113 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TravelRequestCard } from "@/components/TravelRequestCard";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { ApprovalDialog } from "@/components/ApprovalDialog";
 import { Plus, FileText, CheckCircle, Clock, XCircle } from "lucide-react";
 import { type TravelRequest } from "@shared/types";
-
-// todo: remove mock functionality
-const mockRequests: TravelRequest[] = [
-  {
-    id: "1",
-    employeeName: "Jone Vakatawa",
-    employeeId: "EMP001",
-    destination: { code: "SYD", city: "Sydney", country: "Australia" },
-    startDate: "2025-11-15",
-    endDate: "2025-11-18",
-    purpose: "Regional conference attendance",
-    perDiem: { totalFJD: 325, days: 4, mieFJD: 100, firstDayFJD: 75, middleDaysFJD: 200, lastDayFJD: 50 },
-    visaCheck: { status: "ACTION", message: "Visa required" },
-    status: "pending",
-    submittedAt: "2025-10-20T10:00:00Z",
-  },
-  {
-    id: "2",
-    employeeName: "Maria Santos",
-    employeeId: "EMP002",
-    destination: { code: "AKL", city: "Auckland", country: "New Zealand" },
-    startDate: "2025-10-25",
-    endDate: "2025-10-27",
-    purpose: "Training workshop",
-    perDiem: { totalFJD: 225, days: 3, mieFJD: 100, firstDayFJD: 75, middleDaysFJD: 100, lastDayFJD: 50 },
-    visaCheck: { status: "OK", message: "No visa required" },
-    status: "approved",
-    submittedAt: "2025-10-18T14:30:00Z",
-    reviewedAt: "2025-10-19T09:15:00Z",
-    reviewedBy: "Jane Manager",
-  },
-  {
-    id: "3",
-    employeeName: "Seru Rabuka",
-    employeeId: "EMP003",
-    destination: { code: "LAX", city: "Los Angeles", country: "United States" },
-    startDate: "2025-12-01",
-    endDate: "2025-12-05",
-    purpose: "Industry expo participation",
-    perDiem: { totalFJD: 425, days: 5, mieFJD: 100, firstDayFJD: 75, middleDaysFJD: 300, lastDayFJD: 50 },
-    visaCheck: { status: "WARNING", message: "ESTA required" },
-    status: "rejected",
-    submittedAt: "2025-10-15T11:00:00Z",
-    reviewedAt: "2025-10-16T16:45:00Z",
-    reviewedBy: "John Supervisor",
-    reviewComment: "Budget constraints for Q4",
-  },
-];
+import { format } from "date-fns";
 
 export default function Dashboard() {
   const [selectedRequest, setSelectedRequest] = useState<TravelRequest | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleCardClick = (request: TravelRequest) => {
+  const { data: requests = [] } = useQuery<TravelRequest[]>({
+    queryKey: ["/api/requests"],
+  });
+
+  const handleRowClick = (request: TravelRequest) => {
     setSelectedRequest(request);
     setDialogOpen(true);
   };
 
   const stats = {
-    total: mockRequests.length,
-    pending: mockRequests.filter(r => r.status === "pending").length,
-    approved: mockRequests.filter(r => r.status === "approved").length,
-    rejected: mockRequests.filter(r => r.status === "rejected").length,
+    total: requests.length,
+    pending: requests.filter(r => r.status === "submitted" || r.status === "in_review").length,
+    approved: requests.filter(r => r.status === "approved").length,
+    rejected: requests.filter(r => r.status === "rejected").length,
+  };
+
+  const getStatusBadge = (status: TravelRequest['status']) => {
+    switch (status) {
+      case 'draft':
+        return <Badge variant="outline">Draft</Badge>;
+      case 'submitted':
+        return <Badge variant="secondary">Submitted</Badge>;
+      case 'in_review':
+        return <Badge variant="secondary">In Review</Badge>;
+      case 'approved':
+        return <Badge className="bg-green-500">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const renderTable = (filteredRequests: TravelRequest[]) => {
+    if (filteredRequests.length === 0) {
+      return (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            No travel requests found
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Destination</TableHead>
+                  <TableHead>Travel Dates</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Purpose</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Per Diem</TableHead>
+                  <TableHead>Submitted</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRequests.map((request) => (
+                  <TableRow
+                    key={request.id}
+                    className="cursor-pointer hover-elevate"
+                    onClick={() => handleRowClick(request)}
+                    data-testid={`row-request-${request.id}`}
+                  >
+                    <TableCell className="font-medium">{request.employeeName}</TableCell>
+                    <TableCell>
+                      {request.destination.city}, {request.destination.country}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {format(new Date(request.startDate), 'dd MMM')} – {format(new Date(request.endDate), 'dd MMM yyyy')}
+                    </TableCell>
+                    <TableCell>{request.department}</TableCell>
+                    <TableCell className="max-w-xs truncate">{request.purpose}</TableCell>
+                    <TableCell>{getStatusBadge(request.status)}</TableCell>
+                    <TableCell className="text-right">
+                      FJD {request.perDiem.totalFJD.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {format(new Date(request.submittedAt), 'dd MMM yyyy')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -150,48 +188,16 @@ export default function Dashboard() {
           <TabsTrigger value="rejected" data-testid="tab-rejected">Rejected</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockRequests.map((request) => (
-              <TravelRequestCard
-                key={request.id}
-                request={request}
-                onClick={() => handleCardClick(request)}
-              />
-            ))}
-          </div>
+          {renderTable(requests)}
         </TabsContent>
         <TabsContent value="pending" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockRequests.filter(r => r.status === "pending").map((request) => (
-              <TravelRequestCard
-                key={request.id}
-                request={request}
-                onClick={() => handleCardClick(request)}
-              />
-            ))}
-          </div>
+          {renderTable(requests.filter(r => r.status === "submitted" || r.status === "in_review"))}
         </TabsContent>
         <TabsContent value="approved" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockRequests.filter(r => r.status === "approved").map((request) => (
-              <TravelRequestCard
-                key={request.id}
-                request={request}
-                onClick={() => handleCardClick(request)}
-              />
-            ))}
-          </div>
+          {renderTable(requests.filter(r => r.status === "approved"))}
         </TabsContent>
         <TabsContent value="rejected" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockRequests.filter(r => r.status === "rejected").map((request) => (
-              <TravelRequestCard
-                key={request.id}
-                request={request}
-                onClick={() => handleCardClick(request)}
-              />
-            ))}
-          </div>
+          {renderTable(requests.filter(r => r.status === "rejected"))}
         </TabsContent>
       </Tabs>
 
