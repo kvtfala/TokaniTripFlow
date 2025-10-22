@@ -6,6 +6,35 @@ I-Approver Fiji is a professional travel request, approval, and expense manageme
 
 Key features include automated per-diem calculations, visa requirement checking, multi-level approval workflows with delegation support, budget tracking by cost centre, audit trail maintenance, and comprehensive analytics. The system is built with a mobile-first approach optimized for bandwidth-constrained environments.
 
+## Recent Changes (October 22, 2025)
+
+### Layout and UX Improvements
+- **Sidebar Width Optimization**: Reduced sidebar width from 16rem to 13rem (208px) to provide more space for main content and prevent horizontal scrolling on smaller screens
+- **Horizontal Scrollbar Fix**: Eliminated horizontal scrollbar across all pages by:
+  - Adding `overflow-x: hidden` to html/body elements
+  - Changing main element from `overflow-auto` to `overflow-y-auto overflow-x-hidden`
+  - Ensuring all pages use proper `container mx-auto py-8 px-4` structure
+- **Double Scrollbar Resolution**: Fixed New Request page to prevent nested scrollable containers
+
+### Demo Data Enhancement
+- Added 10 realistic travel requests for presentation and testing:
+  - 6 approved requests (Finance, HR, IT, Operations departments)
+  - 2 submitted requests (Marketing, IT)
+  - 1 in-review request (Operations)
+  - 1 rejected request (HR)
+- Destinations include domestic Fiji (Suva, Nadi, Labasa) and international (Australia, New Zealand, Singapore, USA)
+- Total approved per diem: FJD 1,922 across 6 requests
+- All requests include proper visa checks, cost centre assignments, and approval history
+
+### Finance Export Functionality
+- Finance Export page now fully functional with 6 approved requests available for export
+- CSV and Excel export buttons enabled with real demo data
+- Preview section displays sample approved requests with employee names and per diem amounts
+
+### Technical Improvements
+- Added visaCheck to all travel requests (including domestic trips marked as "OK - Domestic travel")
+- Ensured type safety and WCAG 2.1 AA accessibility compliance across all Pacific/Fiji themed components
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

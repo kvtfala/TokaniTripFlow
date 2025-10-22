@@ -141,7 +141,7 @@ function Router() {
             </div>
             <ThemeToggle />
           </header>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/request/new" component={NewRequest} />
