@@ -131,10 +131,13 @@ function Router() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between p-2 border-b sticky top-0 z-50 bg-background">
+          <header className="flex items-center justify-between px-4 py-3 border-b sticky top-0 z-50 bg-ocean text-white">
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <h1 className="text-lg font-semibold">I-Approver Fiji</h1>
+              <div className="flex flex-col">
+                <h1 className="text-lg font-semibold">I-Approver Fiji</h1>
+                <span className="text-xs text-sand-100">Bula! Welcome back</span>
+              </div>
             </div>
             <ThemeToggle />
           </header>

@@ -194,8 +194,9 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {/* Analytics Stats - Pacific Theme (WCAG 2.1 AA Compliant) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+        <Card className="bg-gradient-to-br from-ocean-50 to-ocean-100 dark:from-ocean-900 dark:to-ocean-800 border-ocean-200 dark:border-ocean-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -204,13 +205,13 @@ export default function Dashboard() {
                   FJD {stats.totalSpend.toFixed(0)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-primary-foreground" />
+              <div className="w-12 h-12 bg-ocean-700 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
+        <Card className="bg-gradient-to-br from-lagoon-50 to-lagoon-100 dark:from-lagoon-900 dark:to-lagoon-800 border-lagoon-200 dark:border-lagoon-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -219,13 +220,13 @@ export default function Dashboard() {
                   FJD {stats.avgPerDiem.toFixed(0)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-lagoon-700 rounded-full flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
+        <Card className="bg-gradient-to-br from-sand-50 to-sand-100 dark:from-sand-900 dark:to-sand-800 border-sand-200 dark:border-sand-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -234,20 +235,20 @@ export default function Dashboard() {
                   {stats.budgetUtilization.toFixed(1)}%
                 </p>
               </div>
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-ocean-700 rounded-full flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
+        <Card className="bg-gradient-to-br from-coral-50 to-coral-100 dark:from-coral-900 dark:to-coral-800 border-coral-200 dark:border-coral-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Pending Approvals</p>
                 <p className="text-3xl font-bold" data-testid="text-stat-pending-approvals">{stats.pendingApprovals}</p>
               </div>
-              <div className="w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-coral-700 rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -265,7 +266,7 @@ export default function Dashboard() {
             <Link href="/request/new" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-new-request">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <Plus className="w-8 h-8 text-primary" />
+                  <Plus className="w-8 h-8 text-ocean-700" />
                   <div className="text-center">
                     <div className="font-semibold">Submit Request</div>
                     <div className="text-xs text-muted-foreground mt-1">Create new travel request</div>
@@ -277,7 +278,7 @@ export default function Dashboard() {
             <Link href="/my-trips" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-my-trips">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <Plane className="w-8 h-8 text-blue-600" />
+                  <Plane className="w-8 h-8 text-lagoon-700" />
                   <div className="text-center">
                     <div className="font-semibold">My Trips</div>
                     <div className="text-xs text-muted-foreground mt-1">View your travel history</div>
@@ -289,7 +290,7 @@ export default function Dashboard() {
             <Link href="/travel-watch" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-travel-watch">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <MapPin className="w-8 h-8 text-green-600" />
+                  <MapPin className="w-8 h-8 text-coral-700" />
                   <div className="text-center">
                     <div className="font-semibold">Travel Watch</div>
                     <div className="text-xs text-muted-foreground mt-1">Track active travelers</div>
@@ -301,7 +302,7 @@ export default function Dashboard() {
             <Link href="/approvals" className="block">
               <Card className="hover-elevate cursor-pointer" data-testid="quick-action-approvals">
                 <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <Users className="w-8 h-8 text-amber-600" />
+                  <Users className="w-8 h-8 text-ocean-700" />
                   <div className="text-center">
                     <div className="font-semibold">Approvals</div>
                     <div className="text-xs text-muted-foreground mt-1">Review pending requests</div>
@@ -328,8 +329,8 @@ export default function Dashboard() {
                 <AreaChart data={analyticsData.monthlyChartData}>
                   <defs>
                     <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#00547A" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#00547A" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -354,7 +355,7 @@ export default function Dashboard() {
                   <Area 
                     type="monotone" 
                     dataKey="spend" 
-                    stroke="#3b82f6" 
+                    stroke="#00547A" 
                     fillOpacity={1} 
                     fill="url(#colorSpend)" 
                   />
@@ -398,7 +399,7 @@ export default function Dashboard() {
                     }}
                     formatter={(value: number) => [`FJD ${value.toFixed(2)}`, 'Spend']}
                   />
-                  <Bar dataKey="spend" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="spend" fill="#009BAA" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
