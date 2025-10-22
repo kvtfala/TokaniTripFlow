@@ -136,7 +136,7 @@ function Router() {
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="flex flex-col">
                 <h1 className="text-lg font-semibold">Tokani TripFlow</h1>
-                <span className="text-xs text-sand-100">Bula! Welcome back</span>
+                <span className="text-sm text-white/90">Your Trusted Partner for Travel Approvals</span>
               </div>
             </div>
             <ThemeToggle />

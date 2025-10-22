@@ -1,4 +1,6 @@
 # Tokani TripFlow - Design Guidelines
+**Your Trusted Partner for Travel Approvals**
+
 ## Fiji/Pacific Business Theme with ISO Compliance
 
 ## Design Philosophy
