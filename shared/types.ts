@@ -19,6 +19,15 @@ export interface PerDiemCalculation {
   lastDayFJD: number;
 }
 
+export interface TravelCostBreakdown {
+  flights?: number;
+  accommodation?: number;
+  groundTransfers?: number;
+  visaFees?: number;
+  perDiem: number;
+  totalCost: number;
+}
+
 export interface VisaCheckResult {
   status: VisaStatus;
   message: string;
@@ -70,6 +79,9 @@ export interface TravelRequest {
   needsAccommodation?: boolean;
   needsVisa?: boolean;
   needsTransport?: boolean;
+  
+  // Cost breakdown
+  costBreakdown?: TravelCostBreakdown;
 }
 
 export interface ExpenseClaim {

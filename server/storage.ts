@@ -66,6 +66,14 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: true,
         needsTransport: true,
+        costBreakdown: {
+          flights: 2500,
+          accommodation: 2400,
+          groundTransfers: 180,
+          visaFees: 250,
+          perDiem: 2900,
+          totalCost: 8230
+        },
       },
       {
         id: "req-002",
@@ -95,6 +103,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: false,
         needsTransport: true,
+        costBreakdown: {
+          flights: 1800,
+          accommodation: 1750,
+          groundTransfers: 140,
+          perDiem: 2300,
+          totalCost: 5990
+        },
       },
       {
         id: "req-003",
@@ -124,6 +139,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: false,
         needsTransport: true,
+        costBreakdown: {
+          flights: 350,
+          accommodation: 800,
+          groundTransfers: 90,
+          perDiem: 1250,
+          totalCost: 2490
+        },
       },
       {
         id: "req-004",
@@ -151,6 +173,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: true,
         needsTransport: false,
+        costBreakdown: {
+          flights: 2200,
+          accommodation: 1520,
+          visaFees: 150,
+          perDiem: 1100,
+          totalCost: 4970
+        },
       },
       {
         id: "req-005",
@@ -180,6 +209,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: false,
         needsTransport: true,
+        costBreakdown: {
+          flights: 200,
+          accommodation: 540,
+          groundTransfers: 70,
+          perDiem: 950,
+          totalCost: 1760
+        },
       },
       {
         id: "req-006",
@@ -207,6 +243,14 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: true,
         needsTransport: true,
+        costBreakdown: {
+          flights: 2500,
+          accommodation: 1600,
+          groundTransfers: 160,
+          visaFees: 250,
+          perDiem: 1700,
+          totalCost: 6210
+        },
       },
       {
         id: "req-007",
@@ -236,6 +280,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: false,
         needsTransport: true,
+        costBreakdown: {
+          flights: 1800,
+          accommodation: 1400,
+          groundTransfers: 130,
+          perDiem: 1800,
+          totalCost: 5130
+        },
       },
       {
         id: "req-008",
@@ -264,6 +315,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: true,
         needsTransport: false,
+        costBreakdown: {
+          flights: 2200,
+          accommodation: 1900,
+          visaFees: 150,
+          perDiem: 1950,
+          totalCost: 6200
+        },
       },
       {
         id: "req-009",
@@ -293,6 +351,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: true,
         needsTransport: false,
+        costBreakdown: {
+          flights: 2500,
+          accommodation: 1600,
+          visaFees: 250,
+          perDiem: 1600,
+          totalCost: 5950
+        },
       },
       {
         id: "req-010",
@@ -320,6 +385,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: false,
         needsTransport: true,
+        costBreakdown: {
+          flights: 350,
+          accommodation: 600,
+          groundTransfers: 85,
+          perDiem: 1200,
+          totalCost: 2235
+        },
       },
       {
         id: "req-011",
@@ -349,6 +421,13 @@ export class MemStorage implements IStorage {
         needsAccommodation: true,
         needsVisa: false,
         needsTransport: true,
+        costBreakdown: {
+          flights: 900,
+          accommodation: 1000,
+          groundTransfers: 100,
+          perDiem: 1350,
+          totalCost: 3350
+        },
       },
     ];
 
