@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { generateTripSummaryPDF } from "@/utils/pdf";
 
 export default function MyTrips() {
-  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "submitted" | "approved" | "rejected">("all");
+  const [tabFilter, setTabFilter] = useState<"upcoming" | "past" | "drafts">("upcoming");
 
   // Mock current user - in production this would come from auth
   const currentUserId = "employee";
@@ -22,17 +22,33 @@ export default function MyTrips() {
   // Filter requests for current user
   const myRequests = allRequests.filter((req) => req.employeeId === currentUserId);
 
+  const now = new Date();
+
+  // Categorize trips by time and status (industry standard)
+  // Upcoming: approved trips that haven't ended yet (includes active trips)
+  const upcomingTrips = myRequests.filter(
+    (r) => r.status === "approved" && new Date(r.endDate) >= now
+  );
+  // Past: approved trips that have ended
+  const pastTrips = myRequests.filter(
+    (r) => r.status === "approved" && new Date(r.endDate) < now
+  );
+  // In Progress: non-approved statuses (draft, pending review, rejected)
+  const draftTrips = myRequests.filter(
+    (r) => r.status === "draft" || r.status === "submitted" || r.status === "in_review" || r.status === "rejected"
+  );
+
   const filteredRequests =
-    statusFilter === "all"
-      ? myRequests
-      : myRequests.filter((req) => req.status === statusFilter);
+    tabFilter === "upcoming"
+      ? upcomingTrips
+      : tabFilter === "past"
+      ? pastTrips
+      : draftTrips;
 
   const stats = {
-    total: myRequests.length,
-    draft: myRequests.filter((r) => r.status === "draft").length,
-    submitted: myRequests.filter((r) => r.status === "submitted" || r.status === "in_review").length,
-    approved: myRequests.filter((r) => r.status === "approved").length,
-    rejected: myRequests.filter((r) => r.status === "rejected").length,
+    upcoming: upcomingTrips.length,
+    past: pastTrips.length,
+    drafts: draftTrips.length,
   };
 
   const handleDownloadPDF = (request: TravelRequest) => {
@@ -56,63 +72,48 @@ export default function MyTrips() {
         <p className="text-muted-foreground">View and manage your travel history</p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      {/* Statistics Cards - Industry Standard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-muted-foreground">Total Requests</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.upcoming}</div>
+            <div className="text-sm text-muted-foreground">Upcoming Trips</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-slate-600">{stats.draft}</div>
-            <div className="text-sm text-muted-foreground">Draft</div>
+            <div className="text-2xl font-bold text-slate-600">{stats.past}</div>
+            <div className="text-sm text-muted-foreground">Past Trips</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-amber-600">{stats.submitted}</div>
-            <div className="text-sm text-muted-foreground">Pending</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-            <div className="text-sm text-muted-foreground">Approved</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-            <div className="text-sm text-muted-foreground">Rejected</div>
+            <div className="text-2xl font-bold text-amber-600">{stats.drafts}</div>
+            <div className="text-sm text-muted-foreground">In Progress</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filter Tabs */}
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+      {/* Filter Tabs - Industry Standard */}
+      <Tabs value={tabFilter} onValueChange={(v) => setTabFilter(v as any)}>
         <TabsList className="mb-4">
-          <TabsTrigger value="all" data-testid="tab-all">
-            All ({stats.total})
+          <TabsTrigger value="upcoming" data-testid="tab-upcoming">
+            Upcoming ({stats.upcoming})
           </TabsTrigger>
-          <TabsTrigger value="submitted" data-testid="tab-pending">
-            Pending ({stats.submitted})
+          <TabsTrigger value="past" data-testid="tab-past">
+            Past ({stats.past})
           </TabsTrigger>
-          <TabsTrigger value="approved" data-testid="tab-approved">
-            Approved ({stats.approved})
-          </TabsTrigger>
-          <TabsTrigger value="rejected" data-testid="tab-rejected">
-            Rejected ({stats.rejected})
+          <TabsTrigger value="drafts" data-testid="tab-drafts">
+            In Progress ({stats.drafts})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={statusFilter} className="mt-0">
+        <TabsContent value={tabFilter} className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRequests.length === 0 ? (
               <Card className="col-span-full">
                 <CardContent className="p-12 text-center text-muted-foreground">
-                  No {statusFilter !== "all" && statusFilter} requests found
+                  No {tabFilter} trips found
                 </CardContent>
               </Card>
             ) : (
