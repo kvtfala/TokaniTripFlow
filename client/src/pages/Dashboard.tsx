@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ApprovalDialog } from "@/components/ApprovalDialog";
-import { Plus, FileText, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Plus, FileText, CheckCircle, Clock, XCircle, TrendingUp, BarChart3 } from "lucide-react";
 import { type TravelRequest } from "@shared/types";
-import { format } from "date-fns";
+import { format, parseISO, startOfMonth } from "date-fns";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function Dashboard() {
   const [selectedRequest, setSelectedRequest] = useState<TravelRequest | null>(null);
@@ -30,6 +31,68 @@ export default function Dashboard() {
     approved: requests.filter(r => r.status === "approved").length,
     rejected: requests.filter(r => r.status === "rejected").length,
   };
+
+  // Analytics data - Industry standard charts
+  const analyticsData = useMemo(() => {
+    // Monthly spend trend (last 6 months, chronologically sorted)
+    const monthlySpendMap = new Map<string, { timestamp: Date; spend: number }>();
+    
+    requests.forEach(req => {
+      if (req.status === "approved") {
+        const monthStart = startOfMonth(parseISO(req.submittedAt));
+        const monthKey = format(monthStart, "MMM yyyy");
+        const existing = monthlySpendMap.get(monthKey);
+        
+        if (existing) {
+          existing.spend += req.perDiem.totalFJD;
+        } else {
+          monthlySpendMap.set(monthKey, {
+            timestamp: monthStart,
+            spend: req.perDiem.totalFJD
+          });
+        }
+      }
+    });
+
+    // Sort chronologically and limit to last 6 months
+    const sortedMonthly = Array.from(monthlySpendMap.entries())
+      .sort((a, b) => a[1].timestamp.getTime() - b[1].timestamp.getTime())
+      .slice(-6);
+
+    const monthlyChartData = sortedMonthly.map(([month, data]) => ({
+      month,
+      spend: Math.round(data.spend),
+    }));
+
+    // Department spend comparison
+    const departmentSpend = requests.reduce((acc, req) => {
+      if (req.status === "approved") {
+        acc[req.department] = (acc[req.department] || 0) + req.perDiem.totalFJD;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const departmentChartData = Object.entries(departmentSpend).map(([department, spend]) => ({
+      department,
+      spend: Math.round(spend),
+    }));
+
+    // Total spend metrics
+    const totalSpend = requests
+      .filter(r => r.status === "approved")
+      .reduce((sum, r) => sum + r.perDiem.totalFJD, 0);
+    
+    const avgPerDiem = requests.length > 0
+      ? totalSpend / requests.filter(r => r.status === "approved").length
+      : 0;
+
+    return {
+      monthlyChartData,
+      departmentChartData,
+      totalSpend,
+      avgPerDiem,
+    };
+  }, [requests]);
 
   const getStatusBadge = (status: TravelRequest['status']) => {
     switch (status) {
@@ -176,6 +239,103 @@ export default function Dashboard() {
                 <XCircle className="w-6 h-6 text-white" />
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Analytics Charts - Industry Standard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Travel Spend Trend
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analyticsData.monthlyChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={analyticsData.monthlyChartData}>
+                  <defs>
+                    <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="month" 
+                    className="text-xs"
+                    tick={{ fill: 'currentColor' }}
+                  />
+                  <YAxis 
+                    className="text-xs"
+                    tick={{ fill: 'currentColor' }}
+                    label={{ value: 'FJD', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                    formatter={(value: number) => [`FJD ${value.toFixed(2)}`, 'Spend']}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="spend" 
+                    stroke="#3b82f6" 
+                    fillOpacity={1} 
+                    fill="url(#colorSpend)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                No spend data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Spend by Department
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analyticsData.departmentChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analyticsData.departmentChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="department" 
+                    className="text-xs"
+                    tick={{ fill: 'currentColor' }}
+                  />
+                  <YAxis 
+                    className="text-xs"
+                    tick={{ fill: 'currentColor' }}
+                    label={{ value: 'FJD', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                    formatter={(value: number) => [`FJD ${value.toFixed(2)}`, 'Spend']}
+                  />
+                  <Bar dataKey="spend" fill="#10b981" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                No department data available
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
