@@ -41,7 +41,7 @@ export default function Approvals() {
       const needsMoreApprovals = data && requiresMoreApprovals(data);
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       toast({
-        title: "Request Approved",
+        title: "Vinaka! Request Approved",
         description: needsMoreApprovals 
           ? "Request advanced to next approval level" 
           : "Request fully approved and ready for processing",

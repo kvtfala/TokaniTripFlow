@@ -24,7 +24,7 @@ export default function NewRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       toast({
-        title: "Success!",
+        title: "Vinaka! Request Submitted",
         description: "Your travel request has been submitted for approval.",
       });
       setLocation("/my-trips");

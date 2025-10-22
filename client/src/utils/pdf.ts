@@ -112,19 +112,21 @@ export function generateTripSummaryPDF(request: TravelRequest): void {
   doc.text(`Total Per Diem: FJD ${request.perDiem.totalFJD.toFixed(2)}`, 25, yPos);
   yPos += 10;
 
-  // Visa Status
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("Visa Information", 20, yPos);
-  yPos += 8;
+  // Visa Status (if available)
+  if (request.visaCheck) {
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Visa Information", 20, yPos);
+    yPos += 8;
 
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Status: ${request.visaCheck.status}`, 25, yPos);
-  yPos += 6;
-  const visaLines = doc.splitTextToSize(request.visaCheck.message, pageWidth - 50);
-  doc.text(visaLines, 25, yPos);
-  yPos += visaLines.length * 6 + 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Status: ${request.visaCheck.status}`, 25, yPos);
+    yPos += 6;
+    const visaLines = doc.splitTextToSize(request.visaCheck.message, pageWidth - 50);
+    doc.text(visaLines, 25, yPos);
+    yPos += visaLines.length * 6 + 10;
+  }
 
   // Services Required
   if (request.needsFlights || request.needsAccommodation || request.needsVisa || request.needsTransport) {
