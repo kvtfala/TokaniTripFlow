@@ -1,8 +1,8 @@
-# I-Approver Fiji - Travel Management System
+# Tokani TripFlow - Travel Management System
 
 ## Overview
 
-I-Approver Fiji is a professional travel request, approval, and expense management system designed specifically for Fijian organizations. The application streamlines the entire travel workflow from initial request submission through multi-level approvals to expense reconciliation, with special consideration for low-bandwidth environments and local compliance requirements (FRCS-friendly records).
+Tokani TripFlow is a professional travel request, approval, and expense management system designed specifically for Fijian organizations. The application streamlines the entire travel workflow from initial request submission through multi-level approvals to expense reconciliation, with special consideration for low-bandwidth environments and local compliance requirements (FRCS-friendly records).
 
 Key features include automated per-diem calculations, visa requirement checking, multi-level approval workflows with delegation support, budget tracking by cost centre, audit trail maintenance, and comprehensive analytics. The system is built with a mobile-first approach optimized for bandwidth-constrained environments.
 

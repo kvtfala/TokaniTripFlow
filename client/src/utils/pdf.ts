@@ -13,7 +13,7 @@ export function generateTripSummaryPDF(request: TravelRequest): void {
   // Header
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("I-Approver Fiji", pageWidth / 2, yPos, { align: "center" });
+  doc.text("Tokani TripFlow", pageWidth / 2, yPos, { align: "center" });
   yPos += 10;
 
   doc.setFontSize(14);

@@ -135,7 +135,7 @@ function Router() {
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="flex flex-col">
-                <h1 className="text-lg font-semibold">I-Approver Fiji</h1>
+                <h1 className="text-lg font-semibold">Tokani TripFlow</h1>
                 <span className="text-xs text-sand-100">Bula! Welcome back</span>
               </div>
             </div>

@@ -1,4 +1,4 @@
-# I-Approver Fiji - Design Guidelines
+# Tokani TripFlow - Design Guidelines
 ## Fiji/Pacific Business Theme with ISO Compliance
 
 ## Design Philosophy
