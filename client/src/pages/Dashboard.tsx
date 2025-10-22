@@ -25,12 +25,29 @@ export default function Dashboard() {
     setDialogOpen(true);
   };
 
-  const stats = {
-    total: requests.length,
-    pending: requests.filter(r => r.status === "submitted" || r.status === "in_review").length,
-    approved: requests.filter(r => r.status === "approved").length,
-    rejected: requests.filter(r => r.status === "rejected").length,
-  };
+  const stats = useMemo(() => {
+    const totalSpend = requests
+      .filter(r => r.status === "approved")
+      .reduce((sum, r) => sum + r.perDiem.totalFJD, 0);
+    
+    const approvedCount = requests.filter(r => r.status === "approved").length;
+    const avgPerDiem = approvedCount > 0 ? totalSpend / approvedCount : 0;
+    
+    // Budget utilization (using annual travel budget)
+    const annualBudget = 500000; // FJD - would come from config/database in production
+    const budgetUtilization = annualBudget > 0 ? (totalSpend / annualBudget) * 100 : 0;
+    
+    const pendingApprovals = requests.filter(
+      r => r.status === "submitted" || r.status === "in_review"
+    ).length;
+
+    return {
+      totalSpend,
+      avgPerDiem,
+      budgetUtilization,
+      pendingApprovals,
+    };
+  }, [requests]);
 
   // Analytics data - Industry standard charts
   const analyticsData = useMemo(() => {
@@ -77,20 +94,9 @@ export default function Dashboard() {
       spend: Math.round(spend),
     }));
 
-    // Total spend metrics
-    const totalSpend = requests
-      .filter(r => r.status === "approved")
-      .reduce((sum, r) => sum + r.perDiem.totalFJD, 0);
-    
-    const avgPerDiem = requests.length > 0
-      ? totalSpend / requests.filter(r => r.status === "approved").length
-      : 0;
-
     return {
       monthlyChartData,
       departmentChartData,
-      totalSpend,
-      avgPerDiem,
     };
   }, [requests]);
 
@@ -193,24 +199,13 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Total Requests</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-total">{stats.total}</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Spend</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-total-spend">
+                  FJD {stats.totalSpend.toFixed(0)}
+                </p>
               </div>
               <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Pending</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-pending">{stats.pending}</p>
-              </div>
-              <div className="w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
+                <TrendingUp className="w-6 h-6 text-primary-foreground" />
               </div>
             </div>
           </CardContent>
@@ -219,24 +214,41 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Approved</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-approved">{stats.approved}</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Avg Per Diem</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-avg-perdiem">
+                  FJD {stats.avgPerDiem.toFixed(0)}
+                </p>
               </div>
               <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-white" />
+                <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Rejected</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-rejected">{stats.rejected}</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Budget Utilization</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-budget-utilization">
+                  {stats.budgetUtilization.toFixed(1)}%
+                </p>
               </div>
-              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Pending Approvals</p>
+                <p className="text-3xl font-bold" data-testid="text-stat-pending-approvals">{stats.pendingApprovals}</p>
+              </div>
+              <div className="w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
