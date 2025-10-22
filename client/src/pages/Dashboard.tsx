@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ApprovalDialog } from "@/components/ApprovalDialog";
-import { Plus, FileText, CheckCircle, Clock, XCircle, TrendingUp, BarChart3 } from "lucide-react";
+import { Plus, FileText, CheckCircle, Clock, XCircle, TrendingUp, BarChart3, Plane, MapPin, Download, Users } from "lucide-react";
 import { type TravelRequest } from "@shared/types";
 import { format, parseISO, startOfMonth } from "date-fns";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -242,6 +242,64 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions - Industry Standard */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link href="/request/new" className="block">
+              <Card className="hover-elevate cursor-pointer" data-testid="quick-action-new-request">
+                <CardContent className="flex flex-col items-center gap-3 p-6">
+                  <Plus className="w-8 h-8 text-primary" />
+                  <div className="text-center">
+                    <div className="font-semibold">Submit Request</div>
+                    <div className="text-xs text-muted-foreground mt-1">Create new travel request</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/my-trips" className="block">
+              <Card className="hover-elevate cursor-pointer" data-testid="quick-action-my-trips">
+                <CardContent className="flex flex-col items-center gap-3 p-6">
+                  <Plane className="w-8 h-8 text-blue-600" />
+                  <div className="text-center">
+                    <div className="font-semibold">My Trips</div>
+                    <div className="text-xs text-muted-foreground mt-1">View your travel history</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/travel-watch" className="block">
+              <Card className="hover-elevate cursor-pointer" data-testid="quick-action-travel-watch">
+                <CardContent className="flex flex-col items-center gap-3 p-6">
+                  <MapPin className="w-8 h-8 text-green-600" />
+                  <div className="text-center">
+                    <div className="font-semibold">Travel Watch</div>
+                    <div className="text-xs text-muted-foreground mt-1">Track active travelers</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/approvals" className="block">
+              <Card className="hover-elevate cursor-pointer" data-testid="quick-action-approvals">
+                <CardContent className="flex flex-col items-center gap-3 p-6">
+                  <Users className="w-8 h-8 text-amber-600" />
+                  <div className="text-center">
+                    <div className="font-semibold">Approvals</div>
+                    <div className="text-xs text-muted-foreground mt-1">Review pending requests</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Analytics Charts - Industry Standard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
