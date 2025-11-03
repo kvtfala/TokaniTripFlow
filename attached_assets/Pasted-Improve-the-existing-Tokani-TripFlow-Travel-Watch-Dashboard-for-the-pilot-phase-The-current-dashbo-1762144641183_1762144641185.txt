@@ -1,0 +1,64 @@
+Improve the existing Tokani TripFlow Travel Watch Dashboard for the pilot phase.
+
+The current dashboard already includes:
+
+Metric cards (Active Travelers, Destinations, Total Per Diem, Avg Trip Duration)
+
+Tables for Active and Upcoming trips
+
+A Destination Overview section
+
+A “Top Destinations” bar chart
+
+CSV export option.
+
+The goal is to make the dashboard smarter, cleaner, and more insightful — without connecting to Firebase yet. Use mock or local data to simulate trips.
+
+Objectives
+
+Refine calculations for all metrics so they automatically update based on the mock dataset.
+
+Add meaningful alerts like “travelers returning soon” or “overdue reports.”
+
+Enhance the look and flow of the dashboard — make it feel like a live analytics system, not a static report.
+
+Improve filtering and searching (by traveler, department, cost centre, status).
+
+Polish the Destination Overview with totals, flags, and the latest return date.
+
+Make the chart section more intuitive — top destinations, spend patterns, or travel counts.
+
+Keep CSV export but improve its formatting (include timestamps and only export filtered data).
+
+Ensure layout is responsive, modern, and visually balanced (cards, tables, charts).
+
+Add optional touches like color-coded status indicators or subtle animations.
+
+Guidelines
+
+Use React + Vite (or whatever stack you think best suits this).
+
+You have full creative freedom to redesign layout, component structure, and logic — as long as it fits the TripFlow purpose: “real-time visibility of travelers, destinations, and trip status.”
+
+You can use any libraries (Chart.js, Recharts, Tailwind, MUI, etc.) as long as the design feels clean and professional.
+
+Focus on readability, modular structure, and future scalability — this will later connect to Firebase.
+
+No backend integration yet — only mock JSON data.
+
+Output Expectation
+
+A complete, polished dashboard UI that can serve as the official MDF pilot version.
+
+Fully working metrics, tables, and charts based on local mock data.
+
+Real search/filter interactivity and export function.
+
+Responsive layout that looks sharp on both desktop and tablet.
+
+Code that is clean, well-structured, and ready for Firebase integration later.
+
+Creative Challenge
+
+You can reimagine layout, color scheme, or component structure — make it your version of “TripFlow Travel Watch Pro (Pilot Edition).”
+The final design should feel data-rich, professional, and ready for a live demonstration to stakeholders.
