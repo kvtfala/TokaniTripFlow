@@ -7,9 +7,70 @@ Tokani TripFlow is a professional travel request, approval, and expense manageme
 
 Key features include automated per-diem calculations, visa requirement checking, multi-level approval workflows with delegation support, budget tracking by cost centre, audit trail maintenance, and comprehensive analytics. The system is built with a mobile-first approach optimized for bandwidth-constrained environments.
 
-## Recent Changes (October 22, 2025)
+## Recent Changes
 
-### Layout and UX Improvements
+### November 3, 2025 - Comprehensive Feature Enhancements
+
+#### Dashboard Improvements
+- **Personalized Experience**: Added "Bula, [User]!" greeting with contextual welcome message based on user role
+- **Recent Activity Feed**: Real-time chronological feed showing latest 5 travel request activities with timestamps
+- **Upcoming Trips Widget**: Displays approved trips in next 30 days with countdown and quick details
+- **Budget Alerts**: Visual warnings when cost centre budgets exceed 80% utilization threshold
+- **Advanced Search & Filtering**: 
+  - Real-time search across employee names, destinations, and departments
+  - Multi-select filters for status, department, and visa requirements
+  - Performance-optimized with useMemo for large datasets
+- **Responsive Layout**: Three-column grid adapting to mobile/tablet/desktop breakpoints
+
+#### MyTrips Page Enhancements
+- **Comprehensive Search**: Searches across destinations, purposes, and cost centres
+- **Advanced Filtering System**:
+  - Status filter with multi-select dropdown
+  - Date range picker for departure dates
+  - Cost range sliders (minimum and maximum)
+  - Clear all filters button
+- **Multi-Column Sorting**: Sort by date, cost, destination, or status with ascending/descending toggle
+- **Performance Optimization**: useMemo-based filtering pipeline for instant response
+- **Empty States**: Contextual messaging when no trips match filters
+
+#### Analytics Dashboard Overhaul
+- **Date Range Controls**:
+  - Custom date picker with start/end dates
+  - Quick preset buttons (Last 7/30/90 days, This Month, Last Month)
+  - Comprehensive validation preventing crashes from invalid/empty dates
+- **Trend Analysis**:
+  - Period-over-period comparison with non-overlapping previous periods
+  - Visual trend indicators (↑/↓) with percentage changes
+  - Color-coded positive/negative trends
+- **Monthly Spend Visualization**:
+  - Line chart showing spend trends over selected date range
+  - Tooltip showing exact amounts and trip counts per month
+  - Dynamically adjusts to selected range (not fixed 6-month view)
+- **Data Export**: CSV download of filtered analytics data with proper date formatting
+- **Crash-Proof Implementation**:
+  - Empty date validation with user-friendly alerts
+  - All metrics respect selected date range (spend, destinations, distributions, monthly trends)
+  - Safe fallbacks for edge cases (single day, equal dates, invalid ranges)
+
+#### Approvals Workflow Enhancement
+- **Bulk Actions**:
+  - Multi-select checkboxes for travel requests
+  - Bulk approve/reject buttons for selected items
+  - "Select All" functionality with visual feedback
+- **Search & Filter**:
+  - Search by employee name or department
+  - Date range picker for submission dates
+  - Department multi-select filter
+- **Stats Summary Cards**:
+  - Total pending count
+  - Selected items counter
+  - Average pending per diem value
+- **Improved UX**:
+  - Pacific-themed checkboxes with hover states
+  - Clear visual hierarchy for bulk operations
+  - Confirmation dialogs for bulk actions
+
+### October 22, 2025 - Layout and UX Improvements
 - **Sidebar Width Optimization**: Reduced sidebar width from 16rem to 13rem (208px) to provide more space for main content and prevent horizontal scrolling on smaller screens
 - **Horizontal Scrollbar Fix**: Eliminated horizontal scrollbar across all pages by:
   - Adding `overflow-x: hidden` to html/body elements
