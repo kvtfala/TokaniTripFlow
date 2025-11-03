@@ -1,7 +1,9 @@
-import { useState, Fragment } from "react";
+import { useState, Fragment, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -11,15 +13,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, ChevronDown, ChevronUp } from "lucide-react";
+import { Download, ChevronDown, ChevronUp, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
 import { generateTripSummaryPDF } from "@/utils/pdf";
 
+type SortField = "date" | "cost" | "destination" | "status";
+type SortOrder = "asc" | "desc";
+
 export default function MyTrips() {
   const [tabFilter, setTabFilter] = useState<"upcoming" | "past" | "drafts">("upcoming");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [filterMinCost, setFilterMinCost] = useState("");
+  const [filterMaxCost, setFilterMaxCost] = useState("");
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
   const toggleRow = (requestId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -69,6 +82,92 @@ export default function MyTrips() {
 
   const handleDownloadPDF = (request: TravelRequest) => {
     generateTripSummaryPDF(request);
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setFilterMinCost("");
+    setFilterMaxCost("");
+  };
+
+  const hasActiveFilters = searchQuery || filterStartDate || filterEndDate || filterMinCost || filterMaxCost;
+
+  // Apply search, filters, and sorting
+  const processedRequests = useMemo(() => {
+    let result = [...filteredRequests];
+
+    // Apply search
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      result = result.filter(req =>
+        req.destination.city.toLowerCase().includes(searchLower) ||
+        req.destination.country.toLowerCase().includes(searchLower) ||
+        req.purpose.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply date range filter
+    if (filterStartDate) {
+      result = result.filter(req => new Date(req.startDate) >= new Date(filterStartDate));
+    }
+    if (filterEndDate) {
+      result = result.filter(req => new Date(req.startDate) <= new Date(filterEndDate));
+    }
+
+    // Apply cost range filter
+    if (filterMinCost) {
+      result = result.filter(req => {
+        const cost = req.costBreakdown?.totalCost || req.perDiem.totalFJD;
+        return cost >= parseFloat(filterMinCost);
+      });
+    }
+    if (filterMaxCost) {
+      result = result.filter(req => {
+        const cost = req.costBreakdown?.totalCost || req.perDiem.totalFJD;
+        return cost <= parseFloat(filterMaxCost);
+      });
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "date":
+          comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+          break;
+        case "cost":
+          const costA = a.costBreakdown?.totalCost || a.perDiem.totalFJD;
+          const costB = b.costBreakdown?.totalCost || b.perDiem.totalFJD;
+          comparison = costA - costB;
+          break;
+        case "destination":
+          comparison = a.destination.city.localeCompare(b.destination.city);
+          break;
+        case "status":
+          const statusOrder = { draft: 1, submitted: 2, in_review: 3, approved: 4, rejected: 5 };
+          comparison = statusOrder[a.status] - statusOrder[b.status];
+          break;
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [filteredRequests, searchQuery, filterStartDate, filterEndDate, filterMinCost, filterMaxCost, sortField, sortOrder]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("desc");
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />;
   };
 
   if (isLoading) {
@@ -126,6 +225,107 @@ export default function MyTrips() {
         </Card>
       </div>
 
+      {/* Search and Filters */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search destination or purpose..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-trips"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+                data-testid="button-toggle-filters"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {hasActiveFilters && !searchQuery && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                    {[filterStartDate, filterEndDate, filterMinCost, filterMaxCost].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">From Date</label>
+                  <Input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    data-testid="input-filter-start-date"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">To Date</label>
+                  <Input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    data-testid="input-filter-end-date"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Min Cost (FJD)</label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={filterMinCost}
+                    onChange={(e) => setFilterMinCost(e.target.value)}
+                    data-testid="input-filter-min-cost"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Max Cost (FJD)</label>
+                  <Input
+                    type="number"
+                    placeholder="10000"
+                    value={filterMaxCost}
+                    onChange={(e) => setFilterMaxCost(e.target.value)}
+                    data-testid="input-filter-max-cost"
+                  />
+                </div>
+                {hasActiveFilters && (
+                  <div className="lg:col-span-4 flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="gap-2"
+                      data-testid="button-clear-all-filters"
+                    >
+                      <X className="w-4 h-4" />
+                      Clear All Filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filter Tabs */}
       <Tabs value={tabFilter} onValueChange={(v) => setTabFilter(v as any)}>
         <TabsList className="mb-4">
@@ -141,7 +341,7 @@ export default function MyTrips() {
         </TabsList>
 
         <TabsContent value={tabFilter} className="mt-0">
-          {filteredRequests.length === 0 ? (
+          {processedRequests.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center text-muted-foreground">
                 No {tabFilter} trips found
@@ -153,17 +353,57 @@ export default function MyTrips() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12"></TableHead>
-                    <TableHead>Destination</TableHead>
-                    <TableHead>Travel Dates</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-3 hover:bg-transparent"
+                        onClick={() => toggleSort("destination")}
+                      >
+                        Destination
+                        {getSortIcon("destination")}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-3 hover:bg-transparent"
+                        onClick={() => toggleSort("date")}
+                      >
+                        Travel Dates
+                        {getSortIcon("date")}
+                      </Button>
+                    </TableHead>
                     <TableHead>Duration</TableHead>
-                    <TableHead>Total Cost</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-3 hover:bg-transparent"
+                        onClick={() => toggleSort("cost")}
+                      >
+                        Total Cost
+                        {getSortIcon("cost")}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-3 hover:bg-transparent"
+                        onClick={() => toggleSort("status")}
+                      >
+                        Status
+                        {getSortIcon("status")}
+                      </Button>
+                    </TableHead>
                     <TableHead>Purpose</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRequests.map((request) => {
+                  {processedRequests.map((request) => {
                     const isExpanded = expandedRows.has(request.id);
                     const breakdown = request.costBreakdown;
                     

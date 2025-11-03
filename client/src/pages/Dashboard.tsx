@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ApprovalDialog } from "@/components/ApprovalDialog";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Plus, FileText, CheckCircle, Clock, XCircle, TrendingUp, BarChart3, Plane, MapPin, Download, Users } from "lucide-react";
+import { Plus, FileText, CheckCircle, Clock, XCircle, TrendingUp, BarChart3, Plane, MapPin, Download, Users, Search, Filter, X } from "lucide-react";
 import { type TravelRequest } from "@shared/types";
 import { format, parseISO, startOfMonth } from "date-fns";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -15,6 +17,14 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 export default function Dashboard() {
   const [selectedRequest, setSelectedRequest] = useState<TravelRequest | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterDepartment, setFilterDepartment] = useState("all");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Mock current user - in production this would come from auth
+  const currentUser = { name: "Jone Ratudina", role: "employee" };
 
   const { data: requests = [] } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],
@@ -24,6 +34,44 @@ export default function Dashboard() {
     setSelectedRequest(request);
     setDialogOpen(true);
   };
+
+  // Get unique departments for filter
+  const departments = useMemo(() => {
+    return Array.from(new Set(requests.map(r => r.department))).sort();
+  }, [requests]);
+
+  // Apply search and filters
+  const applyFiltersAndSearch = (requestList: TravelRequest[]) => {
+    return requestList.filter(req => {
+      // Search filter
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        req.employeeName.toLowerCase().includes(searchLower) ||
+        req.destination.city.toLowerCase().includes(searchLower) ||
+        req.destination.country.toLowerCase().includes(searchLower) ||
+        req.purpose.toLowerCase().includes(searchLower) ||
+        req.department.toLowerCase().includes(searchLower);
+
+      // Department filter
+      const matchesDepartment = filterDepartment === "all" || req.department === filterDepartment;
+
+      // Date range filter
+      const reqStartDate = new Date(req.startDate);
+      const matchesStartDate = !filterStartDate || reqStartDate >= new Date(filterStartDate);
+      const matchesEndDate = !filterEndDate || reqStartDate <= new Date(filterEndDate);
+
+      return matchesSearch && matchesDepartment && matchesStartDate && matchesEndDate;
+    });
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterDepartment("all");
+    setFilterStartDate("");
+    setFilterEndDate("");
+  };
+
+  const hasActiveFilters = searchQuery || filterDepartment !== "all" || filterStartDate || filterEndDate;
 
   const stats = useMemo(() => {
     const totalSpend = requests
@@ -46,7 +94,24 @@ export default function Dashboard() {
       avgTripCost,
       budgetUtilization,
       pendingApprovals,
+      annualBudget,
     };
+  }, [requests]);
+
+  // Upcoming trips - approved requests with future end dates
+  const upcomingTrips = useMemo(() => {
+    const now = new Date();
+    return requests
+      .filter(r => r.status === "approved" && new Date(r.endDate) >= now)
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, 5);
+  }, [requests]);
+
+  // Recent activity - latest 5 requests sorted by submission date
+  const recentActivity = useMemo(() => {
+    return [...requests]
+      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+      .slice(0, 5);
   }, [requests]);
 
   // Analytics data - Industry standard charts
@@ -104,11 +169,25 @@ export default function Dashboard() {
 
 
   const renderTable = (filteredRequests: TravelRequest[]) => {
-    if (filteredRequests.length === 0) {
+    // Apply search and filters
+    const displayedRequests = applyFiltersAndSearch(filteredRequests);
+
+    if (displayedRequests.length === 0) {
       return (
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground">
-            No travel requests found
+            {hasActiveFilters ? (
+              <>
+                <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="mb-2">No travel requests match your search</p>
+                <Button variant="outline" size="sm" onClick={clearFilters} data-testid="button-clear-search">
+                  <X className="w-4 h-4 mr-2" />
+                  Clear filters
+                </Button>
+              </>
+            ) : (
+              "No travel requests found"
+            )}
           </CardContent>
         </Card>
       );
@@ -132,7 +211,7 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequests.map((request) => (
+                {displayedRequests.map((request) => (
                   <TableRow
                     key={request.id}
                     className="cursor-pointer hover-elevate"
@@ -189,8 +268,8 @@ export default function Dashboard() {
     <div className="container mx-auto py-8 px-4 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Travel Requests</h1>
-          <p className="text-muted-foreground mt-1">Manage and track all travel requests</p>
+          <h1 className="text-3xl font-bold">Bula, {currentUser.name}!</h1>
+          <p className="text-muted-foreground mt-1">Welcome back to Tokani TripFlow</p>
         </div>
         <Link href="/request/new">
           <Button className="gap-2 h-12 bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90 text-white" data-testid="button-new-request">
@@ -199,6 +278,26 @@ export default function Dashboard() {
           </Button>
         </Link>
       </div>
+
+      {/* Budget Alert */}
+      {stats.budgetUtilization >= 80 && (
+        <Card className="border-[hsl(var(--coral))] bg-[hsl(var(--coral-light))]/50 dark:bg-[hsl(var(--coral-light))]/30">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-[hsl(var(--coral))] rounded-full flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-[hsl(var(--coral))] mb-1">Budget Alert</h3>
+                <p className="text-sm">
+                  You've used {stats.budgetUtilization.toFixed(1)}% of your annual travel budget (FJD {stats.annualBudget.toLocaleString()}).
+                  {stats.budgetUtilization >= 90 && " Consider reviewing upcoming travel plans."}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Analytics Stats - Pacific Theme (WCAG 2.1 AA Compliant) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -320,6 +419,99 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      {/* Upcoming Trips & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Upcoming Trips Widget */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plane className="w-5 h-5" />
+              Upcoming Trips
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingTrips.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                <Plane className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No upcoming trips scheduled</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingTrips.map((trip) => (
+                  <div
+                    key={trip.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border hover-elevate cursor-pointer"
+                    onClick={() => handleRowClick(trip)}
+                    data-testid={`upcoming-trip-${trip.id}`}
+                  >
+                    <div className="w-10 h-10 bg-[hsl(var(--lagoon-light))] rounded-full flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-5 h-5 text-[hsl(var(--lagoon))]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        {trip.destination.city}, {trip.destination.country}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {format(new Date(trip.startDate), 'dd MMM')} – {format(new Date(trip.endDate), 'dd MMM yyyy')}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-semibold text-[hsl(var(--ocean))]">
+                        FJD {(trip.costBreakdown?.totalCost || trip.perDiem.totalFJD).toFixed(0)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity Feed */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentActivity.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No recent activity</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentActivity.map((req) => (
+                  <div
+                    key={req.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border hover-elevate cursor-pointer"
+                    onClick={() => handleRowClick(req)}
+                    data-testid={`recent-activity-${req.id}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium truncate">{req.employeeName}</span>
+                        <StatusBadge status={req.status} type="request" />
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {req.destination.city} • {format(new Date(req.submittedAt), 'dd MMM yyyy')}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-sm font-medium text-[hsl(var(--ocean))]">
+                        FJD {(req.costBreakdown?.totalCost || req.perDiem.totalFJD).toFixed(0)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Analytics Charts - Industry Standard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -416,6 +608,107 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4">
+            {/* Search Bar */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by employee, destination, or purpose..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-requests"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                    onClick={() => setSearchQuery("")}
+                    data-testid="button-clear-search-input"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+                data-testid="button-toggle-filters"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {hasActiveFilters && !searchQuery && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                    {[filterDepartment !== "all", filterStartDate, filterEndDate].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/30">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Department</label>
+                  <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                    <SelectTrigger data-testid="select-filter-department">
+                      <SelectValue placeholder="All Departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Start Date (From)</label>
+                  <Input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    data-testid="input-filter-start-date"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Start Date (To)</label>
+                  <Input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    data-testid="input-filter-end-date"
+                  />
+                </div>
+
+                {hasActiveFilters && (
+                  <div className="md:col-span-3 flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="gap-2"
+                      data-testid="button-clear-all-filters"
+                    >
+                      <X className="w-4 h-4" />
+                      Clear All Filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList>
