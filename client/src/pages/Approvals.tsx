@@ -110,8 +110,27 @@ export default function Approvals() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading approvals...</div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Travel Request Approvals</h1>
+          <p className="text-muted-foreground">Review and approve pending travel requests</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <Card className="animate-pulse">
+              <CardContent className="p-6 space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 bg-muted rounded"></div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-2">
+            <Card className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-96 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -309,10 +328,10 @@ export default function Approvals() {
                 <Separator />
 
                 {!actionMode ? (
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Button
                       variant="outline"
-                      className="flex-1 gap-2"
+                      className="flex-1 gap-2 border-[hsl(var(--coral))] text-[hsl(var(--coral))] hover:bg-[hsl(var(--coral))] hover:text-white"
                       onClick={() => setActionMode("reject")}
                       data-testid="button-start-reject"
                     >
@@ -320,7 +339,7 @@ export default function Approvals() {
                       Reject
                     </Button>
                     <Button
-                      className="flex-1 gap-2"
+                      className="flex-1 gap-2 bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90 text-white"
                       onClick={() => setActionMode("approve")}
                       data-testid="button-start-approve"
                     >
@@ -374,19 +393,18 @@ export default function Approvals() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <Button variant="outline" className="flex-1" onClick={resetForm}>
                         Cancel
                       </Button>
                       <Button
-                        className="flex-1"
+                        className={`flex-1 ${actionMode === "approve" ? "bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90" : "bg-[hsl(var(--coral))] hover:bg-[hsl(var(--coral))]/90"} text-white`}
                         onClick={actionMode === "approve" ? handleApprove : handleReject}
                         disabled={
                           (actionMode === "reject" && !comment.trim()) ||
                           approveMutation.isPending ||
                           rejectMutation.isPending
                         }
-                        variant={actionMode === "reject" ? "destructive" : "default"}
                         data-testid="button-confirm-action"
                       >
                         {approveMutation.isPending || rejectMutation.isPending

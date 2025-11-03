@@ -137,7 +137,7 @@ function Router() {
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <img src={logoUrl} alt="Tokani TripFlow Logo" className="h-12 w-12 rounded-full" data-testid="img-logo" />
               <div className="flex flex-col">
-                <h1 className="text-lg font-semibold">Tokani TripFlow</h1>
+                <h1 className="text-lg font-semibold">Bula! Tokani TripFlow</h1>
                 <span className="text-sm text-white/90">Your Trusted Partner for Travel Approvals</span>
               </div>
             </div>

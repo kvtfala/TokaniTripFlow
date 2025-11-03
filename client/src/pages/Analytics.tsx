@@ -30,7 +30,8 @@ export default function Analytics() {
     const byCC: Record<string, number> = {};
     approvedRequests.forEach((r) => {
       const key = `${r.costCentre.code}`;
-      byCC[key] = (byCC[key] || 0) + r.perDiem.totalFJD;
+      const cost = r.costBreakdown?.totalCost || r.perDiem.totalFJD;
+      byCC[key] = (byCC[key] || 0) + cost;
     });
 
     return Object.entries(byCC)
@@ -65,7 +66,10 @@ export default function Analytics() {
     ];
   })();
 
-  const totalSpend = approvedRequests.reduce((sum, r) => sum + r.perDiem.totalFJD, 0);
+  const totalSpend = approvedRequests.reduce(
+    (sum, r) => sum + (r.costBreakdown?.totalCost || r.perDiem.totalFJD), 
+    0
+  );
 
   const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 

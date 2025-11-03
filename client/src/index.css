@@ -84,6 +84,16 @@ html, body {
   --chart-4: 355 60% 70%;  /* Light red */
   --chart-5: 210 25% 60%;  /* Gray-blue */
 
+  /* Pacific Theme Colors (Ocean/Coral/Lagoon/Sand) */
+  --ocean: 210 30% 37%;  /* Deep ocean blue (#3D5A80) */
+  --ocean-light: 210 40% 92%;  /* Light ocean mist */
+  --coral: 355 77% 58%;  /* Warm coral (#EF6C57) */
+  --coral-light: 8 100% 92%;  /* Light coral */
+  --lagoon: 185 100% 33%;  /* Bright turquoise (#009BAA) */
+  --lagoon-light: 185 85% 92%;  /* Light lagoon */
+  --sand: 42 62% 85%;  /* Warm sand (#F4E4C1) */
+  --sand-light: 42 60% 95%;  /* Light sand */
+
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, Monaco, 'Courier New', monospace;
@@ -204,6 +214,16 @@ html, body {
   --chart-3: 210 40% 65%;  /* Medium blue */
   --chart-4: 355 60% 75%;  /* Light red */
   --chart-5: 210 30% 50%;  /* Gray-blue */
+
+  /* Pacific Theme Colors - Dark Mode */
+  --ocean: 210 50% 55%;  /* Brighter ocean for dark bg */
+  --ocean-light: 210 30% 20%;  /* Dark ocean accent */
+  --coral: 355 77% 65%;  /* Brighter coral */
+  --coral-light: 8 70% 25%;  /* Dark coral accent */
+  --lagoon: 185 85% 55%;  /* Brighter turquoise */
+  --lagoon-light: 185 60% 22%;  /* Dark lagoon accent */
+  --sand: 42 40% 60%;  /* Desaturated sand */
+  --sand-light: 42 30% 18%;  /* Dark sand accent */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.20);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);

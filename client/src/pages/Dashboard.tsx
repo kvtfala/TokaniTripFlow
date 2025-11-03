@@ -31,7 +31,7 @@ export default function Dashboard() {
       .reduce((sum, r) => sum + (r.costBreakdown?.totalCost || r.perDiem.totalFJD), 0);
     
     const approvedCount = requests.filter(r => r.status === "approved").length;
-    const avgPerDiem = approvedCount > 0 ? totalSpend / approvedCount : 0;
+    const avgTripCost = approvedCount > 0 ? totalSpend / approvedCount : 0;
     
     // Budget utilization (using annual travel budget)
     const annualBudget = 500000; // FJD - would come from config/database in production
@@ -43,7 +43,7 @@ export default function Dashboard() {
 
     return {
       totalSpend,
-      avgPerDiem,
+      avgTripCost,
       budgetUtilization,
       pendingApprovals,
     };
@@ -181,6 +181,26 @@ export default function Dashboard() {
     );
   };
 
+  if (!requests || requests.length === 0) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <FileText className="w-16 h-16 text-muted-foreground/50 mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">No Travel Requests Yet</h2>
+          <p className="text-muted-foreground mb-6 max-w-md">
+            Start your journey by creating your first travel request. We'll help you manage approvals and track expenses.
+          </p>
+          <Link href="/request/new">
+            <Button className="gap-2 h-12 bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90 text-white" data-testid="button-new-request-empty">
+              <Plus className="w-5 h-5" />
+              Create Your First Request
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -189,68 +209,68 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1">Manage and track all travel requests</p>
         </div>
         <Link href="/request/new">
-          <Button className="gap-2 h-12" data-testid="button-new-request">
+          <Button className="gap-2 h-12 bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90 text-white" data-testid="button-new-request">
             <Plus className="w-5 h-5" />
             New Request
           </Button>
         </Link>
       </div>
 
-      {/* Analytics Stats - Red & Blue Theme (WCAG 2.1 AA Compliant) */}
+      {/* Analytics Stats - Pacific Theme (WCAG 2.1 AA Compliant) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 border-blue-200 dark:border-blue-700">
+        <Card className="bg-gradient-to-br from-[hsl(var(--ocean-light))] to-[hsl(var(--ocean-light))] dark:from-[hsl(var(--ocean-light))] dark:to-[hsl(var(--ocean-light))] border-[hsl(var(--ocean))] border-opacity-20">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Total Spend</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-total-spend">
+                <p className="text-3xl font-bold text-[hsl(var(--ocean))]" data-testid="text-stat-total-spend">
                   FJD {stats.totalSpend.toFixed(0)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-[hsl(var(--ocean))] rounded-full flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900 dark:to-cyan-800 border-cyan-200 dark:border-cyan-700">
+        <Card className="bg-gradient-to-br from-[hsl(var(--lagoon-light))] to-[hsl(var(--lagoon-light))] dark:from-[hsl(var(--lagoon-light))] dark:to-[hsl(var(--lagoon-light))] border-[hsl(var(--lagoon))] border-opacity-20">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Avg Per Diem</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-avg-perdiem">
-                  FJD {stats.avgPerDiem.toFixed(0)}
+                <p className="text-sm font-medium text-muted-foreground mb-1">Avg Trip Cost</p>
+                <p className="text-3xl font-bold text-[hsl(var(--lagoon))]" data-testid="text-stat-avg-tripcost">
+                  FJD {stats.avgTripCost.toFixed(0)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-[hsl(var(--lagoon))] rounded-full flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700">
+        <Card className="bg-gradient-to-br from-[hsl(var(--sand-light))] to-[hsl(var(--sand-light))] dark:from-[hsl(var(--sand-light))] dark:to-[hsl(var(--sand-light))] border-[hsl(var(--sand))] border-opacity-20">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Budget Utilization</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-budget-utilization">
+                <p className="text-3xl font-bold text-[hsl(var(--ocean))]" data-testid="text-stat-budget-utilization">
                   {stats.budgetUtilization.toFixed(1)}%
                 </p>
               </div>
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-[hsl(var(--ocean))] rounded-full flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900 dark:to-red-800 border-red-200 dark:border-red-700">
+        <Card className="bg-gradient-to-br from-[hsl(var(--coral-light))] to-[hsl(var(--coral-light))] dark:from-[hsl(var(--coral-light))] dark:to-[hsl(var(--coral-light))] border-[hsl(var(--coral))] border-opacity-20">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Pending Approvals</p>
-                <p className="text-3xl font-bold" data-testid="text-stat-pending-approvals">{stats.pendingApprovals}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--coral))]" data-testid="text-stat-pending-approvals">{stats.pendingApprovals}</p>
               </div>
-              <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-[hsl(var(--coral))] rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
               </div>
             </div>

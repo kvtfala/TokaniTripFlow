@@ -74,9 +74,25 @@ export default function MyTrips() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading your trips...</div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">My Travel Requests</h1>
+          <p className="text-muted-foreground">View and manage your travel history</p>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-8 bg-muted rounded w-16 mb-2"></div>
+                <div className="h-4 bg-muted rounded w-24"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card className="animate-pulse">
+          <CardContent className="p-6">
+            <div className="h-64 bg-muted rounded"></div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -88,24 +104,24 @@ export default function MyTrips() {
         <p className="text-muted-foreground">View and manage your travel history</p>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Statistics Cards - Pacific Theme */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">{stats.upcoming}</div>
-            <div className="text-sm text-muted-foreground">Upcoming Trips</div>
+        <Card className="bg-gradient-to-br from-[hsl(var(--lagoon-light))] to-[hsl(var(--lagoon-light))] dark:from-[hsl(var(--lagoon-light))] dark:to-[hsl(var(--lagoon-light))] border-[hsl(var(--lagoon))] border-opacity-20">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-[hsl(var(--lagoon))]" data-testid="stat-upcoming">{stats.upcoming}</div>
+            <div className="text-sm font-medium text-muted-foreground mt-1">Upcoming Trips</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-slate-600">{stats.past}</div>
-            <div className="text-sm text-muted-foreground">Past Trips</div>
+        <Card className="bg-gradient-to-br from-[hsl(var(--ocean-light))] to-[hsl(var(--ocean-light))] dark:from-[hsl(var(--ocean-light))] dark:to-[hsl(var(--ocean-light))] border-[hsl(var(--ocean))] border-opacity-20">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-[hsl(var(--ocean))]" data-testid="stat-past">{stats.past}</div>
+            <div className="text-sm font-medium text-muted-foreground mt-1">Past Trips</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-amber-600">{stats.drafts}</div>
-            <div className="text-sm text-muted-foreground">In Progress</div>
+        <Card className="bg-gradient-to-br from-[hsl(var(--sand-light))] to-[hsl(var(--sand-light))] dark:from-[hsl(var(--sand-light))] dark:to-[hsl(var(--sand-light))] border-[hsl(var(--sand))] border-opacity-20">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-[hsl(var(--ocean))]" data-testid="stat-drafts">{stats.drafts}</div>
+            <div className="text-sm font-medium text-muted-foreground mt-1">In Progress</div>
           </CardContent>
         </Card>
       </div>
@@ -157,15 +173,15 @@ export default function MyTrips() {
                           <TableCell>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="p-0 h-auto"
+                              size="icon"
                               onClick={() => toggleRow(request.id)}
                               data-testid={`button-expand-${request.id}`}
+                              aria-label={isExpanded ? "Hide cost breakdown" : "Show cost breakdown"}
                             >
                               {isExpanded ? (
-                                <ChevronUp className="w-4 h-4" />
+                                <ChevronUp className="w-5 h-5 text-primary" />
                               ) : (
-                                <ChevronDown className="w-4 h-4" />
+                                <ChevronDown className="w-5 h-5 text-primary" />
                               )}
                             </Button>
                           </TableCell>
@@ -193,8 +209,8 @@ export default function MyTrips() {
                               FJD {breakdown ? breakdown.totalCost.toFixed(2) : request.perDiem.totalFJD.toFixed(2)}
                             </div>
                             {breakdown && (
-                              <div className="text-xs text-muted-foreground">
-                                Click to view breakdown
+                              <div className="text-xs text-[hsl(var(--lagoon))] font-medium">
+                                {isExpanded ? '▲ Hide details' : '▼ View breakdown'}
                               </div>
                             )}
                           </TableCell>
