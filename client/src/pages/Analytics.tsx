@@ -1,15 +1,72 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, DollarSign, MapPin, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { TrendingUp, TrendingDown, DollarSign, MapPin, Clock, Download, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { format, subDays, isWithinInterval, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths } from "date-fns";
 import type { TravelRequest } from "@shared/types";
+import Papa from "papaparse";
 
 export default function Analytics() {
   const { data: requests = [], isLoading } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],
   });
 
-  const approvedRequests = requests.filter((r) => r.status === "approved");
+  // Date range state - default to last 90 days
+  const [startDate, setStartDate] = useState<string>(format(subDays(new Date(), 90), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+
+  // Validate date range
+  const isValidDateRange = useMemo(() => {
+    if (!startDate || !endDate) return false; // Empty dates are invalid
+    return new Date(startDate) <= new Date(endDate);
+  }, [startDate, endDate]);
+
+  // Filter requests by date range
+  const filteredRequests = useMemo(() => {
+    if (!isValidDateRange) return [];
+    
+    return requests.filter((r) => {
+      const submittedDate = new Date(r.submittedAt);
+      return isWithinInterval(submittedDate, {
+        start: new Date(startDate),
+        end: new Date(endDate),
+      });
+    });
+  }, [requests, startDate, endDate, isValidDateRange]);
+
+  const approvedRequests = filteredRequests.filter((r) => r.status === "approved");
+
+  // Calculate previous period for trend comparison (non-overlapping)
+  const { previousPeriodStart, previousPeriodEnd } = useMemo(() => {
+    if (!isValidDateRange) {
+      // Return placeholders when date range is invalid to prevent crashes
+      return { previousPeriodStart: "", previousPeriodEnd: "" };
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const durationDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1; // Include both days
+    
+    return {
+      previousPeriodStart: format(subDays(start, durationDays), "yyyy-MM-dd"),
+      previousPeriodEnd: format(subDays(start, 1), "yyyy-MM-dd"),
+    };
+  }, [startDate, endDate, isValidDateRange]);
+
+  const previousPeriodRequests = useMemo(() => {
+    if (!isValidDateRange) return [];
+    
+    return requests.filter((r) => {
+      const submittedDate = new Date(r.submittedAt);
+      return r.status === "approved" && isWithinInterval(submittedDate, {
+        start: new Date(previousPeriodStart),
+        end: new Date(previousPeriodEnd),
+      });
+    });
+  }, [requests, previousPeriodStart, previousPeriodEnd, isValidDateRange]);
 
   // Calculate average approval time
   const avgApprovalTime = (() => {
@@ -39,10 +96,10 @@ export default function Analytics() {
       .sort((a, b) => b.total - a.total);
   })();
 
-  // Top destinations
+  // Top destinations (from filtered requests)
   const topDestinations = (() => {
     const byCityCountry: Record<string, number> = {};
-    requests.forEach((r) => {
+    filteredRequests.forEach((r) => {
       const key = `${r.destination.city}, ${r.destination.country}`;
       byCityCountry[key] = (byCityCountry[key] || 0) + 1;
     });
@@ -70,6 +127,93 @@ export default function Analytics() {
     (sum, r) => sum + (r.costBreakdown?.totalCost || r.perDiem.totalFJD), 
     0
   );
+
+  const previousPeriodSpend = previousPeriodRequests.reduce(
+    (sum, r) => sum + (r.costBreakdown?.totalCost || r.perDiem.totalFJD),
+    0
+  );
+
+  // Calculate trends
+  const spendTrend = previousPeriodSpend === 0 ? 0 : ((totalSpend - previousPeriodSpend) / previousPeriodSpend) * 100;
+  const requestCountTrend = previousPeriodRequests.length === 0 ? 0 : ((approvedRequests.length - previousPeriodRequests.length) / previousPeriodRequests.length) * 100;
+
+  // Monthly spend trend (within selected date range)
+  const monthlySpendTrend = useMemo(() => {
+    if (!isValidDateRange) return [];
+    
+    // Get months that fall within the selected date range
+    const rangeStart = new Date(startDate);
+    const rangeEnd = new Date(endDate);
+    const months = eachMonthOfInterval({ start: rangeStart, end: rangeEnd });
+
+    return months.map((month) => {
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
+      // Only count requests within both the month AND the selected date range
+      const monthRequests = filteredRequests.filter((r) => {
+        const submittedDate = new Date(r.submittedAt);
+        return isWithinInterval(submittedDate, { start: monthStart, end: monthEnd });
+      });
+      const monthSpend = monthRequests.reduce((sum, r) => sum + (r.costBreakdown?.totalCost || r.perDiem.totalFJD), 0);
+      return {
+        month: format(month, "MMM yyyy"),
+        spend: monthSpend,
+        count: monthRequests.length,
+      };
+    });
+  }, [filteredRequests, startDate, endDate, isValidDateRange]);
+
+  // Export analytics data
+  const exportAnalytics = () => {
+    const exportData = approvedRequests.map((r) => ({
+      "Request ID": r.id,
+      "Employee": r.employeeName,
+      "Department": r.department,
+      "Destination": `${r.destination.city}, ${r.destination.country}`,
+      "Travel Start": format(new Date(r.startDate), "yyyy-MM-dd"),
+      "Travel End": format(new Date(r.endDate), "yyyy-MM-dd"),
+      "Duration (days)": r.perDiem.days,
+      "Cost Centre": r.costCentre.code,
+      "Funding Type": r.fundingType,
+      "Total Cost (FJD)": (r.costBreakdown?.totalCost || r.perDiem.totalFJD).toFixed(2),
+      "Submitted": format(new Date(r.submittedAt), "yyyy-MM-dd HH:mm"),
+      "Approved": r.reviewedAt ? format(new Date(r.reviewedAt), "yyyy-MM-dd HH:mm") : "",
+    }));
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `travel-analytics-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+  };
+
+  // Quick date range presets
+  const setDatePreset = (preset: "7d" | "30d" | "90d" | "6m" | "1y") => {
+    const end = new Date();
+    let start = new Date();
+
+    switch (preset) {
+      case "7d":
+        start = subDays(end, 7);
+        break;
+      case "30d":
+        start = subDays(end, 30);
+        break;
+      case "90d":
+        start = subDays(end, 90);
+        break;
+      case "6m":
+        start = subMonths(end, 6);
+        break;
+      case "1y":
+        start = subMonths(end, 12);
+        break;
+    }
+
+    setStartDate(format(start, "yyyy-MM-dd"));
+    setEndDate(format(end, "yyyy-MM-dd"));
+  };
 
   const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
@@ -126,6 +270,18 @@ export default function Analytics() {
     );
   }
 
+  const TrendIndicator = ({ value }: { value: number }) => {
+    const isPositive = value > 0;
+    const isZero = value === 0;
+    return (
+      <div className={`flex items-center gap-1 text-xs ${isZero ? 'text-muted-foreground' : isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+        {!isZero && (isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}
+        <span>{isZero ? 'No change' : `${isPositive ? '+' : ''}${value.toFixed(1)}%`}</span>
+        <span className="text-muted-foreground">vs prev period</span>
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6">
@@ -135,16 +291,74 @@ export default function Analytics() {
         </p>
       </div>
 
+      {/* Date Range Filters */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Calendar className="w-5 h-5 text-muted-foreground" />
+              <span className="text-sm font-medium">Date Range:</span>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-auto"
+                data-testid="input-analytics-start-date"
+              />
+              <span className="text-sm text-muted-foreground">to</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-auto"
+                data-testid="input-analytics-end-date"
+              />
+              <div className="flex gap-2 ml-auto">
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("7d")} data-testid="button-preset-7d">
+                  Last 7 days
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("30d")} data-testid="button-preset-30d">
+                  Last 30 days
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("90d")} data-testid="button-preset-90d">
+                  Last 90 days
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("6m")} data-testid="button-preset-6m">
+                  Last 6 months
+                </Button>
+                <Button variant="primary" size="sm" onClick={exportAnalytics} className="gap-2" data-testid="button-export-analytics">
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Invalid Date Range Alert */}
+      {!isValidDateRange && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Invalid date range: End date must be after or equal to start date.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
+        <Card className="bg-gradient-to-br from-[hsl(var(--ocean-light))] to-[hsl(var(--ocean-light))] dark:from-[hsl(var(--ocean-light))] dark:to-[hsl(var(--ocean-light))] border-[hsl(var(--ocean))] border-opacity-20">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-muted-foreground">Total Spend</div>
-              <DollarSign className="w-5 h-5 text-muted-foreground" />
+              <div className="text-sm font-medium text-muted-foreground">Total Spend</div>
+              <DollarSign className="w-5 h-5 text-[hsl(var(--ocean))]" />
             </div>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-2xl font-bold text-[hsl(var(--ocean))]">
               FJD {totalSpend.toFixed(2)}
+            </div>
+            <div className="mt-2">
+              <TrendIndicator value={spendTrend} />
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               {approvedRequests.length} approved requests
@@ -152,16 +366,34 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
+        <Card className="bg-gradient-to-br from-[hsl(var(--lagoon-light))] to-[hsl(var(--lagoon-light))] dark:from-[hsl(var(--lagoon-light))] dark:to-[hsl(var(--lagoon-light))] border-[hsl(var(--lagoon))] border-opacity-20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-muted-foreground">Request Count</div>
+              <TrendingUp className="w-5 h-5 text-[hsl(var(--lagoon))]" />
+            </div>
+            <div className="text-2xl font-bold text-[hsl(var(--lagoon))]">
+              {approvedRequests.length}
+            </div>
+            <div className="mt-2">
+              <TrendIndicator value={requestCountTrend} />
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Approved in period
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-muted-foreground">Avg Approval Time</div>
+              <div className="text-sm font-medium text-muted-foreground">Avg Approval Time</div>
               <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
             <div className="text-2xl font-bold">
               {avgApprovalTime.toFixed(1)} days
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-3">
               From submission to approval
             </div>
           </CardContent>
@@ -258,6 +490,35 @@ export default function Analytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Spend Trend */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Monthly Spend Trend</CardTitle>
+          <CardDescription>Travel expenses over the last 6 months</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {monthlySpendTrend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={monthlySpendTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: number) => [`FJD ${value.toFixed(2)}`, "Spend"]}
+                  labelFormatter={(label) => `Month: ${label}`}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="spend" stroke="hsl(var(--ocean))" strokeWidth={2} name="Total Spend (FJD)" />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              No monthly trend data available
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Top Destinations Table */}
       <Card>
