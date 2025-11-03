@@ -1,250 +1,69 @@
 # Tokani TripFlow - Travel Management System
-**Your Trusted Partner for Travel Approvals**
 
 ## Overview
-
-Tokani TripFlow is a professional travel request, approval, and expense management system designed specifically for Fijian organizations. The application streamlines the entire travel workflow from initial request submission through multi-level approvals to expense reconciliation, with special consideration for low-bandwidth environments and local compliance requirements (FRCS-friendly records).
-
-Key features include automated per-diem calculations, visa requirement checking, multi-level approval workflows with delegation support, budget tracking by cost centre, audit trail maintenance, and comprehensive analytics. The system is built with a mobile-first approach optimized for bandwidth-constrained environments.
-
-## Recent Changes
-
-### November 3, 2025 - Comprehensive Feature Enhancements
-
-#### Dashboard Improvements
-- **Personalized Experience**: Added "Bula, [User]!" greeting with contextual welcome message based on user role
-- **Recent Activity Feed**: Real-time chronological feed showing latest 5 travel request activities with timestamps
-- **Upcoming Trips Widget**: Displays approved trips in next 30 days with countdown and quick details
-- **Budget Alerts**: Visual warnings when cost centre budgets exceed 80% utilization threshold
-- **Advanced Search & Filtering**: 
-  - Real-time search across employee names, destinations, and departments
-  - Multi-select filters for status, department, and visa requirements
-  - Performance-optimized with useMemo for large datasets
-- **Responsive Layout**: Three-column grid adapting to mobile/tablet/desktop breakpoints
-
-#### MyTrips Page Enhancements
-- **Comprehensive Search**: Searches across destinations, purposes, and cost centres
-- **Advanced Filtering System**:
-  - Status filter with multi-select dropdown
-  - Date range picker for departure dates
-  - Cost range sliders (minimum and maximum)
-  - Clear all filters button
-- **Multi-Column Sorting**: Sort by date, cost, destination, or status with ascending/descending toggle
-- **Performance Optimization**: useMemo-based filtering pipeline for instant response
-- **Empty States**: Contextual messaging when no trips match filters
-
-#### Analytics Dashboard Overhaul
-- **Date Range Controls**:
-  - Custom date picker with start/end dates
-  - Quick preset buttons (Last 7/30/90 days, This Month, Last Month)
-  - Comprehensive validation preventing crashes from invalid/empty dates
-- **Trend Analysis**:
-  - Period-over-period comparison with non-overlapping previous periods
-  - Visual trend indicators (↑/↓) with percentage changes
-  - Color-coded positive/negative trends
-- **Monthly Spend Visualization**:
-  - Line chart showing spend trends over selected date range
-  - Tooltip showing exact amounts and trip counts per month
-  - Dynamically adjusts to selected range (not fixed 6-month view)
-- **Data Export**: CSV download of filtered analytics data with proper date formatting
-- **Crash-Proof Implementation**:
-  - Empty date validation with user-friendly alerts
-  - All metrics respect selected date range (spend, destinations, distributions, monthly trends)
-  - Safe fallbacks for edge cases (single day, equal dates, invalid ranges)
-
-#### Approvals Workflow Enhancement
-- **Bulk Actions**:
-  - Multi-select checkboxes for travel requests
-  - Bulk approve/reject buttons for selected items
-  - "Select All" functionality with visual feedback
-- **Search & Filter**:
-  - Search by employee name or department
-  - Date range picker for submission dates
-  - Department multi-select filter
-- **Stats Summary Cards**:
-  - Total pending count
-  - Selected items counter
-  - Average pending per diem value
-- **Improved UX**:
-  - Pacific-themed checkboxes with hover states
-  - Clear visual hierarchy for bulk operations
-  - Confirmation dialogs for bulk actions
-
-### October 22, 2025 - Layout and UX Improvements
-- **Sidebar Width Optimization**: Reduced sidebar width from 16rem to 13rem (208px) to provide more space for main content and prevent horizontal scrolling on smaller screens
-- **Horizontal Scrollbar Fix**: Eliminated horizontal scrollbar across all pages by:
-  - Adding `overflow-x: hidden` to html/body elements
-  - Changing main element from `overflow-auto` to `overflow-y-auto overflow-x-hidden`
-  - Ensuring all pages use proper `container mx-auto py-8 px-4` structure
-- **Double Scrollbar Resolution**: Fixed New Request page to prevent nested scrollable containers
-
-### Enterprise Dataset - Pacific Foods Group Pte Ltd
-- **Corporate Client Profile**: Demo represents a large-scale enterprise client
-  - Company: Pacific Foods Group Pte Ltd (PFG) - Manufacturing / Export / Retail
-  - Employees: 480
-  - Annual Trips: 1,759
-  - Annual Spend: FJD 2.82M
-  - Average Fare: FJD 1,850
-
-- **11 Department Structure**: All PFG departments represented in sample data:
-  1. Board of Directors (84 trips/yr | Avg FJD 2,900)
-  2. Executive Management (185 trips/yr | Avg FJD 2,300)
-  3. Travel Operations (270 trips/yr | Avg FJD 1,250)
-  4. Visa / Immigration Services (115 trips/yr | Avg FJD 1,100)
-  5. Customer Service / Reservations (205 trips/yr | Avg FJD 950)
-  6. Finance & Accounting (115 trips/yr | Avg FJD 1,700)
-  7. Technology & Data (150 trips/yr | Avg FJD 1,800)
-  8. Marketing & Sales (250 trips/yr | Avg FJD 1,950)
-  9. Compliance, Audit, Risk (105 trips/yr | Avg FJD 1,600)
-  10. Administration & HR (95 trips/yr | Avg FJD 1,200)
-  11. Subsidiaries (Combined) (190 trips/yr | Avg FJD 1,350)
-
-- **11 Sample Travel Requests** for demo/presentation:
-  - 7 approved requests (FJD 12,150 total per diem)
-  - 2 submitted requests awaiting approval
-  - 1 in-review request under evaluation
-  - 1 rejected request
-  
-- **Top Routes**: NAN–SYD, NAN–AKL, NAN–SIN, SUV–NAN, NAN–APW
-- **Enterprise Features**: All requests include executive-level travel purposes (M&A due diligence, strategic planning, compliance audits, subsidiary coordination), proper PFG employee numbering (PFG-BOD-001, PFG-EXE-012, etc.), and department-aligned cost centres
-
-### Finance Export Functionality
-- Finance Export page now fully functional with 7 approved requests available for export
-- Total approved per diem: FJD 12,150 across enterprise-level travel
-- CSV and Excel export buttons enabled with real PFG demo data
-- Preview section displays sample approved requests with employee names, departments, and per diem amounts
-
-### Technical Improvements
-- Added visaCheck to all travel requests (including domestic trips marked as "OK - Domestic travel")
-- Ensured type safety and WCAG 2.1 AA accessibility compliance across all Pacific/Fiji themed components
+Tokani TripFlow is a professional travel request, approval, and expense management system designed for Fijian organizations. It streamlines the entire travel workflow from submission to multi-level approvals and expense reconciliation, focusing on low-bandwidth environments and local compliance (FRCS-friendly records). Key capabilities include automated per-diem calculations, visa requirement checks, multi-level approval workflows with delegation, budget tracking by cost center, audit trails, and comprehensive analytics. The system prioritizes a mobile-first approach. The project's ambition is to provide a robust, efficient, and compliant travel management solution tailored for enterprise clients like Pacific Foods Group Pte Ltd, demonstrating significant market potential in the Pacific region.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### Frontend Architecture
-
-**Framework & Build Tools**
-- React with TypeScript for type-safe component development
-- Vite as the build tool and development server
-- TailwindCSS for utility-first styling with custom design tokens
-- Wouter for lightweight client-side routing
-
-**UI Component System**
-- Radix UI primitives for accessible, unstyled components
-- shadcn/ui component library (New York style variant) providing pre-built, customizable components
-- Custom theme system with light/dark mode support via CSS variables
-- Material Design principles adapted for enterprise productivity with bandwidth optimization
-
-**State Management & Data Fetching**
-- TanStack Query (React Query) for server state management, caching, and data synchronization
-- Form state managed via react-hook-form with Zod schema validation
-- Local component state using React hooks
-
-**Design Philosophy**
-- Efficiency-first approach minimizing cognitive load
-- Bandwidth-conscious: no decorative animations, optimized assets
-- Mobile-native with 44px minimum touch targets
-- Professional aesthetics for trust in financial/compliance workflows
-- Progressive enhancement for offline-friendly UX
+- **Framework & Build Tools**: React with TypeScript, Vite, TailwindCSS, Wouter for routing.
+- **UI Component System**: Radix UI primitives, shadcn/ui (New York style), custom theme with light/dark mode, Material Design principles adapted for enterprise productivity and bandwidth optimization.
+- **State Management & Data Fetching**: TanStack Query for server state, react-hook-form with Zod for form state.
+- **Design Philosophy**: Efficiency-first, bandwidth-conscious (no decorative animations, optimized assets), mobile-native (44px touch targets), professional aesthetics, progressive enhancement for offline UX.
 
 ### Backend Architecture
-
-**Server Framework**
-- Express.js server with TypeScript
-- RESTful API design pattern
-- In-memory storage adapter pattern (production-ready interface for database integration)
-
-**API Structure**
-- `/api/requests/*` - Travel request CRUD operations
-- `/api/requests/:id/approve` - Approval workflow endpoints
-- `/api/requests/:id/reject` - Rejection workflow endpoints
-- `/api/delegations/*` - Delegation management
-
-**Data Layer Pattern**
-- Storage adapter interface (`IStorage`) abstracting database operations
-- Current implementation uses `MemStorage` (in-memory) with sample data
-- Designed for easy migration to persistent storage (Drizzle ORM configuration present)
-- Type-safe data models defined in `shared/types.ts`
-
-**Business Logic**
-- Per-diem calculation with first/last day 75% rule
-- Visa checking against stored rules
-- Multi-level approval flow with configurable approver sequences
-- Delegation and escalation support
-- Budget validation and tracking by cost centre
-- Immutable audit trail for all state changes
+- **Server Framework**: Express.js with TypeScript, RESTful API design.
+- **API Structure**: Endpoints for travel request CRUD, approval/rejection workflows, and delegation management.
+- **Data Layer Pattern**: Abstracted storage adapter (`IStorage`) with current in-memory implementation (`MemStorage`) for development, designed for easy migration to persistent storage (e.g., PostgreSQL with Drizzle ORM).
+- **Business Logic**: Per-diem calculation (first/last day 75% rule), visa checking, multi-level configurable approval flows, delegation, budget validation, and immutable audit trails.
 
 ### Data Storage Solutions
-
-**Current Implementation**
-- In-memory storage (`MemStorage` class) for development/testing
-- Seeded sample data for demonstration
-
-**Planned Production Storage**
-- Drizzle ORM configured for PostgreSQL (via `@neondatabase/serverless`)
-- Database schema defined in `shared/schema.ts` (currently minimal - users table only)
-- Migration support via `drizzle-kit` with migrations output to `./migrations`
-- Environment variable `DATABASE_URL` required for production database connection
-
-**Data Model Highlights**
-- `TravelRequest` - Core entity with embedded per-diem calculations, visa status, approval flow
-- `DelegateAssignment` - Temporary authority delegation with date ranges
-- `CostCentre` - Budget tracking and finance reconciliation
-- `HistoryEntry` - Immutable audit trail entries
-- Adapter pattern allows swapping storage implementations without business logic changes
+- **Current**: In-memory storage (`MemStorage`) with seeded sample data.
+- **Planned Production**: Drizzle ORM configured for PostgreSQL (via `@neondatabase/serverless`), schema defined in `shared/schema.ts`, migration support via `drizzle-kit`.
+- **Data Model Highlights**: `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, with an adapter pattern for storage flexibility.
 
 ### Authentication and Authorization
+- **Current**: Mock authentication with hardcoded user IDs and role-based access control types (`UserRole`: employee, approver, finance_admin, travel_admin).
+- **Planned**: Session-based authentication (using `connect-pg-simple`), role-based permissions, and a delegation system.
 
-**Current State**
-- Mock authentication with hardcoded user IDs ("employee", "manager", "finance_admin")
-- Role-based access control types defined (`UserRole`: employee, approver, finance_admin, travel_admin)
-- User model exists in schema but authentication not yet implemented
+### System Design Choices
+- **UI/UX**: Dashboard improvements include personalized greetings, activity feeds, upcoming trips widgets, budget alerts, advanced search/filtering, and responsive layouts. "MyTrips" page offers comprehensive search, advanced filtering, multi-column sorting, and performance optimization. "Analytics Dashboard" provides date range controls, trend analysis, monthly spend visualization, and data export. "Approvals Workflow" supports bulk actions, search/filter, and summary cards. "Travel Watch" page features KPI summary cards, search, alerts for returning travelers, and CSV export, with mobile-first responsive design and Pacific-themed map enhancements for visual clarity and accessibility.
+- **Technical Implementations**: Implemented `useMemo` for performance optimization across dashboards, `data-testid` attributes for testing, and comprehensive validation for date inputs. Addressed layout issues by optimizing sidebar width and fixing horizontal/double scrollbars.
+- **Feature Specifications**: Automated per-diem and visa checks, multi-level approvals, budget tracking, audit trails, and comprehensive analytics are core features. The system also includes enterprise-specific features demonstrated with a detailed dataset for Pacific Foods Group Pte Ltd, encompassing 11 departments and various travel request scenarios, including finance export functionality.
 
-**Planned Implementation**
-- Session-based authentication (connect-pg-simple package included for PostgreSQL session store)
-- Role-based permissions controlling access to approval, analytics, and admin features
-- Delegation system allowing temporary authority transfer between users
+## External Dependencies
 
-### External Dependencies
+### Third-Party APIs
+- **Amadeus Self-Service API**: Airport/city code autocomplete (currently mocked).
 
-**Third-Party APIs**
-- **Amadeus Self-Service API** - Airport/city code autocomplete (currently mocked with static data in `LocationAutocomplete.tsx`)
-  - Integration point: `client/src/components/LocationAutocomplete.tsx`
-  - Mock data includes major Pacific region airports (Fiji, Australia, New Zealand, US)
+### UI Libraries & Components
+- **Radix UI**: Accessible component primitives.
+- **shadcn/ui**: Pre-styled component library.
+- **Recharts**: Charting for analytics.
+- **cmdk**: Command palette component.
 
-**UI Libraries & Components**
-- **Radix UI** - Comprehensive suite of accessible component primitives (accordion, dialog, dropdown, popover, select, tabs, toast, tooltip, etc.)
-- **shadcn/ui** - Pre-styled component library built on Radix UI
-- **Recharts** - Chart library for analytics dashboard visualization
-- **cmdk** - Command palette component for search/navigation
+### Data Processing & Export
+- **papaparse**: CSV parsing and generation.
+- **xlsx**: Excel file generation.
+- **jsPDF**: PDF generation.
 
-**Data Processing & Export**
-- **papaparse** - CSV parsing and generation for finance exports
-- **xlsx** - Excel file generation for export functionality
-- **jsPDF** - PDF generation for trip summaries
+### Form Handling & Validation
+- **react-hook-form**: Form state management.
+- **zod**: Schema validation.
+- **@hookform/resolvers**: Integration with zod.
 
-**Form Handling & Validation**
-- **react-hook-form** - Performant form state management
-- **zod** - Schema validation with TypeScript type inference
-- **@hookform/resolvers** - Integration between react-hook-form and zod
+### Date Handling
+- **date-fns**: Date manipulation and formatting.
 
-**Date Handling**
-- **date-fns** - Lightweight date manipulation and formatting
+### Database & ORM
+- **Drizzle ORM**: TypeScript-first ORM.
+- **@neondatabase/serverless**: PostgreSQL driver.
+- **drizzle-zod**: Zod schema generation from Drizzle schemas.
 
-**Development Tools**
-- **Replit-specific plugins** - Runtime error overlay, cartographer, dev banner for Replit environment
-- **tsx** - TypeScript execution for development server
-- **esbuild** - Fast bundling for production builds
-
-**Database & ORM**
-- **Drizzle ORM** - TypeScript-first ORM with type-safe queries
-- **@neondatabase/serverless** - PostgreSQL driver optimized for serverless environments
-- **drizzle-zod** - Automatic Zod schema generation from Drizzle schemas
-
-**Utility Libraries**
-- **clsx** & **tailwind-merge** - Conditional className composition
-- **class-variance-authority** - Type-safe variant styling patterns
-- **nanoid** - Compact unique ID generation
+### Utility Libraries
+- **clsx** & **tailwind-merge**: Conditional className composition.
+- **class-variance-authority**: Type-safe variant styling.
+- **nanoid**: Unique ID generation.
