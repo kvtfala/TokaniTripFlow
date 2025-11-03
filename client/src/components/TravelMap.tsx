@@ -54,13 +54,13 @@ export function TravelMap({ trips }: TravelMapProps) {
   const getMarkerColor = (status: Trip['tripStatus']) => {
     switch (status) {
       case 'current':
-        return '#22c55e'; // green
+        return '#009BAA'; // Lagoon - bright turquoise
       case 'upcoming':
-        return '#eab308'; // yellow
+        return '#EF6C57'; // Coral - warm coral
       case 'completed':
         return '#94a3b8'; // gray
       default:
-        return '#3b82f6'; // blue
+        return '#00547A'; // Ocean - deep ocean blue
     }
   };
 
@@ -82,16 +82,16 @@ export function TravelMap({ trips }: TravelMapProps) {
     <div className="relative">
       <Card className="p-4">
         {/* Map Legend */}
-        <div className="absolute top-6 right-6 z-10 bg-card border rounded-md p-3 shadow-lg text-sm">
+        <div className="absolute top-6 right-6 z-10 bg-card border rounded-md p-3 shadow-lg text-sm" data-testid="map-legend">
           <div className="font-semibold mb-2">Map Legend</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>In Progress</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#009BAA' }}></div>
+              <span>In Progress (Lagoon)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>Upcoming (30 days)</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF6C57' }}></div>
+              <span>Upcoming (Coral)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-gray-400"></div>
@@ -106,16 +106,17 @@ export function TravelMap({ trips }: TravelMapProps) {
         {/* SVG Map */}
         <svg
           viewBox="0 0 800 500"
-          className="w-full h-[500px] bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-slate-900 rounded-md"
+          className="w-full h-[500px] bg-gradient-to-br from-cyan-50 to-teal-100 dark:from-cyan-950 dark:to-slate-900 rounded-md"
           aria-label="World map showing traveler locations"
+          data-testid="travel-map"
         >
-          {/* Simple ocean/land representation */}
+          {/* Simple ocean/land representation - Pacific lagoon theme */}
           <rect x="0" y="0" width="800" height="500" fill="url(#oceanGradient)" />
           
           <defs>
             <radialGradient id="oceanGradient">
-              <stop offset="0%" stopColor="hsl(210, 100%, 95%)" className="dark:stop-color-[hsl(210,40%,10%)]" />
-              <stop offset="100%" stopColor="hsl(210, 100%, 85%)" className="dark:stop-color-[hsl(210,40%,15%)]" />
+              <stop offset="0%" stopColor="hsl(185, 80%, 92%)" className="dark:stop-color-[hsl(195,30%,12%)]" />
+              <stop offset="100%" stopColor="hsl(195, 60%, 82%)" className="dark:stop-color-[hsl(195,25%,18%)]" />
             </radialGradient>
           </defs>
 
