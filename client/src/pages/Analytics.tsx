@@ -76,9 +76,52 @@ export default function Analytics() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading analytics...</div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Analytics Dashboard</h1>
+          <p className="text-muted-foreground">
+            Travel request insights and key performance indicators
+          </p>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-16 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-64 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!requests || requests.length === 0) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Analytics Dashboard</h1>
+          <p className="text-muted-foreground">
+            Travel request insights and key performance indicators
+          </p>
+        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <BarChart className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">No Data Available</h2>
+            <p className="text-muted-foreground">
+              Analytics will appear here once travel requests are submitted and approved.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }

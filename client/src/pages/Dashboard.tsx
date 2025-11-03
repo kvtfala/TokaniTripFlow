@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { ApprovalDialog } from "@/components/ApprovalDialog";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Plus, FileText, CheckCircle, Clock, XCircle, TrendingUp, BarChart3, Plane, MapPin, Download, Users } from "lucide-react";
 import { type TravelRequest } from "@shared/types";
 import { format, parseISO, startOfMonth } from "date-fns";
@@ -102,22 +102,6 @@ export default function Dashboard() {
     };
   }, [requests]);
 
-  const getStatusBadge = (status: TravelRequest['status']) => {
-    switch (status) {
-      case 'draft':
-        return <Badge variant="outline">Draft</Badge>;
-      case 'submitted':
-        return <Badge variant="secondary">Submitted</Badge>;
-      case 'in_review':
-        return <Badge variant="secondary">In Review</Badge>;
-      case 'approved':
-        return <Badge className="bg-green-500">Approved</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   const renderTable = (filteredRequests: TravelRequest[]) => {
     if (filteredRequests.length === 0) {
@@ -164,7 +148,7 @@ export default function Dashboard() {
                     </TableCell>
                     <TableCell>{request.department}</TableCell>
                     <TableCell className="max-w-xs truncate">{request.purpose}</TableCell>
-                    <TableCell>{getStatusBadge(request.status)}</TableCell>
+                    <TableCell><StatusBadge status={request.status} type="request" /></TableCell>
                     <TableCell className="text-right">
                       FJD {(request.costBreakdown?.totalCost || request.perDiem.totalFJD).toFixed(2)}
                     </TableCell>

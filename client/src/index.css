@@ -216,14 +216,14 @@ html, body {
   --chart-5: 210 30% 50%;  /* Gray-blue */
 
   /* Pacific Theme Colors - Dark Mode - WCAG 2.1 AA Compliant */
-  --ocean: 210 50% 55%;  /* Brighter ocean for dark bg - WCAG AA */
-  --ocean-light: 210 30% 20%;  /* Dark ocean accent */
-  --coral: 355 77% 45%;  /* Darker coral for dark bg - WCAG AA ≥4.5:1 with white */
-  --coral-light: 8 70% 25%;  /* Dark coral accent */
-  --lagoon: 185 100% 22%;  /* Darker turquoise for dark bg - WCAG AA ≥4.5:1 with white */
-  --lagoon-light: 185 60% 22%;  /* Dark lagoon accent */
+  --ocean: 210 50% 65%;  /* Bright ocean for badge text - WCAG AA ≥4.5:1 over dark bg */
+  --ocean-light: 210 30% 20%;  /* Dark ocean accent for badge backgrounds */
+  --coral: 355 77% 45%;  /* Darker coral for buttons - WCAG AA ≥4.5:1 with white */
+  --coral-light: 8 70% 25%;  /* Dark coral accent for badge backgrounds */
+  --lagoon: 185 100% 25%;  /* Darker lagoon for buttons - WCAG AA ≥4.5:1 with white */
+  --lagoon-light: 185 60% 22%;  /* Dark lagoon accent for badge backgrounds */
   --sand: 42 40% 60%;  /* Desaturated sand */
-  --sand-light: 42 30% 18%;  /* Dark sand accent */
+  --sand-light: 42 30% 18%;  /* Dark sand accent for badge backgrounds */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.20);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);

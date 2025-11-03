@@ -163,8 +163,12 @@ export default function Approvals() {
             <div className="space-y-4">
               {pendingRequests.length === 0 ? (
                 <Card>
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    No pending approvals
+                  <CardContent className="p-12 text-center">
+                    <CheckCircle className="w-16 h-16 text-[hsl(var(--lagoon))] mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">All Caught Up!</h2>
+                    <p className="text-muted-foreground">
+                      No pending travel requests to review at the moment.
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
