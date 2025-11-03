@@ -69,53 +69,96 @@ Preferred communication style: Simple, everyday language.
 - **nanoid**: Unique ID generation.
 ## Recent Changes
 
-### November 3, 2025 - Map Replacement with Destination Analytics
+### November 3, 2025 - Travel Watch Dashboard Pilot Phase Enhancements
 
-#### Travel Watch: SVG Map → Destination Analytics Panel
-Replaced the SVG-based map visualization with a practical destination analytics system that delivers actionable insights for travel administrators.
+#### Comprehensive Dashboard Upgrade for MDF Pilot
+Transformed Travel Watch into a polished, production-ready analytics dashboard with smart metrics, enhanced alerts, advanced filtering, and professional visual polish suitable for stakeholder demonstrations.
 
-**Why the Change:**
-- Old SVG map lacked geographic context (ocean gradient only, no real map imagery)
-- Difficult to extract actionable business intelligence
-- Consumed bandwidth without providing decision value
-- Limited utility for travel monitoring tasks
+**Enhancements Delivered:**
 
-**New Destination Analytics Panel:**
+1. **Smart Metrics with Trend Indicators**:
+   - All 4 metric cards (Active Travelers, Destinations, Total Per Diem, Avg Duration) now show:
+     * Percentage change vs previous period (30-60 day comparison)
+     * Color-coded trend icons: ↑ Green (>5% increase), ↓ Red (>5% decrease), - Gray (neutral)
+     * Baseline comparison text: "X% vs last period"
+   - Provides immediate insight into travel activity trends
 
-1. **Destination Overview Table/Cards**:
-   - Aggregates active trips (in progress + upcoming) by city/country
-   - Shows: In Progress count, Upcoming count, Total Per Diem (FJD), Latest Return Date, Visa Compliance Flags
-   - Desktop: 6-column sortable table with hover states
-   - Mobile: Responsive card layout with 2x2 grid per destination  
-   - Badge colors: Lagoon (#009BAA) for in-progress, Coral (#EF6C57) for upcoming
-   - Visa warning badges (amber) for compliance alerts
-   - Auto-sorted by total trip volume (busiest destinations first)
-   - data-testid: card-destination-overview, row-destination-{idx}, card-destination-{idx}
+2. **Enhanced Multi-Level Alert System**:
+   - **Travelers Returning Soon**: Amber alert for travelers returning within 3 days (existing, improved)
+   - **Overdue Expense Reports**: NEW - Red alert for trips completed >7 days ago without expense claims
+   - **High-Value Trips**: NEW - Blue alert highlighting trips with per diem >FJD 5,000
+   - **Visa Compliance Actions**: NEW - Orange alert for trips requiring immediate visa action
+   - Each alert shows count, affected travelers, and contextual details
 
-2. **Top Destinations Bar Chart**:
-   - Horizontal stacked bar chart showing top 10 travel destinations
-   - Segments: In Progress (Lagoon), Upcoming (Coral), Completed (Gray)
-   - Covers all trip types for comprehensive travel pattern analysis
-   - Built with Recharts, 300px responsive height
-   - Pacific color palette throughout (#009BAA, #EF6C57, #94a3b8)
-   - data-testid: card-destination-chart
+3. **Advanced Analytics Charts**:
+   - **Department Spend Breakdown**: Vertical bar chart showing per diem spend by department (top 8)
+   - **Travel Activity Trends**: Line chart visualizing daily trip counts over 60 days
+   - **Visa Compliance Dashboard**: 
+     * Large compliance rate percentage display
+     * Donut pie chart with color segments
+     * Detailed breakdown: Compliant (green), Warning (amber), Action Required (red)
+   - All charts use Recharts with responsive containers and Pacific color palette
+
+4. **Enhanced CSV Export**:
+   - Includes comprehensive metadata header:
+     * "Tokani TripFlow - Travel Watch Export" title
+     * Generation timestamp
+     * Total record count
+     * Active filter summary
+     * Search query information
+   - Filename with timestamp: `travel-watch_YYYY-MM-DD_HHMM.csv`
+   - Exports only filtered data (respects current search/filter state)
+
+5. **Sortable Table Columns**:
+   - All table columns now sortable with click interaction
+   - Sort fields: Traveler, Destination, Start Date, Department, Per Diem
+   - Toggle between ascending/descending order
+   - Visual indicator (ArrowUpDown icon) on sortable headers
+   - Sort state maintained across filtering
+
+6. **Quick Filter Chips & Smart Controls**:
+   - Active filters displayed as removable chips below filter controls
+   - Each chip shows filter type and value with "×" close button
+   - "Clear X filters" button with dynamic count
+   - Single-click filter removal via chip or bulk clear via button
+   - Improves filter visibility and management
+
+7. **Live System Polish & Animations**:
+   - Pulsing "Live" badge in dashboard header (green dot animation)
+   - Animated pulse on "In Progress" status indicators (trip badges and table indicators)
+   - `hover-elevate` effects on all cards and table rows
+   - Smooth, subtle animations throughout (professional, not distracting)
+   - Enhances perception of real-time, active system
+
+8. **Destination Analytics** (from earlier session):
+   - Destination Overview Table/Cards with sortable columns
+   - Top Destinations Bar Chart (stacked: In Progress, Upcoming, Completed)
+   - Badge colors: Lagoon (#009BAA) for current, Coral (#EF6C57) for upcoming
+   - Visa warning flags for compliance
 
 **Technical Implementation:**
-- **Aggregation Logic**: Map-based O(n) aggregation in useMemo hooks
-  - `destinationData`: Groups trips by destination with counts, totals, dates, warnings
-  - `topRoutesData`: Top 10 destinations across all trip statuses
-- **Performance**: Memoized calculations prevent unnecessary re-renders
-- **Offline-Ready**: No external API dependencies, works in low-bandwidth environments
-- **WCAG 2.1 AA Compliant**: Proper semantic HTML, color contrast, keyboard navigation
+- **Performance Optimizations**: All calculations use useMemo hooks
+  - Trend calculations: Compare current (last 30 days) vs previous period (30-60 days ago)
+  - Alert logic: Memoized selectors for returning travelers, overdue reports, high-value trips
+  - Chart data: Aggregated department spend, 60-day trends, visa compliance stats
+  - Sorting/filtering: Single filteredTrips state drives all displays
+- **State Management**: Centralized filter state (search, department, cost centre, status, sort field, sort direction)
+- **Code Quality**: LSP errors resolved, TypeScript strict mode compliance
+- **Accessibility**: WCAG 2.1 AA compliant, comprehensive data-testid coverage
+- **Responsive Design**: Mobile-first with table→card transformations <768px
 
 **Value Delivered:**
-- ✅ Clear trip counts and per diem totals by destination  
-- ✅ Return date visibility for resource planning
-- ✅ Visa compliance warnings surfaced prominently
-- ✅ Travel pattern visualization (top routes chart)
-- ✅ Works offline/low bandwidth (critical for Fiji)
-- ✅ Actionable data over decorative visualization
-- ✅ Mobile-responsive (table → cards)
+- ✅ Professional "live analytics system" feel suitable for stakeholder demos
+- ✅ Smart metrics with trend insights (vs static numbers)
+- ✅ Comprehensive alert coverage (4 alert types)
+- ✅ Advanced data visualization (5 charts total)
+- ✅ Enhanced user experience (sortable tables, filter chips, animations)
+- ✅ Production-ready CSV export with metadata
+- ✅ Offline-capable, low-bandwidth optimized
+- ✅ Mobile-responsive throughout
 
 **Files Modified:**
-- `client/src/pages/TravelWatch.tsx`: Removed TravelMap import, added destination aggregation logic and analytics components
+- `client/src/pages/TravelWatch.tsx`: Complete dashboard enhancement with 1,200+ lines of production-ready code
+
+**Pilot Readiness:**
+Dashboard is now production-ready for MDF pilot demonstrations, delivering professional analytics, smart insights, and polished UX expected by enterprise stakeholders.
