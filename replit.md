@@ -67,3 +67,55 @@ Preferred communication style: Simple, everyday language.
 - **clsx** & **tailwind-merge**: Conditional className composition.
 - **class-variance-authority**: Type-safe variant styling.
 - **nanoid**: Unique ID generation.
+## Recent Changes
+
+### November 3, 2025 - Map Replacement with Destination Analytics
+
+#### Travel Watch: SVG Map → Destination Analytics Panel
+Replaced the SVG-based map visualization with a practical destination analytics system that delivers actionable insights for travel administrators.
+
+**Why the Change:**
+- Old SVG map lacked geographic context (ocean gradient only, no real map imagery)
+- Difficult to extract actionable business intelligence
+- Consumed bandwidth without providing decision value
+- Limited utility for travel monitoring tasks
+
+**New Destination Analytics Panel:**
+
+1. **Destination Overview Table/Cards**:
+   - Aggregates active trips (in progress + upcoming) by city/country
+   - Shows: In Progress count, Upcoming count, Total Per Diem (FJD), Latest Return Date, Visa Compliance Flags
+   - Desktop: 6-column sortable table with hover states
+   - Mobile: Responsive card layout with 2x2 grid per destination  
+   - Badge colors: Lagoon (#009BAA) for in-progress, Coral (#EF6C57) for upcoming
+   - Visa warning badges (amber) for compliance alerts
+   - Auto-sorted by total trip volume (busiest destinations first)
+   - data-testid: card-destination-overview, row-destination-{idx}, card-destination-{idx}
+
+2. **Top Destinations Bar Chart**:
+   - Horizontal stacked bar chart showing top 10 travel destinations
+   - Segments: In Progress (Lagoon), Upcoming (Coral), Completed (Gray)
+   - Covers all trip types for comprehensive travel pattern analysis
+   - Built with Recharts, 300px responsive height
+   - Pacific color palette throughout (#009BAA, #EF6C57, #94a3b8)
+   - data-testid: card-destination-chart
+
+**Technical Implementation:**
+- **Aggregation Logic**: Map-based O(n) aggregation in useMemo hooks
+  - `destinationData`: Groups trips by destination with counts, totals, dates, warnings
+  - `topRoutesData`: Top 10 destinations across all trip statuses
+- **Performance**: Memoized calculations prevent unnecessary re-renders
+- **Offline-Ready**: No external API dependencies, works in low-bandwidth environments
+- **WCAG 2.1 AA Compliant**: Proper semantic HTML, color contrast, keyboard navigation
+
+**Value Delivered:**
+- ✅ Clear trip counts and per diem totals by destination  
+- ✅ Return date visibility for resource planning
+- ✅ Visa compliance warnings surfaced prominently
+- ✅ Travel pattern visualization (top routes chart)
+- ✅ Works offline/low bandwidth (critical for Fiji)
+- ✅ Actionable data over decorative visualization
+- ✅ Mobile-responsive (table → cards)
+
+**Files Modified:**
+- `client/src/pages/TravelWatch.tsx`: Removed TravelMap import, added destination aggregation logic and analytics components
