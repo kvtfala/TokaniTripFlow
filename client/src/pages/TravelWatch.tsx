@@ -7,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Search, Users, MapPin as MapPinIcon, DollarSign, Clock, AlertCircle, FileDown } from "lucide-react";
+import { Download, Search, Users, MapPin as MapPinIcon, DollarSign, Clock, AlertCircle, FileDown, TrendingUp, ArrowUpDown } from "lucide-react";
 import { useTripsNowAndUpcoming, type Trip } from "@/data/hooks";
-import { TravelMap } from "@/components/TravelMap";
 import { format, differenceInDays } from "date-fns";
 import { generateTripSummaryPDF } from "@/utils/pdf";
 import Papa from "papaparse";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function TravelWatch() {
   const { current, upcoming, completed } = useTripsNowAndUpcoming();
@@ -87,6 +87,85 @@ export default function TravelWatch() {
       return endDate >= now && endDate <= threeDaysFromNow;
     });
   }, [current]);
+
+  // Aggregate trips by destination
+  const destinationData = useMemo(() => {
+    const activeTrips = [...current, ...upcoming];
+    const destMap = new Map<string, {
+      destination: string;
+      city: string;
+      country: string;
+      currentCount: number;
+      upcomingCount: number;
+      totalPerDiem: number;
+      latestReturn: Date | null;
+      hasVisaWarning: boolean;
+    }>();
+
+    activeTrips.forEach(trip => {
+      const key = `${trip.destination.city}, ${trip.destination.country}`;
+      const existing = destMap.get(key);
+      const endDate = new Date(trip.endDate);
+      const hasWarning = trip.visaCheck?.status === 'warning' || trip.visaCheck?.status === 'required';
+
+      if (existing) {
+        existing.currentCount += trip.tripStatus === 'current' ? 1 : 0;
+        existing.upcomingCount += trip.tripStatus === 'upcoming' ? 1 : 0;
+        existing.totalPerDiem += trip.perDiem.totalFJD;
+        if (!existing.latestReturn || endDate > existing.latestReturn) {
+          existing.latestReturn = endDate;
+        }
+        existing.hasVisaWarning = existing.hasVisaWarning || hasWarning;
+      } else {
+        destMap.set(key, {
+          destination: key,
+          city: trip.destination.city,
+          country: trip.destination.country,
+          currentCount: trip.tripStatus === 'current' ? 1 : 0,
+          upcomingCount: trip.tripStatus === 'upcoming' ? 1 : 0,
+          totalPerDiem: trip.perDiem.totalFJD,
+          latestReturn: endDate,
+          hasVisaWarning: hasWarning,
+        });
+      }
+    });
+
+    return Array.from(destMap.values()).sort((a, b) => 
+      (b.currentCount + b.upcomingCount) - (a.currentCount + a.upcomingCount)
+    );
+  }, [current, upcoming]);
+
+  // Top routes data for chart (all trips in last 90 days)
+  const topRoutesData = useMemo(() => {
+    const routeMap = new Map<string, {
+      route: string;
+      current: number;
+      upcoming: number;
+      completed: number;
+    }>();
+
+    allTrips.forEach(trip => {
+      const route = `${trip.destination.city}`;
+      const existing = routeMap.get(route);
+
+      if (existing) {
+        if (trip.tripStatus === 'current') existing.current++;
+        else if (trip.tripStatus === 'upcoming') existing.upcoming++;
+        else existing.completed++;
+      } else {
+        routeMap.set(route, {
+          route,
+          current: trip.tripStatus === 'current' ? 1 : 0,
+          upcoming: trip.tripStatus === 'upcoming' ? 1 : 0,
+          completed: trip.tripStatus === 'completed' ? 1 : 0,
+        });
+      }
+    });
+
+    return Array.from(routeMap.values())
+      .sort((a, b) => (b.current + b.upcoming + b.completed) - (a.current + a.upcoming + a.completed))
+      .slice(0, 10); // Top 10 destinations
+  }, [allTrips]);
   
   // Export to CSV function
   const exportToCSV = () => {
@@ -511,10 +590,191 @@ export default function TravelWatch() {
           </Card>
         </div>
 
-        {/* Right: Live Map */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Live Trips Map</h2>
-          <TravelMap trips={[...displayedCurrent, ...displayedUpcoming]} />
+        {/* Right: Destination Analytics */}
+        <div className="space-y-6">
+          {/* Destination Overview */}
+          <Card data-testid="card-destination-overview">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPinIcon className="w-5 h-5" />
+                Destination Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {destinationData.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground" data-testid="empty-destinations">
+                  No active destinations
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-auto max-h-[400px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Destination</TableHead>
+                          <TableHead className="text-center">In Progress</TableHead>
+                          <TableHead className="text-center">Upcoming</TableHead>
+                          <TableHead className="text-right">Total Per Diem</TableHead>
+                          <TableHead>Latest Return</TableHead>
+                          <TableHead className="text-center">Flags</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {destinationData.map((dest, idx) => (
+                          <TableRow key={idx} data-testid={`row-destination-${idx}`}>
+                            <TableCell className="font-medium">
+                              <div>
+                                <div>{dest.city}</div>
+                                <div className="text-xs text-muted-foreground">{dest.country}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {dest.currentCount > 0 ? (
+                                <Badge style={{ backgroundColor: '#009BAA' }} className="text-white">
+                                  {dest.currentCount}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {dest.upcomingCount > 0 ? (
+                                <Badge style={{ backgroundColor: '#EF6C57' }} className="text-white">
+                                  {dest.upcomingCount}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              FJD {dest.totalPerDiem.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {dest.latestReturn ? format(dest.latestReturn, 'dd MMM yyyy') : '-'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {dest.hasVisaWarning && (
+                                <Badge variant="outline" className="border-amber-500 text-amber-700">
+                                  Visa
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3 max-h-[400px] overflow-auto">
+                    {destinationData.map((dest, idx) => (
+                      <div key={idx} className="p-4 border rounded-lg bg-card" data-testid={`card-destination-${idx}`}>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="font-semibold">{dest.city}</p>
+                            <p className="text-sm text-muted-foreground">{dest.country}</p>
+                          </div>
+                          {dest.hasVisaWarning && (
+                            <Badge variant="outline" className="border-amber-500 text-amber-700">
+                              Visa
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-muted-foreground block mb-1">In Progress</span>
+                            {dest.currentCount > 0 ? (
+                              <Badge style={{ backgroundColor: '#009BAA' }} className="text-white">
+                                {dest.currentCount}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block mb-1">Upcoming</span>
+                            {dest.upcomingCount > 0 ? (
+                              <Badge style={{ backgroundColor: '#EF6C57' }} className="text-white">
+                                {dest.upcomingCount}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block mb-1">Per Diem</span>
+                            <span className="font-semibold">FJD {dest.totalPerDiem.toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block mb-1">Latest Return</span>
+                            <span>{dest.latestReturn ? format(dest.latestReturn, 'dd MMM') : '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Destinations Chart */}
+          <Card data-testid="card-destination-chart">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Top Destinations (All Trips)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topRoutesData.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
+                  No trip data available
+                </div>
+              ) : (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topRoutesData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis 
+                        dataKey="route" 
+                        type="category" 
+                        width={80}
+                        fontSize={12}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))' 
+                        }}
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="current" 
+                        name="In Progress" 
+                        fill="#009BAA" 
+                        stackId="a"
+                      />
+                      <Bar 
+                        dataKey="upcoming" 
+                        name="Upcoming" 
+                        fill="#EF6C57" 
+                        stackId="a"
+                      />
+                      <Bar 
+                        dataKey="completed" 
+                        name="Completed" 
+                        fill="#94a3b8" 
+                        stackId="a"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
