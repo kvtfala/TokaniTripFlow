@@ -1,8 +1,12 @@
-export type RequestStatus = "draft" | "submitted" | "in_review" | "approved" | "rejected";
+export type RequestStatus = "draft" | "submitted" | "in_review" | "approved" | "rejected" | "ticketed";
 export type VisaStatus = "OK" | "WARNING" | "ACTION";
-export type UserRole = "employee" | "approver" | "finance_admin" | "travel_admin";
+export type UserRole = "employee" | "coordinator" | "manager" | "finance" | "travel_desk" | "admin";
 export type FundingType = "advance" | "reimbursement";
-export type HistoryAction = "SUBMIT" | "APPROVE" | "REJECT" | "ESCALATE" | "COMMENT";
+export type HistoryAction = "SUBMIT" | "APPROVE" | "REJECT" | "ESCALATE" | "COMMENT" | "TICKET" | "QUOTE";
+export type TripType = "one-way" | "return" | "multi-city";
+export type CabinClass = "economy" | "premium" | "business";
+export type CostBand = "< FJD 1,000" | "FJD 1,000-3,000" | "FJD 3,000-5,000" | "> FJD 5,000";
+export type PolicyStatus = "in_policy" | "out_of_policy";
 
 export interface Location {
   code: string;
@@ -102,4 +106,49 @@ export interface DelegateAssignment {
   startDate: string;
   endDate: string;
   active: boolean;
+}
+
+export interface Traveller {
+  id: string;
+  name: string;
+  employeeNumber: string;
+  position: string;
+  department: string;
+  manager: string;
+  managerId?: string;
+}
+
+export interface TripSector {
+  id: string;
+  origin: string;
+  destination: string;
+  date: string;
+}
+
+export interface PolicyCheck {
+  status: PolicyStatus;
+  reason?: string;
+}
+
+export interface WizardFormData {
+  travellers: Traveller[];
+  isGroupRequest: boolean;
+  tripType: TripType;
+  origin: string;
+  destination: Location | null;
+  departureDate: string;
+  returnDate: string;
+  datesFlexible: boolean;
+  flexibilityDays?: number;
+  sectors?: TripSector[];
+  specialNotes?: string;
+  cabinClass: CabinClass;
+  costBand: CostBand;
+  fundingCode: string;
+  projectCode?: string;
+  attachments: File[];
+  policyCheck: PolicyCheck;
+  primaryApproverId: string;
+  additionalApprovers: string[];
+  purpose: string;
 }

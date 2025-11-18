@@ -1,0 +1,450 @@
+You are helping me redesign and rebuild the front-end UX of an existing React SPA called Tokani TravelFlow (TTF) hosted on Replit.
+
+TTF is a corporate travel approval system for Fiji and the Pacific. It is not a public booking site and not a self-service tool for travellers. It is an internal workflow tool used by:
+
+Travel coordinators / PAs / admin staff (primary users)
+
+Approval managers (line managers, executives)
+
+Finance / budget holders
+
+Travel Desk / corporate travel agency
+
+Admins
+
+Travellers do not log in or submit their own requests. Their details are selected by coordinators from a directory.
+
+Your job:
+Refactor and/or build the front-end UI components so the UX matches the spec below, without breaking existing business logic or API calls.
+
+Use the existing stack (React + whatever styling is already used). Do not introduce heavy new frameworks. Use functional components and hooks.
+
+1. HIGH-LEVEL UX GOALS
+
+Primary user = coordinator/PA, not traveller.
+
+Make data entry very fast: autocomplete, prefilled fields, multi-traveller selection, templates.
+
+Use a multi-step wizard for creating a request instead of one giant form.
+
+Managers see clean summary cards and big approve/reject buttons, not the whole long form.
+
+Travel Desk has a queue view + simple action screen, not the full request form.
+
+All key screens must be mobile-first and responsive (most approvals will be on mobile).
+
+2. ROUTES / PAGES TO IMPLEMENT OR CLEAN UP
+
+Please inspect the existing code and then:
+
+/request/new – New Travel Request Wizard (coordinator flow)
+
+/requests – List of requests (filterable by status, role, etc.)
+
+/requests/:id – Request Detail + Timeline + Actions
+
+/dashboard/coordinator – Coordinator “my work” dashboard
+
+/dashboard/manager – Manager approvals dashboard
+
+/travel-desk – Travel Desk queue and processing screen
+
+If the exact routing is different, adapt the components to fit the current system, but keep the UX patterns described.
+
+3. ROLES & PERMISSIONS (FRONT-END UX)
+
+Assume we have roles like:
+
+COORDINATOR
+
+MANAGER
+
+FINANCE
+
+TRAVEL_DESK
+
+ADMIN
+
+On the front end:
+
+Show different dashboards/navigation depending on the role.
+
+Coordinators see tools to create and manage requests.
+
+Managers see pending approvals and clear decision screens.
+
+Travel Desk sees approved requests to quote/ticket.
+
+Admins see configuration and reporting.
+
+Do NOT build full auth, just respect whatever role state already exists.
+
+4. /request/new – COORDINATOR WIZARD (CRITICAL)
+
+Rebuild /request/new as a 4–5 step wizard optimized for coordinators/PAs creating requests for other people.
+
+STEP 1 – Traveller(s)
+
+Traveller selector:
+
+Multi-select input that searches a “directory” of travellers.
+
+When a traveller is selected:
+
+Auto-fill Department.
+
+Auto-fill Manager (line manager).
+
+Fields:
+
+Traveller(s) [multi-select]
+
+Department (auto, editable)
+
+Manager (auto, editable)
+
+UX details:
+
+Show “recent travellers” for speed.
+
+A toggle for “Group travel request” when multiple travellers are added.
+
+STEP 2 – Trip Details
+
+Fields:
+
+Trip Type: One-way / Return / Multi-city
+
+Origin
+
+Destination
+
+Departure Date
+
+Return Date
+
+Are dates flexible? (Yes/No, optional ± days)
+
+Special travel notes (textarea, optional – e.g. medical, seating, etc.)
+
+Behaviour:
+
+If Multi-city: show an editable list of sectors (e.g. NAN → SYD, SYD → POM).
+
+Provide “Copy to all travellers” behaviour if multiple travellers.
+
+STEP 3 – Cost & Policy
+
+We only need high-level inputs, not exact fares.
+
+Fields:
+
+Cabin Requested: Economy (default), Premium, Business
+
+Estimated Cost Band (dropdown):
+
+< FJD 1,000
+
+1,000 – 3,000
+
+3,000 – 5,000
+
+> 5,000
+
+Funding / Project / Cost Code (text or select)
+
+Attachments: allow upload of at least 1–3 files (conference invite, training letter, memo).
+
+Policy indicator:
+
+Show a small policy status pill:
+
+“In Policy” (green)
+
+“Out of Policy” (amber)
+
+Show a short reason text, even if it’s a placeholder for now (e.g. “Cabin above allowed level”).
+
+If you can’t implement full policy logic yet, still wire in a simple flag, so the UI is ready.
+
+STEP 4 – Approval Routing
+
+Show a simple “Approval Path” box:
+
+e.g. Manager → Finance (if cost band high or out-of-policy) → Travel Desk.
+
+Fields:
+
+Primary approver: auto-filled manager, editable.
+
+Optional additional approver(s): e.g., Finance, HR, Project Owner.
+
+UX:
+
+Coordinators must be able to override or add approvers within reason.
+
+This step is about who will see the request, not all company rules hard-coded.
+
+STEP 5 – Review & Submit
+
+Show a clean summary card:
+
+Traveller(s)
+
+Dept / Manager
+
+Purpose
+
+Route and dates
+
+Estimated cost band
+
+Policy status
+
+Funding code
+
+Approval path
+
+Buttons:
+
+Submit Request
+
+Save Draft
+
+Duplicate (optionally later)
+
+UX rules:
+
+Display everything in a single, readable card, not a long form.
+
+Make it mobile-friendly.
+
+Wizard Technical Notes
+
+Track current step in component state.
+
+Use a progress indicator (e.g. Step 1 of 5).
+
+Persist unsaved changes in local component state.
+
+If easy, add simple autosave (e.g. localStorage) so form progress isn’t lost on refresh.
+
+5. MANAGER APPROVAL UX – /requests/:id (MANAGER VIEW)
+
+When a manager opens a specific request, they should NOT see the raw form first. They should see a decision-focused view:
+
+SECTION A – Summary Card
+
+Top of the page:
+
+Traveller(s)
+
+Department
+
+Purpose
+
+Origin → Destination
+
+Dates
+
+Estimated Cost Band
+
+Policy Status (In Policy / Out of Policy + reason)
+
+Funding / Project Code
+
+Attachments list (links)
+
+SECTION B – Cost Impact Box
+
+A small panel that shows:
+
+Policy baseline (e.g. Economy only if you have that info)
+
+Requested cabin
+
+Cost band
+
+Simple variance statement if possible (even textual).
+
+If real calculations are not available yet, keep this UI but hardcode a placeholder so we can wire logic later.
+
+SECTION C – Timeline / Status
+
+Vertical timeline like:
+
+Submitted by [Coordinator] – date/time
+
+With Manager – since X
+
+Next: Finance (if applicable)
+
+Travel Desk
+
+Ticketed
+
+Use a simple step indicator or timeline component.
+
+SECTION D – Action Buttons
+
+Large, clear buttons:
+
+Approve (primary)
+
+Reject (danger)
+
+Request More Info (secondary)
+
+When rejecting or requesting info, show a required comment field.
+
+Do not bury the buttons below lots of text; actions must be visible high on the page.
+
+6. COORDINATOR DASHBOARD – /dashboard/coordinator
+
+This is the “home” for coordinators and PAs.
+
+Top-level cards:
+
+New Request (button)
+
+Drafts count
+
+Awaiting Manager Approval
+
+Awaiting Travel Desk
+
+Table or list:
+
+Columns example:
+
+Request ID
+
+Traveller(s)
+
+Route
+
+Dates
+
+Status
+
+Last updated
+
+Action (View / Edit / Resend / Cancel)
+
+Provide filters (status, date range) and search by traveller name.
+
+7. MANAGER DASHBOARD – /dashboard/manager
+
+Designed for fast approval decisions.
+
+Top cards:
+
+Pending approvals count
+
+Approved this month
+
+Total approximate spend (sum of bands, or just count-based if needed)
+
+Average approval time (can be placeholder for now)
+
+Table:
+
+Request ID
+
+Traveller
+
+Route
+
+Dates
+
+Cost band
+
+Policy status
+
+Status (e.g. “Waiting for your decision”)
+
+Actions (View / Approve quickly if you want to add a modal later)
+
+Make it extremely easy for managers to see what needs attention.
+
+8. TRAVEL DESK UX – /travel-desk
+
+This view is for the Travel Desk / agency.
+
+Queue View:
+
+Table like:
+
+Request ID
+
+Traveller(s)
+
+Route
+
+Dates
+
+Status (e.g. “Approved – Awaiting Itinerary/Fare”)
+
+SLA (e.g. “Due in 12h”)
+
+Action (Open)
+
+Detail View for Travel Desk:
+
+When they click “Open,” show:
+
+Request summary (left panel)
+
+Attachments (if any)
+
+Forms to:
+
+Add itinerary text or file upload
+
+Enter PNR
+
+Enter fare options
+
+Enter final confirmed cost or cost band
+
+Ticketing deadline
+
+Action buttons:
+
+Save Quote
+
+Mark as Ready for Final Approval
+
+Mark as Ticketed
+
+DO NOT force travel desk users to work through the same wizard as coordinators. Give them a focused, “process this request” screen.
+
+9. DESIGN & STYLING REQUIREMENTS
+
+Use existing styling approach in the project (CSS modules, Tailwind, etc.).
+
+Ensure all critical views are usable on mobile screens.
+
+Use clear headings, section dividers, and cards. Avoid clutter.
+
+Keep labels and copy plain-English and non-technical:
+
+Avoid GDS jargon.
+
+Avoid showing internal codes like RBD, TST etc.
+
+10. IMPLEMENTATION GUIDANCE
+
+First, inspect current components related to request, approval, dashboard, and travel desk (if they exist).
+
+Then, refactor or create new components to match the above UX without breaking existing API calls or business logic.
+
+Keep functions and API utilities intact where possible; focus on UI structure, layouts, and props.
+
+Where data structures aren’t available yet (e.g. policy rules, budget figures, savings), implement UI components with mock placeholder content, but structure them so real data can be wired in later.
+
+At the end, summarise:
+
+What components you created or refactored.
+
+Any places where I need to plug in real data or backend support.

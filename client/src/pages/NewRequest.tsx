@@ -1,24 +1,67 @@
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TravelRequestForm } from "@/components/TravelRequestForm";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { TravelRequestWizard } from "@/components/wizard/TravelRequestWizard";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { WizardFormData } from "@shared/types";
 
 export default function NewRequest() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: WizardFormData) => {
+      // Determine if finance approval is required
+      const requiresFinance = 
+        data.costBand === "> FJD 5,000" || 
+        data.costBand === "FJD 3,000-5,000" ||
+        data.policyCheck.status === "out_of_policy";
+
+      // Build approval flow with finance inserted at correct position
+      const approverFlow: string[] = [data.primaryApproverId];
+      
+      // Add any additional approvers
+      if (data.additionalApprovers.length > 0) {
+        approverFlow.push(...data.additionalApprovers);
+      }
+      
+      // Insert finance approver if required (before travel_desk)
+      if (requiresFinance) {
+        approverFlow.push("emp_002"); // CFO Mere Delana approves high-cost/out-of-policy requests
+      }
+      
+      // Always end with travel_desk
+      approverFlow.push("travel_desk");
+
+      // Convert wizard data to API format
       const requestData = {
-        ...data,
-        employeeId: "employee", // In production, use actual user ID from auth
-        approverFlow: ["manager", "finance_admin"], // In production, determine from org structure
-        status: "submitted",
+        employeeName: data.travellers[0]?.name || "",
+        employeeNumber: data.travellers[0]?.employeeNumber || "",
+        position: data.travellers[0]?.position || "",
+        department: data.travellers[0]?.department || "",
+        employeeId: data.travellers[0]?.id || "employee",
+        destination: data.destination || { code: "", city: "", country: "" },
+        startDate: data.departureDate,
+        endDate: data.returnDate || data.departureDate,
+        purpose: data.purpose,
+        costCentre: { code: data.fundingCode, name: data.fundingCode },
+        fundingType: "advance" as const,
+        approverFlow,
+        approverIndex: 0,
+        status: "submitted" as const,
+        history: [{
+          ts: new Date().toISOString(),
+          actor: "coordinator",
+          action: "SUBMIT" as const,
+          note: `${data.isGroupRequest ? "Group request for " + data.travellers.length + " travellers" : "Request submitted"}`,
+        }],
+        needsFlights: true,
+        needsAccommodation: true,
+        needsVisa: data.destination?.country !== "Fiji",
+        needsTransport: true,
+        // Note: perDiem and visaCheck will be calculated by the backend
       };
+
       return apiRequest("POST", "/api/requests", requestData);
     },
     onSuccess: () => {
@@ -38,36 +81,20 @@ export default function NewRequest() {
     },
   });
 
-  return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setLocation("/")}
-          data-testid="button-back"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">New Travel Request</h1>
-          <p className="text-muted-foreground mt-1">Submit a new travel request for approval</p>
-        </div>
-      </div>
+  const handleSaveDraft = (data: WizardFormData) => {
+    // For now, just save to localStorage (already done in wizard)
+    // In production, this would save to the backend
+    toast({
+      title: "Draft Saved",
+      description: "Your progress has been saved and can be resumed later.",
+    });
+  };
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Travel Details</CardTitle>
-          <CardDescription>
-            Complete the form below to submit your travel request. Per diem will be calculated automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TravelRequestForm
-            onSubmit={(data) => createMutation.mutate(data)}
-          />
-        </CardContent>
-      </Card>
-    </div>
+  return (
+    <TravelRequestWizard
+      onSubmit={(data) => createMutation.mutate(data)}
+      onSaveDraft={handleSaveDraft}
+      isPending={createMutation.isPending}
+    />
   );
 }
