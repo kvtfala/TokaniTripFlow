@@ -1,0 +1,165 @@
+You are working in the Tokani Trip Flow (TTF) project.
+
+We recently added a demo login endpoint `/api/demo-login` and a demo login form with:
+- Company code
+- Email
+- Password
+
+Now the browser shows this error when trying to use the demo login:
+
+"Login Failed – Failed to execute 'fetch' on 'Window': '/api/demo-login' is not a valid HTTP method."
+
+This almost certainly means the client-side `fetch` call was written incorrectly.
+
+------------------------------------------------
+STEP 1 – FIX THE /api/demo-login FETCH CALL
+------------------------------------------------
+1. Search the client code for `/api/demo-login` and find the `fetch` call used by the demo login form.
+
+2. Fix the `fetch` signature so it is valid:
+
+   - The first argument to `fetch` must be the URL string: `"/api/demo-login"`.
+   - The second argument must be an options object with a valid HTTP method (e.g. `"POST"`), NOT the URL.
+
+   The final call should look roughly like this (adapt to the existing structure):
+
+   ```ts
+   const res = await fetch("/api/demo-login", {
+     method: "POST",
+     headers: {
+       "Content-Type": "application/json",
+     },
+     body: JSON.stringify({
+       companyCode,
+       email,
+       password,
+     }),
+   });
+Make sure:
+
+method is "POST" (or "GET" if the backend is designed that way, but most likely "POST").
+
+You are not accidentally setting method: "/api/demo-login" or any other non-HTTP verb.
+
+Confirm that the server-side route for POST /api/demo-login already exists and responds correctly. If it expects a different HTTP method, align the fetch call with that method, but keep the URL and body structure consistent.
+
+STEP 2 – HANDLE THE DEMO LOGIN RESPONSE PROPERLY
+Ensure the client code checks res.ok and handles errors cleanly:
+
+On success:
+
+Establish the session using the existing auth/session helper logic.
+
+Redirect to the authenticated Home/Welcome page.
+
+On failure:
+
+Show a clear error message, e.g. "Invalid demo credentials or company code."
+
+Do not change any business logic for non-demo (Replit Auth) login; only adjust the demo login handling.
+
+STEP 3 – SCAN FOR OTHER RUNTIME / CONSOLE ERRORS
+Now perform a quick stability pass:
+
+Start the app and, as a user, go through these flows:
+
+Open the landing page (unauthenticated).
+
+Use the demo login:
+
+companyCode: "itt001"
+
+email: "desmond.bale@islandtraveltech.com"
+
+password: "itt1235*"
+
+Let the splash/loading screen show.
+
+Land on the Home/Welcome page.
+
+Navigate to:
+
+My Trips
+
+Manager/Approvals view
+
+Travel Desk / Travel Watch
+
+Any other primary dashboards
+
+While doing this, watch for:
+
+Browser console errors (TypeError, undefined property access, etc.).
+
+Red runtime errors in the Replit console (server-side exceptions).
+
+Obvious TypeScript compile errors, if present.
+
+For each error you find:
+
+Fix the root cause with minimal, targeted changes.
+
+Examples of what to fix:
+
+Accessing currentUser.name.split(...) without checking if currentUser or name exists.
+
+Accessing props or state fields that may be undefined without guards.
+
+Incorrect imports/paths.
+
+Missing null checks during initial auth load.
+
+DO NOT:
+
+Rewrite large parts of the app.
+
+Change overall architecture, routes, or role logic.
+
+Remove important business rules (approvals, role guards, etc.).
+
+Pay special attention to:
+
+Greeting logic on Home.tsx (ensure it is null-safe if it uses currentUser).
+
+Any components that rely on seeded demo data (they should handle “no data” gracefully instead of crashing).
+
+STEP 4 – FINAL VERIFICATION & SUMMARY
+After fixing the /api/demo-login call and other errors:
+
+Confirm that:
+
+Demo login works successfully with:
+
+companyCode: "itt001"
+
+email: "desmond.bale@islandtraveltech.com"
+
+password: "itt1235*"
+
+The user is treated as the correct role (manager/superuser).
+
+No console errors appear on:
+
+Landing page
+
+Splash screen
+
+Home/Welcome page
+
+Key dashboards (My Trips, Approvals, Travel Desk, Travel Watch).
+
+Provide a short summary listing:
+
+Files changed for the /api/demo-login fix.
+
+Any other files adjusted to resolve runtime errors.
+
+A brief description of each error and how you fixed it.
+
+Do not modify any business logic beyond what is necessary to:
+
+Fix the demo login,
+
+Make the Home/Welcome experience stable,
+
+And eliminate obvious runtime errors.

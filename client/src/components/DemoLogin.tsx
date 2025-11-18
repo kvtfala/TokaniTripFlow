@@ -28,7 +28,7 @@ export function DemoLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: DemoLoginInput) => {
-      const result = await apiRequest("/api/demo-login", "POST", data);
+      const result = await apiRequest("POST", "/api/demo-login", data);
       return result;
     },
     onSuccess: () => {
