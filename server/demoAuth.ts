@@ -64,8 +64,10 @@ export function setupDemoAuth(app: Express) {
       });
     }
 
-    // Create session - mimicking Replit Auth session structure
+    // Create session - demo sessions don't use OIDC tokens
+    // Set shorter expiry to require explicit re-login instead of refresh
     const demoUser = {
+      isDemo: true, // Flag to indicate this is a demo session
       claims: {
         sub: user.id,
         email: user.email,
@@ -73,9 +75,8 @@ export function setupDemoAuth(app: Express) {
         last_name: user.lastName,
         profile_image_url: user.profileImageUrl,
       },
-      access_token: "demo-access-token",
-      refresh_token: "demo-refresh-token",
-      expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week
+      // Demo sessions expire in 24 hours and require explicit re-login
+      expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
     };
 
     // Establish session using Passport's login method

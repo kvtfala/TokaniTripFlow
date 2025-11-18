@@ -1,53 +1,62 @@
 // Demo Login Component
 // Provides email + password + company code authentication for demo purposes
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Lock, Mail, Building2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { demoLoginSchema, type DemoLoginInput } from "@shared/demoSchema";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export function DemoLogin() {
-  const [companyCode, setCompanyCode] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  const form = useForm<DemoLoginInput>({
+    resolver: zodResolver(demoLoginSchema),
+    defaultValues: {
+      companyCode: "",
+      email: "",
+      password: "",
+    },
+  });
 
-    try {
-      const response = await fetch("/api/demo-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyCode, email, password }),
+  const loginMutation = useMutation({
+    mutationFn: async (data: DemoLoginInput) => {
+      const result = await apiRequest("/api/demo-login", "POST", data);
+      return result;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Login Successful",
+        description: "Redirecting to dashboard...",
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.message || "Login failed");
-        setIsLoading(false);
-        return;
-      }
-
-      // Success - redirect to home
+      // Redirect to home after successful login
       window.location.href = "/";
-    } catch (err) {
-      setError("An error occurred during login");
-      setIsLoading(false);
-    }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: DemoLoginInput) => {
+    loginMutation.mutate(data);
   };
 
   // Auto-fill demo credentials for convenience
   const fillDemoCredentials = () => {
-    setCompanyCode("itt001");
-    setEmail("desmond.bale@islandtraveltech.com");
-    setPassword("itt1235*");
+    form.setValue("companyCode", "itt001");
+    form.setValue("email", "desmond.bale@islandtraveltech.com");
+    form.setValue("password", "itt1235*");
   };
 
   return (
@@ -59,94 +68,107 @@ export function DemoLogin() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="companyCode">Company Code</Label>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                id="companyCode"
-                type="text"
-                placeholder="Company Code (e.g., itt001)"
-                value={companyCode}
-                onChange={(e) => setCompanyCode(e.target.value)}
-                className="pl-10"
-                data-testid="input-company-code"
-                required
-              />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="companyCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Code</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Company Code (e.g., itt001)"
+                        className="pl-10"
+                        data-testid="input-company-code"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        className="pl-10"
+                        data-testid="input-email"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        className="pl-10"
+                        data-testid="input-password"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-2">
+              <Button 
+                type="submit" 
+                className="w-full bg-[#3C7DD9] hover:bg-[#2D5BA8] text-white"
+                disabled={loginMutation.isPending}
+                data-testid="button-demo-login"
+              >
+                {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In to Demo
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline"
+                className="w-full"
+                onClick={fillDemoCredentials}
+                disabled={loginMutation.isPending}
+                data-testid="button-fill-demo"
+              >
+                Fill Demo Credentials
+              </Button>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
-                data-testid="input-email"
-                required
-              />
+            <div className="text-xs text-muted-foreground text-center pt-2 space-y-1">
+              <p className="font-semibold">Demo Credentials:</p>
+              <p>Company: <code className="bg-muted px-1 rounded">itt001</code></p>
+              <p>Email: <code className="bg-muted px-1 rounded">desmond.bale@islandtraveltech.com</code></p>
+              <p>Password: <code className="bg-muted px-1 rounded">itt1235*</code></p>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                id="password"
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                data-testid="input-password"
-                required
-              />
-            </div>
-          </div>
-
-          {error && (
-            <Alert variant="destructive" data-testid="alert-error">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <Button 
-              type="submit" 
-              className="w-full bg-[#3C7DD9] hover:bg-[#2D5BA8] text-white"
-              disabled={isLoading}
-              data-testid="button-demo-login"
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In to Demo
-            </Button>
-            
-            <Button 
-              type="button" 
-              variant="outline"
-              className="w-full"
-              onClick={fillDemoCredentials}
-              disabled={isLoading}
-              data-testid="button-fill-demo"
-            >
-              Fill Demo Credentials
-            </Button>
-          </div>
-
-          <div className="text-xs text-muted-foreground text-center pt-2 space-y-1">
-            <p className="font-semibold">Demo Credentials:</p>
-            <p>Company: <code className="bg-muted px-1 rounded">itt001</code></p>
-            <p>Email: <code className="bg-muted px-1 rounded">desmond.bale@islandtraveltech.com</code></p>
-            <p>Password: <code className="bg-muted px-1 rounded">itt1235*</code></p>
-          </div>
-        </form>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

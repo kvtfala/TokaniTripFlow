@@ -154,6 +154,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return next();
   }
 
+  // Demo sessions don't support OIDC refresh - require explicit re-login
+  if (user.isDemo) {
+    res.status(401).json({ message: "Demo session expired. Please log in again." });
+    return;
+  }
+
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
     res.status(401).json({ message: "Unauthorized" });
