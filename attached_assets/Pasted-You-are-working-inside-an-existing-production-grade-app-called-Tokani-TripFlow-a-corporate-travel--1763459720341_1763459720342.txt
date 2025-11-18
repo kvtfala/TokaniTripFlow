@@ -1,0 +1,389 @@
+You are working inside an existing production-grade app called Tokani TripFlow – a corporate travel approval system.
+
+Over the last few weeks, this app has been significantly upgraded with:
+
+Replit Auth and real roles stored in PostgreSQL (employee, coordinator, manager, finance_admin, travel_admin, etc.)
+
+Role-based dashboards (main dashboard, My Trips, Travel Watch, Travel Desk)
+
+Tables for travel requests and trips (no more card grids)
+
+A Pacific business theme, branding, accessibility, and demo data for a large client
+
+Per diem logic, exports, and multiple pages already wired together
+
+Your job now is not to rewrite anything from scratch.
+Your job is to:
+
+Assess what already exists (models, statuses, flows, UI, APIs),
+
+Compare it to the desired travel request + RFQ + quote + final approval workflow below,
+
+Then implement the missing pieces in a way that complements and extends the current design, with minimal disruption.
+
+0. HOW YOU SHOULD WORK (IMPORTANT)
+
+Before making changes:
+
+Scan & understand:
+
+The existing TravelRequest (or equivalent) schema/model.
+
+Any existing status enums or constants.
+
+Existing approval / request flows.
+
+Existing React pages for:
+
+Request creation / New Request
+
+Coordinator view / dashboards
+
+Manager approval screens
+
+Travel Desk screens
+
+The auth and role logic (how current user & role are accessed).
+
+Summarize your findings (in comments or short notes):
+
+What statuses already exist and how they are used.
+
+What current flow looks like from:
+
+Coordinator → Manager → Travel Desk.
+
+Any existing quote/expense/booking structures that may overlap.
+
+Only then decide:
+
+Whether to add new statuses vs reusing existing ones.
+
+Where to plug in RFQ and quote logic in the UI.
+
+How to extend models without breaking old behaviours.
+
+Guiding principles:
+
+Do NOT rename or remove existing fields or statuses unless they are clearly unused and safe to refactor.
+
+Prefer extension over replacement:
+
+Add missing transitions, new components, and new endpoints that plug into the existing flow.
+
+Keep existing dashboards and role guards working.
+
+1. TARGET BUSINESS FLOW (WHAT WE WANT TO ACHIEVE)
+
+The system should support this two-stage approval with RFQs and quotes:
+
+Coordinator creates a travel request (New Request page).
+
+Coordinator submits it for manager pre-approval to go and get quotes.
+
+Manager approves pre-approval (or rejects/returns).
+
+After pre-approval, coordinator sends RFQs (request for quotes) to preferred vendors via email from within TripFlow.
+
+Vendors reply outside the system; coordinator logs each quote into TripFlow:
+
+Vendor name, quote value, currency, PNR, expiry, attachment of quote, etc.
+
+Once enough quotes are captured (as required by policy), coordinator submits the request for final approval with a selected quote and justification.
+
+Manager (or finance) reviews quotes, compares options, and gives final approval for booking.
+
+Once final approval is given, the Travel Desk processes/tickets the booking.
+
+The number of quotes required should be driven by policy/config and checked before final approval.
+
+2. STATUS MODEL – INTEGRATE WITH WHAT’S THERE
+
+First, inspect the existing status model.
+
+Find:
+
+Any status field on travel requests.
+
+Where statuses are defined (enums/constants).
+
+Where they’re used in dashboards/UI.
+
+Then:
+
+Map the existing statuses to the conceptual stages:
+
+Draft
+
+Submitted for pre-approval (to get quotes)
+
+Pre-approved for quotes
+
+RFQ sent / quotes collecting
+
+Quotes recorded
+
+Submitted for final approval
+
+Approved for booking
+
+Rejected/Returned
+
+If some of these concepts already exist under different names, reuse them instead of creating duplicates.
+
+Only add new statuses where truly necessary, and wire them into:
+
+Database schema
+
+API handlers
+
+UI labels (human-readable status text)
+
+Role-based dashboards filters (Dashboard, My Trips, Travel Desk, etc.)
+
+Also, implement or extend server-side guards so status transitions follow a valid path, but again respect whatever logic already exists and extend it rather than replacing it.
+
+3. RFQ & QUOTES – COMPLEMENT EXISTING STRUCTURE
+
+Before implementing, check:
+
+Whether there is already:
+
+Any quote-like model (e.g. costs, segments, supplier data).
+
+Any existing UI section for breakdowns (flights, accommodation, transfers, visa).
+
+If something similar exists, integrate with it instead of creating parallel structures.
+
+Then:
+
+3.1 Quote Model (Extend or Create)
+
+If no quote model exists, create a TravelQuote (or similar) that fits the current ORM/schema style:
+
+id
+
+requestId (FK to travel request)
+
+vendorName
+
+vendorEmail
+
+quoteValue
+
+currency (e.g. "FJD")
+
+pnr / reservationNumber
+
+quoteExpiry
+
+notes
+
+attachmentUrl / attachmentPath
+
+createdBy (user id)
+
+createdAt, updatedAt
+
+If there is a partially similar model, extend it to support the above fields.
+
+3.2 RFQ Sending
+
+On a travel request that is pre-approved for quotes (whatever that maps to in your current status model), add coordinator UI:
+
+Button like: “Send RFQ to Vendors”
+
+A modal to choose vendors (either from a list if one exists, or manual email entry).
+
+Backend:
+
+Add or extend an endpoint to send RFQs:
+
+Use the existing mail utility if present; otherwise, create a stub and comment TODO: wire mail sending.
+
+Save RFQ metadata on the request (e.g. rfqRecipients with vendor names/emails and sentAt).
+
+Important:
+Do not hard-code vendor behaviour in a way that contradicts any existing vendor/agent logic in the app. If there is already a vendor/agency concept, plug into that.
+
+3.3 Logging Quotes
+
+In the coordinator’s existing Request Detail UI, add a Quotes section (table) that:
+
+Lists all quotes for this request.
+
+Has an “Add Quote” button with a form for:
+
+Vendor, amount, currency, PNR, expiry, notes, and file upload.
+
+Backend:
+
+Add endpoint(s) to create/read quotes, using existing patterns (services/controllers).
+
+4. MINIMUM QUOTES BY POLICY – FIT INTO CURRENT POLICY/CONFIG
+
+Before implementing:
+
+Look for any existing:
+
+Policy, Settings, Company config models.
+
+Per-diem rules, thresholds, or similar business logic.
+
+If a policy/config system already exists, extend it to include something like:
+
+minQuotesDomestic
+
+minQuotesInternational
+
+Or just minQuotes for now.
+
+If no such system exists, create a small, extendable config that can later be tied to a full policy model.
+
+Then:
+
+On “Submit for Final Approval”, compute:
+
+Required number of quotes (from policy/config + trip type).
+
+Actual number of quotes attached.
+
+If insufficient:
+
+Return a clear error.
+
+Show a user-friendly message in the UI:
+
+“Policy requires at least X quotes; you currently have Y.”
+
+If an exception/override pattern already exists in the codebase, reuse it (for example for per-diem overrides, class overrides, etc.). If not, implement a simple override with:
+
+quoteRequirementOverridden (bool)
+
+quoteOverrideReason (string)
+
+and allow overrides only for specific roles (e.g. manager, finance_admin).
+
+5. FINAL APPROVAL UI – BUILD ON TOP OF CURRENT APPROVAL SCREEN
+
+There are already manager and finance dashboards and approval UIs. You must modify, not replace, them.
+
+Manager / Final Approver view should:
+
+Show request summary at the top (reusing existing components).
+
+Add a quotes table below it:
+
+Vendor, value, currency, expiry, PNR, link to attachment.
+
+Let coordinator select one quote as “selected” and capture a justification, especially if it’s not the cheapest.
+
+On the backend:
+
+The final approval endpoint should:
+
+Validate min quotes (or override).
+
+Ensure a selected quote exists.
+
+Record the selected quote and justification.
+
+Transition status to the correct “approved for booking” state that matches existing Travel Desk behaviour.
+
+Where there are existing “Approve/Reject” endpoints, extend them with this extra logic rather than creating duplicate parallel endpoints, unless it’s cleaner to split “pre-approval” and “final approval” explicitly.
+
+6. AUDIT TRAIL – ALIGN WITH EXISTING PATTERNS (IF ANY)
+
+Before building a new audit system:
+
+Check if there is already:
+
+Any logging / history / timeline model for requests.
+
+Any “Activity” component on the UI.
+
+If something exists, extend it with new actions; if not, create a RequestActivity style model with:
+
+requestId
+
+actorId, actorRole
+
+action (enum/string)
+
+fromStatus, toStatus
+
+details (JSON/text)
+
+createdAt
+
+Log key events:
+
+Submission for pre-approval
+
+Pre-approval decision
+
+RFQ sent (including recipients)
+
+Quote added
+
+Final submission
+
+Policy override
+
+Final approval/rejection
+
+Expose this in the request detail UI as a simple Activity/History section, reusing any existing timeline styles or table components where possible.
+
+7. ROLE & PERMISSION INTEGRATION
+
+Throughout all changes:
+
+Use whatever role checking pattern already exists (useAuth, user.role, guard components).
+
+Do not introduce new role names unless absolutely required.
+
+Make sure:
+
+Coordinators can:
+
+Create/edit requests up to certain statuses.
+
+Send RFQs.
+
+Add quotes.
+
+Submit for final approval.
+
+Managers/Finance can:
+
+Pre-approve.
+
+Override min quotes.
+
+Final approve/reject.
+
+Travel Desk sees only what they need to process after APPROVED_FOR_BOOKING.
+
+Mirror backend checks (auth middleware) with frontend visibility (hide/disable buttons).
+
+8. AT THE END – SUMMARIZE CHANGES
+
+After implementing, please:
+
+Add a short summary in comments or a small markdown file (e.g. FLOW_NOTES.md or extend existing docs) explaining:
+
+New/extended statuses.
+
+New/updated models (TravelQuote, RequestActivity, any policy config).
+
+New/updated endpoints.
+
+How the RFQ + quotes + final approval flow works step-by-step.
+
+Confirm that:
+
+Existing dashboards still load and filter correctly.
+
+Role-based dashboards still respect roles.
+
+No breaking change has been introduced to current per-diem and reporting functions.
