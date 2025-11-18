@@ -3,8 +3,9 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, MapPin, Clock, Download, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, MapPin, Clock, Download, Calendar, ArrowUpRight, ArrowDownRight, AlertTriangle } from "lucide-react";
 import { format, subDays, isWithinInterval, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths } from "date-fns";
 import type { TravelRequest } from "@shared/types";
 import Papa from "papaparse";
@@ -326,7 +327,7 @@ export default function Analytics() {
                 <Button variant="outline" size="sm" onClick={() => setDatePreset("6m")} data-testid="button-preset-6m">
                   Last 6 months
                 </Button>
-                <Button variant="primary" size="sm" onClick={exportAnalytics} className="gap-2" data-testid="button-export-analytics">
+                <Button variant="secondary" size="sm" onClick={exportAnalytics} className="gap-2" data-testid="button-export-analytics">
                   <Download className="w-4 h-4" />
                   Export CSV
                 </Button>
