@@ -50,7 +50,7 @@ export function AuthSplash({ onComplete, minDuration = 2000 }: AuthSplashProps) 
         <h1 className="text-3xl font-bold text-white mb-2">
           TOKANI TRIP FLOW
         </h1>
-        <p className="text-white font-medium text-base">
+        <p className="text-white/95 font-semibold text-base shadow-sm">
           Preparing your travel overview...
         </p>
       </div>
