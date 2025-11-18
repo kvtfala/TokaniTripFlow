@@ -1,14 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { UserRole } from "@shared/types";
-
-interface User {
-  id: string;
-  name: string;
-  role: UserRole;
-  department?: string;
-  email?: string;
-}
+import type { User } from "@shared/schema";
 
 interface RoleContextType {
   currentUser: User;
@@ -19,12 +12,18 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-// Fallback user when not authenticated
+// Fallback user when not authenticated (should rarely be used due to auth loading state)
 const DEFAULT_USER: User = {
-  id: "coord_001",
-  name: "Salote Ratuvuki",
-  role: "coordinator",
-  department: "HR",
+  id: "user-default-001",
+  email: "user@example.com",
+  firstName: "User",
+  lastName: null,
+  role: "employee",
+  profileImageUrl: null,
+  companyCode: null,
+  passwordHash: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 export function RoleProvider({ children }: { children: ReactNode }) {
@@ -45,8 +44,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   }, [authUser]);
 
   const hasRole = (roles: UserRole | UserRole[]) => {
+    if (!currentUser.role) return false;
     const roleArray = Array.isArray(roles) ? roles : [roles];
-    return roleArray.includes(currentUser.role);
+    return roleArray.includes(currentUser.role as UserRole);
   };
 
   return (

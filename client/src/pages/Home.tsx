@@ -65,19 +65,37 @@ export default function Home() {
 
   const stats = getStats();
 
+  // Null-safe greeting name extractor
+  const getGreetingName = () => {
+    if (!currentUser) return "there";
+    
+    // Prefer firstName if available
+    if (currentUser.firstName) return currentUser.firstName;
+    
+    // Fall back to email username if available
+    if (currentUser.email) {
+      const emailUsername = currentUser.email.split("@")[0];
+      if (emailUsername) return emailUsername;
+    }
+    
+    // Final fallback
+    return "there";
+  };
+
   // Role-aware greeting
   const getGreeting = () => {
-    const firstName = currentUser.name.split(" ")[0];
+    const name = getGreetingName();
     const roleGreetings: Record<string, string> = {
       employee: `Here's your travel overview`,
       coordinator: `Manage your team's travel requests`,
       manager: `Review and approve travel requests`,
-      finance: `Monitor travel budgets and expenses`,
-      travel_desk: `Process approved travel bookings`,
+      finance_admin: `Monitor travel budgets and expenses`,
+      travel_admin: `Process approved travel bookings`,
     };
+    const role = currentUser?.role || "employee";
     return {
-      title: `Bula, ${firstName}!`,
-      subtitle: roleGreetings[currentUser.role] || "Your trusted partner for travel approvals",
+      title: `Bula, ${name} 👋`,
+      subtitle: roleGreetings[role] || "Your trusted partner for travel approvals",
     };
   };
 
