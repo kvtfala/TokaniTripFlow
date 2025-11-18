@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Users, DollarSign, ExternalLink } from "lucide-react";
 import { TokaniLogo } from "@/components/brand/TokaniLogo";
+import { DemoLogin } from "@/components/DemoLogin";
 
 export default function Landing() {
   return (
@@ -56,24 +57,23 @@ export default function Landing() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a href="/api/login">
+              <a href="#demo">
                 <Button 
                   size="lg" 
                   className="text-lg px-10 py-7 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0 shadow-xl w-full sm:w-auto"
-                  data-testid="button-sign-in-hero"
+                  data-testid="button-try-demo"
                 >
-                  Sign In
+                  Try Demo
                 </Button>
               </a>
-              <a href="#about" className="w-full sm:w-auto">
+              <a href="/api/login">
                 <Button 
                   size="lg" 
                   variant="outline" 
                   className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full"
-                  data-testid="button-about-tokani"
+                  data-testid="button-sign-in-replit"
                 >
-                  <span>About Tokani</span>
-                  <ExternalLink className="w-4 h-4 ml-2" />
+                  Sign In with Replit
                 </Button>
               </a>
             </div>
@@ -85,6 +85,21 @@ export default function Landing() {
           <svg viewBox="0 0 1440 120" className="w-full h-12 md:h-20 fill-background">
             <path d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,58.7C960,64,1056,64,1152,58.7C1248,53,1344,43,1392,37.3L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
           </svg>
+        </div>
+      </section>
+
+      {/* Demo Login Section */}
+      <section id="demo" className="py-20 md:py-28 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Try The Demo
+            </h3>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Experience Tokani TripFlow with full manager access to all features and dashboards
+            </p>
+          </div>
+          <DemoLogin />
         </div>
       </section>
 
@@ -157,7 +172,7 @@ export default function Landing() {
                   Ready to transform your travel management?
                 </CardTitle>
                 <CardDescription className="text-base md:text-lg mb-8 text-muted-foreground">
-                  Join Pacific Foods Group and other leading organizations managing travel with confidence
+                  Join leading organizations managing travel with confidence
                 </CardDescription>
                 <a href="/api/login">
                   <Button 
@@ -186,7 +201,7 @@ export default function Landing() {
               </div>
             </div>
             <div className="text-center md:text-right">
-              <p className="text-white/90">Built for Pacific Foods Group Pte Ltd</p>
+              <p className="text-white/90">Demo Environment - Island Travel Technologies</p>
               <p className="text-sm text-white/60 mt-1">© 2025 Tokani TripFlow. All rights reserved.</p>
             </div>
           </div>

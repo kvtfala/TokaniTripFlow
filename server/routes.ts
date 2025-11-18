@@ -3,10 +3,14 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote } from "@shared/types";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupDemoAuth } from "./demoAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Replit Auth Integration - Setup authentication middleware
   await setupAuth(app);
+  
+  // Demo Login Integration - Setup demo login path (DEMO ONLY)
+  setupDemoAuth(app);
 
   // Replit Auth Integration - User endpoint  
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {

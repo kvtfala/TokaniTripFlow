@@ -58,19 +58,9 @@ async function upsertUser(
 ) {
   const email = claims["email"];
   
-  // Auto-assign roles based on email for test users
-  let role = "employee"; // default role
-  if (email === "coordinator@pacificfoods.fj") {
-    role = "coordinator";
-  } else if (email === "manager@pacificfoods.fj") {
-    role = "manager";
-  } else if (email === "finance@pacificfoods.fj") {
-    role = "finance_admin";
-  } else if (email === "traveldesk@pacificfoods.fj") {
-    role = "travel_admin";
-  } else if (email === "employee@pacificfoods.fj") {
-    role = "employee";
-  }
+  // Default role for Replit Auth users
+  // Demo login users use a separate path with pre-assigned roles
+  const role = "employee"; // default role for new Replit Auth users
   
   await storage.upsertUser({
     id: claims["sub"],
