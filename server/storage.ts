@@ -1,5 +1,5 @@
 import { type User, type UpsertUser } from "@shared/schema";
-import type { TravelRequest, DelegateAssignment, CostCentre, HistoryEntry } from "@shared/types";
+import type { TravelRequest, DelegateAssignment, CostCentre, HistoryEntry, TravelQuote, QuotePolicy } from "@shared/types";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -19,20 +19,35 @@ export interface IStorage {
   createDelegation(delegation: Omit<DelegateAssignment, "id">): Promise<DelegateAssignment>;
   updateDelegation(id: string, updates: Partial<DelegateAssignment>): Promise<DelegateAssignment | undefined>;
   deleteDelegation(id: string): Promise<boolean>;
+  
+  // Travel Quotes (RFQ Workflow)
+  getQuotes(requestId: string): Promise<TravelQuote[]>;
+  getQuote(id: string): Promise<TravelQuote | undefined>;
+  createQuote(quote: Omit<TravelQuote, "id" | "createdAt" | "updatedAt">): Promise<TravelQuote>;
+  updateQuote(id: string, updates: Partial<TravelQuote>): Promise<TravelQuote | undefined>;
+  deleteQuote(id: string): Promise<boolean>;
+  
+  // Quote Policies
+  getQuotePolicy(): Promise<QuotePolicy | undefined>;
+  updateQuotePolicy(policy: Partial<QuotePolicy>): Promise<QuotePolicy>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private travelRequests: Map<string, TravelRequest>;
   private delegations: Map<string, DelegateAssignment>;
+  private quotes: Map<string, TravelQuote>;
+  private quotePolicy: QuotePolicy | undefined;
 
   constructor() {
     this.users = new Map();
     this.travelRequests = new Map();
     this.delegations = new Map();
+    this.quotes = new Map();
     
     // Seed with sample data
     this.seedSampleData();
+    this.seedQuotePolicy();
   }
 
   private seedSampleData() {
@@ -519,6 +534,7 @@ export class MemStorage implements IStorage {
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
+        role: userData.role || "employee",
         createdAt: now,
         updatedAt: now,
       };
@@ -591,6 +607,87 @@ export class MemStorage implements IStorage {
 
   async deleteDelegation(id: string): Promise<boolean> {
     return this.delegations.delete(id);
+  }
+
+  // Travel Quotes (RFQ Workflow)
+  async getQuotes(requestId: string): Promise<TravelQuote[]> {
+    return Array.from(this.quotes.values()).filter(q => q.requestId === requestId);
+  }
+
+  async getQuote(id: string): Promise<TravelQuote | undefined> {
+    return this.quotes.get(id);
+  }
+
+  async createQuote(quote: Omit<TravelQuote, "id" | "createdAt" | "updatedAt">): Promise<TravelQuote> {
+    const id = `quote-${randomUUID().slice(0, 8)}`;
+    const now = new Date().toISOString();
+    const newQuote: TravelQuote = {
+      ...quote,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.quotes.set(id, newQuote);
+    return newQuote;
+  }
+
+  async updateQuote(id: string, updates: Partial<TravelQuote>): Promise<TravelQuote | undefined> {
+    const existing = this.quotes.get(id);
+    if (!existing) return undefined;
+
+    const updated: TravelQuote = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    this.quotes.set(id, updated);
+    return updated;
+  }
+
+  async deleteQuote(id: string): Promise<boolean> {
+    return this.quotes.delete(id);
+  }
+
+  // Quote Policies
+  async getQuotePolicy(): Promise<QuotePolicy | undefined> {
+    return this.quotePolicy;
+  }
+
+  async updateQuotePolicy(policyUpdates: Partial<QuotePolicy>): Promise<QuotePolicy> {
+    if (!this.quotePolicy) {
+      // Create default policy if none exists
+      this.quotePolicy = {
+        id: "policy-001",
+        name: "Default Quote Policy",
+        minQuotesDomestic: 2,
+        minQuotesInternational: 3,
+        allowOverride: true,
+        overrideRoles: ["manager", "finance_admin"],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    
+    this.quotePolicy = {
+      ...this.quotePolicy,
+      ...policyUpdates,
+      updatedAt: new Date().toISOString(),
+    };
+    return this.quotePolicy;
+  }
+
+  private seedQuotePolicy() {
+    // Seed default quote policy
+    this.quotePolicy = {
+      id: "policy-001",
+      name: "Pacific Foods Group Quote Policy",
+      minQuotesDomestic: 2,    // Domestic (within Fiji) requires 2 quotes
+      minQuotesInternational: 3, // International requires 3 quotes
+      allowOverride: true,
+      overrideRoles: ["manager", "finance_admin"],
+      createdAt: new Date("2025-01-01T00:00:00Z").toISOString(),
+      updatedAt: new Date("2025-01-01T00:00:00Z").toISOString(),
+    };
   }
 }
 

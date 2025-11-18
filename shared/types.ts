@@ -1,4 +1,12 @@
-export type RequestStatus = "draft" | "submitted" | "in_review" | "approved" | "rejected" | "ticketed";
+export type RequestStatus = 
+  | "draft" 
+  | "submitted"           // Initial submission
+  | "in_review"           // Approval in progress
+  | "awaiting_quotes"     // Pre-approved to collect vendor quotes
+  | "quotes_submitted"    // Coordinator submitted with quotes for final approval
+  | "approved"            // Final approval (ready for Travel Desk)
+  | "rejected" 
+  | "ticketed";           // Travel Desk processed
 export type VisaStatus = "OK" | "WARNING" | "ACTION";
 export type UserRole = "employee" | "coordinator" | "manager" | "finance" | "travel_desk" | "admin";
 export type FundingType = "advance" | "reimbursement";
@@ -86,6 +94,40 @@ export interface TravelRequest {
   
   // Cost breakdown
   costBreakdown?: TravelCostBreakdown;
+  
+  // RFQ and Quotes (Phase 3)
+  rfqRecipients?: Array<{vendorName: string; email: string; sentAt: string}>;
+  selectedQuoteId?: string;
+  quoteJustification?: string;
+  quoteRequirementOverridden?: boolean;
+  quoteOverrideReason?: string;
+}
+
+export interface TravelQuote {
+  id: string;
+  requestId: string;
+  vendorName: string;
+  vendorEmail: string;
+  quoteValue: number;
+  currency: string;  // e.g. "FJD", "USD", "AUD"
+  pnr?: string;  // Reservation/reference number
+  quoteExpiry?: string;  // ISO date string
+  notes?: string;
+  attachmentUrl?: string;
+  createdBy: string;  // User ID who logged this quote
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuotePolicy {
+  id: string;
+  name: string;
+  minQuotesDomestic: number;
+  minQuotesInternational: number;
+  allowOverride: boolean;
+  overrideRoles: string[];  // e.g. ["manager", "finance_admin"]
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ExpenseClaim {
