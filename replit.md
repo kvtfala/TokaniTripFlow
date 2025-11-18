@@ -27,8 +27,12 @@ Preferred communication style: Simple, everyday language.
 - **Data Model Highlights**: `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, with an adapter pattern for storage flexibility.
 
 ### Authentication and Authorization
-- **Current**: Mock authentication with hardcoded user IDs and role-based access control types (`UserRole`: employee, approver, finance_admin, travel_admin).
-- **Planned**: Session-based authentication (using `connect-pg-simple`), role-based permissions, and a delegation system.
+- **Current**: Mock authentication with RoleProvider context, hardcoded user IDs in backend routes (`currentManagerId = "manager"`), and basic role guards on dashboard pages.
+  * Role guards implemented on CoordinatorDashboard (coordinator/manager only) and ManagerDashboard (manager only)
+  * RequestDetail approval actions use hardcoded `currentManagerId = "manager"` matching backend validation
+  * TODO: Replace with session-based authentication and dynamic user ID from req.user
+- **Role Types**: `UserRole`: employee, coordinator, manager, finance_admin, travel_admin
+- **Planned Production**: Session-based authentication (using `connect-pg-simple`), JWT tokens, role-based permissions middleware, delegation system, and proper authorization checks on all API routes.
 
 ### Technical Implementations
 - `useMemo` for performance optimization, `data-testid` attributes for testing, comprehensive validation for date inputs.

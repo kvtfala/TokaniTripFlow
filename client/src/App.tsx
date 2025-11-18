@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { RoleProvider } from "@/contexts/RoleContext";
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +39,9 @@ import FinanceExport from "@/pages/FinanceExport";
 import Analytics from "@/pages/Analytics";
 import DelegateSettings from "@/pages/DelegateSettings";
 import TravelWatch from "@/pages/TravelWatch";
+import CoordinatorDashboard from "@/pages/CoordinatorDashboard";
+import ManagerDashboard from "@/pages/ManagerDashboard";
+import RequestDetail from "@/pages/RequestDetail";
 
 const menuItems = [
   {
@@ -146,7 +150,10 @@ function Router() {
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
             <Switch>
               <Route path="/" component={Dashboard} />
+              <Route path="/dashboard/coordinator" component={CoordinatorDashboard} />
+              <Route path="/dashboard/manager" component={ManagerDashboard} />
               <Route path="/request/new" component={NewRequest} />
+              <Route path="/requests/:id" component={RequestDetail} />
               <Route path="/approvals" component={Approvals} />
               <Route path="/my-trips" component={MyTrips} />
               <Route path="/finance" component={FinanceExport} />
@@ -166,10 +173,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <RoleProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </RoleProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
