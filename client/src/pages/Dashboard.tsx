@@ -6,20 +6,25 @@ import { Loader2 } from "lucide-react";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
-  const { currentUser } = useRole();
+  const { currentUser, isLoading } = useRole();
 
-  // Redirect to role-specific dashboard
+  // Redirect to role-specific dashboard (wait for auth to load)
   useEffect(() => {
+    // Don't redirect until we've loaded the actual authenticated user
+    if (isLoading) return;
+    
     if (currentUser.role === "coordinator") {
       setLocation("/dashboard/coordinator");
     } else if (currentUser.role === "manager") {
       setLocation("/dashboard/manager");
+    } else if (currentUser.role === "travel_desk") {
+      setLocation("/dashboard/traveldesk");
     } else {
       // Default to coordinator dashboard for demo
       // In production: show appropriate dashboard based on actual role
       setLocation("/dashboard/coordinator");
     }
-  }, [currentUser.role, setLocation]);
+  }, [currentUser.role, isLoading, setLocation]);
 
   // Show loading while redirecting
   return (

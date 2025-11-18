@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { UserRole } from "@shared/types";
 
 interface User {
@@ -6,17 +7,19 @@ interface User {
   name: string;
   role: UserRole;
   department?: string;
+  email?: string;
 }
 
 interface RoleContextType {
   currentUser: User;
   setCurrentUser: (user: User) => void;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
+  isLoading: boolean;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-// Mock user - in production this would come from authentication
+// Fallback user when not authenticated
 const DEFAULT_USER: User = {
   id: "coord_001",
   name: "Salote Ratuvuki",
@@ -26,6 +29,20 @@ const DEFAULT_USER: User = {
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User>(DEFAULT_USER);
+  
+  // Fetch authenticated user from Replit Auth
+  const { data: authUser, isLoading } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Update currentUser when auth data is available
+  useEffect(() => {
+    if (authUser) {
+      setCurrentUser(authUser);
+    }
+  }, [authUser]);
 
   const hasRole = (roles: UserRole | UserRole[]) => {
     const roleArray = Array.isArray(roles) ? roles : [roles];
@@ -33,7 +50,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <RoleContext.Provider value={{ currentUser, setCurrentUser, hasRole }}>
+    <RoleContext.Provider value={{ currentUser, setCurrentUser, hasRole, isLoading }}>
       {children}
     </RoleContext.Provider>
   );

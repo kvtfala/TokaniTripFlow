@@ -4,7 +4,6 @@ import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
@@ -23,6 +22,7 @@ import {
 import { format } from "date-fns";
 import type { TravelRequest, RequestStatus } from "@shared/types";
 import { useRole } from "@/contexts/RoleContext";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export default function CoordinatorDashboard() {
   const { currentUser } = useRole();
@@ -72,20 +72,6 @@ export default function CoordinatorDashboard() {
     pending: requests.filter(r => r.status === "submitted" || r.status === "in_review").length,
     approved: requests.filter(r => r.status === "approved").length,
     rejected: requests.filter(r => r.status === "rejected").length,
-  };
-
-  const getStatusBadge = (status: RequestStatus) => {
-    const variants: Record<RequestStatus, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-      draft: { variant: "secondary", label: "Draft" },
-      submitted: { variant: "outline", label: "Submitted" },
-      in_review: { variant: "default", label: "In Review" },
-      awaiting_quotes: { variant: "outline", label: "Awaiting Quotes" },
-      quotes_submitted: { variant: "default", label: "Quotes Submitted" },
-      approved: { variant: "default", label: "Approved" },
-      rejected: { variant: "destructive", label: "Rejected" },
-      ticketed: { variant: "default", label: "Ticketed" },
-    };
-    return variants[status];
   };
 
   return (
@@ -212,9 +198,7 @@ export default function CoordinatorDashboard() {
                               {request.position} · {request.department}
                             </p>
                           </div>
-                          <Badge {...getStatusBadge(request.status)} data-testid={`badge-status-${request.id}`}>
-                            {getStatusBadge(request.status).label}
-                          </Badge>
+                          <StatusBadge status={request.status} id={request.id} />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">

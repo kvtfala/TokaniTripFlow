@@ -4,9 +4,10 @@ import type { RequestStatus } from "@shared/types";
 interface StatusBadgeProps {
   status: RequestStatus;
   type?: "request" | "claim";
+  id?: string;
 }
 
-export function StatusBadge({ status, type = "request" }: StatusBadgeProps) {
+export function StatusBadge({ status, type = "request", id }: StatusBadgeProps) {
   const statusConfig: Record<RequestStatus, { label: string; className: string }> = {
     draft: {
       label: "Draft",
@@ -43,9 +44,10 @@ export function StatusBadge({ status, type = "request" }: StatusBadgeProps) {
   };
 
   const config = statusConfig[status] || statusConfig.draft;
+  const testId = id ? `badge-status-${id}` : `badge-status-${status}`;
 
   return (
-    <Badge className={config.className} data-testid={`badge-status-${status}`}>
+    <Badge className={config.className} data-testid={testId}>
       {config.label}
     </Badge>
   );
