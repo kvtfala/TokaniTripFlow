@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { TokaniLogo } from "@/components/brand/TokaniLogo";
 
 interface AuthSplashProps {
   onComplete: () => void;
@@ -8,7 +9,6 @@ interface AuthSplashProps {
 
 export function AuthSplash({ onComplete, minDuration = 2000 }: AuthSplashProps) {
   const [fadeOut, setFadeOut] = useState(false);
-  const logoUrl = "/tokani-logo.png";
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -37,12 +37,12 @@ export function AuthSplash({ onComplete, minDuration = 2000 }: AuthSplashProps) 
         </div>
         
         {/* Logo with scale animation */}
-        <img
-          src={logoUrl}
-          alt="Tokani TripFlow"
-          className="h-32 w-32 rounded-full shadow-2xl relative z-10 animate-scale-in"
-          data-testid="splash-logo"
-        />
+        <div className="relative z-10 animate-scale-in">
+          <TokaniLogo 
+            variant="icon" 
+            className="h-32 w-32 shadow-2xl"
+          />
+        </div>
       </div>
 
       {/* Text content */}
