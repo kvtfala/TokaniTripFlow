@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Users, DollarSign, ExternalLink } from "lucide-react";
-import logoUrl from "@assets/Red and Blue Logo for Tokani Trip Flow_1761166715410.png";
+import { TokaniLogo } from "@/components/brand/TokaniLogo";
 
 export default function Landing() {
   return (
@@ -13,18 +13,7 @@ export default function Landing() {
       <header className="bg-white dark:bg-card border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img 
-                src={logoUrl} 
-                alt="Tokani TripFlow Logo" 
-                className="h-12 w-12 rounded-lg shadow-sm" 
-                data-testid="img-logo"
-              />
-              <div className="flex flex-col">
-                <h1 className="text-xl font-bold text-foreground">Tokani TripFlow</h1>
-                <span className="text-xs text-muted-foreground">Enterprise Travel Management</span>
-              </div>
-            </div>
+            <TokaniLogo variant="full" />
             <a href="/api/login">
               <Button 
                 size="lg" 
@@ -52,12 +41,7 @@ export default function Landing() {
           <div className="max-w-4xl mx-auto text-center">
             {/* Logo */}
             <div className="flex justify-center mb-8">
-              <img 
-                src={logoUrl} 
-                alt="Tokani TripFlow" 
-                className="h-24 w-24 md:h-32 md:w-32 rounded-2xl shadow-2xl border-4 border-white/20" 
-                data-testid="img-hero-logo"
-              />
+              <TokaniLogo variant="icon" className="h-24 w-24 md:h-32 md:w-32 shadow-2xl border-4 border-white/20" data-testid="img-hero-logo" />
             </div>
 
             {/* Main Headline */}
@@ -195,12 +179,7 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <img 
-                src={logoUrl} 
-                alt="Tokani TripFlow" 
-                className="h-10 w-10 rounded-lg" 
-                data-testid="img-footer-logo"
-              />
+              <TokaniLogo variant="icon" className="h-10 w-10" data-testid="img-footer-logo" />
               <div className="flex flex-col">
                 <span className="font-bold text-lg">Tokani TripFlow</span>
                 <span className="text-sm text-white/70">Enterprise Travel Management</span>

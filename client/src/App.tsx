@@ -30,9 +30,10 @@ import {
   Menu,
   Map
 } from "lucide-react";
-import logoUrl from "@assets/Red and Blue Logo for Tokani Trip Flow_1761166715410.png";
+import { TokaniLogo } from "@/components/brand/TokaniLogo";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
+import Home from "@/pages/Home";
 import NewRequest from "@/pages/NewRequest";
 import Approvals from "@/pages/Approvals";
 import MyTrips from "@/pages/MyTrips";
@@ -46,11 +47,13 @@ import RequestDetail from "@/pages/RequestDetail";
 import TravelDeskDashboard from "@/pages/TravelDeskDashboard";
 import Landing from "@/pages/Landing";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthSplash } from "@/components/layout/AuthSplash";
+import { useState, useEffect } from "react";
 
 const menuItems = [
   {
-    title: "Dashboard",
-    subtitle: "Analytics",
+    title: "Home",
+    subtitle: "Overview",
     url: "/",
     icon: LayoutDashboard,
   },
@@ -132,13 +135,31 @@ function AppSidebar() {
 function Router() {
   // Replit Auth Integration - Show Landing page for logged-out users
   const { isAuthenticated, isLoading } = useAuth();
+  const [showSplash, setShowSplash] = useState(false);
+  const [hasSeenSplash, setHasSeenSplash] = useState(() => {
+    // Check sessionStorage to see if splash was shown this session
+    return sessionStorage.getItem("hasSeenSplash") === "true";
+  });
 
   const style = {
     "--sidebar-width": "11rem",
     "--sidebar-width-icon": "3rem",
   };
 
-  // Show landing page if not authenticated or still loading
+  // Show splash once after successful authentication
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && !hasSeenSplash) {
+      setShowSplash(true);
+    }
+  }, [isLoading, isAuthenticated, hasSeenSplash]);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    setHasSeenSplash(true);
+    sessionStorage.setItem("hasSeenSplash", "true");
+  };
+
+  // Show landing page if not authenticated or still loading auth
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
@@ -146,6 +167,11 @@ function Router() {
         <Route component={Landing} />
       </Switch>
     );
+  }
+
+  // Show splash screen after successful auth
+  if (showSplash) {
+    return <AuthSplash onComplete={handleSplashComplete} />;
   }
 
   // Show authenticated app
@@ -157,7 +183,7 @@ function Router() {
           <header className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-50 bg-primary text-primary-foreground shadow-sm">
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" className="text-primary-foreground" />
-              <img src={logoUrl} alt="Tokani TripFlow Logo" className="h-10 w-10 rounded-lg shadow-sm" data-testid="img-logo" />
+              <TokaniLogo variant="icon" className="h-10 w-10" />
               <div className="flex flex-col">
                 <h1 className="text-lg font-semibold">Bula! Tokani TripFlow</h1>
                 <span className="text-xs opacity-90">Your Trusted Partner for Travel Approvals</span>
@@ -174,7 +200,7 @@ function Router() {
           </header>
           <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background">
             <Switch>
-              <Route path="/" component={Dashboard} />
+              <Route path="/" component={Home} />
               <Route path="/dashboard/coordinator" component={CoordinatorDashboard} />
               <Route path="/dashboard/manager" component={ManagerDashboard} />
               <Route path="/dashboard/travel-desk" component={TravelDeskDashboard} />
