@@ -17,6 +17,7 @@ export const sessions = pgTable(
 
 // Replit Auth Integration - User storage table
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// Extended with company_code and password_hash for demo login support
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
@@ -24,6 +25,8 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role", { length: 50 }).default("employee"),
+  companyCode: varchar("company_code", { length: 20 }), // Demo company identifier (e.g., "itt001")
+  passwordHash: varchar("password_hash"), // For demo login only (not used by Replit Auth)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

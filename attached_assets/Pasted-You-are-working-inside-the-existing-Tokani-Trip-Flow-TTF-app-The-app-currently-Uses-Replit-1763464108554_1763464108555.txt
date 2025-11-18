@@ -1,0 +1,180 @@
+You are working inside the existing Tokani Trip Flow (TTF) app.
+
+The app currently:
+- Uses Replit Auth
+- Has demo data for “Pacific Foods Group”
+- Seeds several demo users (employee@pacificfoods.fj, coordinator@…, etc.)
+- Shows “Built for Pacific Foods …” on the landing page
+
+I now want to convert this into a **generic Tokani Trip Flow demo** for my own company:
+
+  Company Name: Island Travel Technologies
+  Company Code / Identifier: itt001
+
+  Demo Manager User:
+    Email: desmond.bale@islandtraveltech.com
+    Password: itt1235*
+    Role: manager (superuser – can do everything, see all role views)
+
+IMPORTANT: 
+- Do NOT break the current Replit Auth flow.
+- Instead, ADD a separate “Demo Login” path that uses email + password + company code, just for demo purposes.
+
+------------------------------------------------
+STEP 0 – UNDERSTAND CURRENT AUTH & DEMO DATA
+------------------------------------------------
+1. Locate:
+   - Replit Auth integration (e.g. `replitAuth.ts`, auth middleware, callbacks).
+   - The `users` table schema in PostgreSQL.
+   - Where demo users and demo company data are inserted (seeding scripts, SQL, or setup functions).
+   - Any code that auto-assigns roles based on email domains like `@pacificfoods.fj`.
+   - Any references to “Pacific Foods” in:
+     - Seed data
+     - Landing page copy
+     - Demo labels
+
+2. Do not remove Replit Auth. It should still be available for development/testing.
+   We are adding a **separate demo login** alongside it.
+
+------------------------------------------------
+STEP 1 – DEFINE THE DEMO COMPANY & SUPER-MANAGER
+------------------------------------------------
+1. If there is a Company/Tenant table already:
+   - Create or update an entry:
+     - name: "Island Travel Technologies"
+     - code: "itt001"
+     - status: "active"
+
+2. If there is no company/tenant model yet:
+   - Add a minimal `company_code` column to the `users` table (or an equivalent place) that can store "itt001".
+   - This is sufficient for the demo; keep it simple and backwards compatible.
+
+3. Clean up previous demo data:
+   - Delete or disable demo company entries and users that reference “Pacific Foods Group” or similar.
+   - Remove any logic that automatically assigns roles based on `@pacificfoods.fj`.
+   - Keep the roles themselves (`employee`, `coordinator`, `manager`, `finance_admin`, `travel_admin`), but drop the old seeded users.
+
+4. Seed a new demo user in PostgreSQL:
+
+   User:
+   - email: "desmond.bale@islandtraveltech.com"
+   - first_name: "Desmond"
+   - last_name: "Bale"
+   - role: "manager"
+   - company_code (or FK to company): "itt001"
+
+   Password:
+   - Store a securely hashed version of `itt1235*` using the same password hashing function used elsewhere in the app.
+   - Do NOT store the raw password; only in code comments indicate that this hash corresponds to `itt1235*` for demo purposes.
+
+5. Make sure this “manager” role has full access:
+   - Can view all dashboards (employee, coordinator, manager, finance_admin, travel_admin views).
+   - Can see/manage role descriptions for demo/testing.
+   - Essentially a “superuser” for the demo tenant.
+
+------------------------------------------------
+STEP 2 – ADD COMPANY CODE + EMAIL/PASSWORD DEMO SIGN-IN
+------------------------------------------------
+I want a **separate demo login** on the landing page that uses:
+
+  Company Code: itt001
+  Email: desmond.bale@islandtraveltech.com
+  Password: itt1235*
+
+Implementation:
+
+1. On the main landing/login page:
+   - Keep the existing “Sign in with Replit” button (for dev).
+   - ADD a separate block labelled “Demo Login” or “Sign in to Demo Account”.
+
+2. Demo Login form fields:
+   - Company Code (text input) – placeholder: "Company Code (e.g. itt001)"
+   - Email (text input) – placeholder: "Email"
+   - Password (password input) – placeholder: "Password"
+
+3. Validation behaviour:
+   - On submit, validate:
+     - company_code === "itt001"
+     - email === "desmond.bale@islandtraveltech.com"
+     - password === "itt1235*"
+   - If they match:
+     - Authenticate the user by:
+       - Finding the corresponding user in the database, or
+       - Creating a demo session object for that user using the same session mechanism used by Replit Auth.
+   - If they do NOT match:
+     - Show a simple error: "Invalid demo credentials or company code."
+
+4. Session behaviour:
+   - Once the demo login succeeds, treat the session exactly like any authenticated user:
+     - The Home/Welcome page and dashboards should see this user as:
+       - role: "manager"
+       - company_code: "itt001"
+   - Make sure this works even when Replit Auth is present; they should not conflict.
+
+5. Code structure:
+   - Reuse existing auth/session helpers where possible.
+   - Clearly comment that this path is for DEMO ONLY with hardcoded credentials.
+
+------------------------------------------------
+STEP 3 – UPDATE LANDING PAGE BRANDING (REMOVE PACIFIC FOODS)
+------------------------------------------------
+1. Remove all references to “Pacific Foods Group”, “Pacific Foods”, or any client-specific demo name from:
+   - Landing page hero text
+   - Footers or taglines
+   - Demo descriptions
+
+2. Replace with **generic** TTF copy, for example:
+   - Headline: "Tokani Trip Flow"
+   - Subtitle: "Your Trusted Partner For Travel Approvals."
+   - Subheading: "Built for organisations that need clear approvals, duty of care, and less email chasing."
+
+3. Where you previously showed something like “Built for Pacific Foods Group”:
+   - Replace with either:
+     - Nothing, OR
+     - A neutral line like: "Demo environment powered by Island Travel Technologies."
+
+4. Keep the new TTF logo and colour scheme intact (do not revert to any previous branding).
+
+------------------------------------------------
+STEP 4 – HOOK DEMO COMPANY INTO EXISTING DATA SEEDS
+------------------------------------------------
+1. Update demo/training data so it now uses Island Travel Technologies as the company context:
+
+   - Any demo departments, cost centres, or employees should belong to:
+     - company: "Island Travel Technologies"
+     - company_code: "itt001"
+
+2. If there are any sample travellers, trips, or approvals seeded:
+   - Replace references like "Pacific Foods Group Pte Ltd (PFG)" with:
+     - "Island Travel Technologies Demo" or just "Island Travel Technologies"
+   - Keep the structure (many trips, real-looking routes, etc.) but adjust names where needed.
+
+3. Ensure that when the demo manager logs in via:
+   - Demo Login (company code + email/password) OR
+   - Replit Auth (if we later map that email as a Replit user),
+   they see this ITT demo data, not any Pacific Foods data.
+
+------------------------------------------------
+STEP 5 – TEST & SUMMARISE
+------------------------------------------------
+After implementing:
+
+1. Confirm that:
+   - The old Pacific Foods-specific text is not visible anywhere on the landing page.
+   - The Replit Auth sign-in still works as before.
+   - The new Demo Login form appears with:
+     - Company Code, Email, and Password inputs.
+   - Using:
+     - Company Code: itt001
+     - Email: desmond.bale@islandtraveltech.com
+     - Password: itt1235*
+     logs me in as a manager/superuser.
+
+2. Confirm that the logged-in user:
+   - Has full manager access (can see all role dashboards).
+   - Sees demo data tied to Island Travel Technologies, not Pacific Foods.
+
+3. Provide a short summary:
+   - Files modified (auth, landing page, seeds).
+   - How the demo login path works.
+   - How to change the demo credentials later if needed.

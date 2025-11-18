@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   // Replit Auth Integration - User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Travel Requests
@@ -51,62 +52,30 @@ export class MemStorage implements IStorage {
   }
 
   private seedSampleData() {
-    // Seed test users for each role
-    // These are test credentials for development/testing
+    // Island Travel Technologies Demo User
+    // DEMO CREDENTIALS (for demo environment only):
+    //   Company Code: itt001
+    //   Email: desmond.bale@islandtraveltech.com
+    //   Password: itt1235* (stored as bcrypt hash below)
+    //   Role: manager (superuser - full access to all role views)
+    
     const testUsers: User[] = [
       {
-        id: "user-employee-001",
-        email: "employee@pacificfoods.fj",
-        firstName: "Mereani",
-        lastName: "Tukana",
-        profileImageUrl: null,
-        role: "employee",
-        createdAt: new Date("2025-01-01T00:00:00Z"),
-        updatedAt: new Date("2025-01-01T00:00:00Z"),
-      },
-      {
-        id: "user-coordinator-001",
-        email: "coordinator@pacificfoods.fj",
-        firstName: "Jone",
-        lastName: "Navuso",
-        profileImageUrl: null,
-        role: "coordinator",
-        createdAt: new Date("2025-01-01T00:00:00Z"),
-        updatedAt: new Date("2025-01-01T00:00:00Z"),
-      },
-      {
-        id: "user-manager-001",
-        email: "manager@pacificfoods.fj",
-        firstName: "Litiana",
-        lastName: "Ravouvou",
+        id: "user-itt-manager-001",
+        email: "desmond.bale@islandtraveltech.com",
+        firstName: "Desmond",
+        lastName: "Bale",
         profileImageUrl: null,
         role: "manager",
-        createdAt: new Date("2025-01-01T00:00:00Z"),
-        updatedAt: new Date("2025-01-01T00:00:00Z"),
-      },
-      {
-        id: "user-finance-001",
-        email: "finance@pacificfoods.fj",
-        firstName: "Ratu",
-        lastName: "Cakobau",
-        profileImageUrl: null,
-        role: "finance_admin",
-        createdAt: new Date("2025-01-01T00:00:00Z"),
-        updatedAt: new Date("2025-01-01T00:00:00Z"),
-      },
-      {
-        id: "user-travel-001",
-        email: "traveldesk@pacificfoods.fj",
-        firstName: "Setareki",
-        lastName: "Tukana",
-        profileImageUrl: null,
-        role: "travel_admin",
+        companyCode: "itt001",
+        // bcrypt hash of "itt1235*" - generated with: bcrypt.hash("itt1235*", 10)
+        passwordHash: "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS",
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
     ];
 
-    // Store test users
+    // Store demo user
     testUsers.forEach(user => this.users.set(user.id, user));
 
     // Pacific Foods Group Pte Ltd - Enterprise-scale demo dataset
@@ -510,6 +479,10 @@ export class MemStorage implements IStorage {
   // Replit Auth Integration - User operations
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
