@@ -14,7 +14,7 @@ export function TokaniLogo({ variant = "full", className, "data-testid": dataTes
       <img
         src={logoUrl}
         alt="Tokani TripFlow"
-        className={cn("rounded-full", className)}
+        className={cn("rounded-full object-cover", className)}
         data-testid={dataTestId || "img-logo-icon"}
       />
     );
@@ -34,7 +34,7 @@ export function TokaniLogo({ variant = "full", className, "data-testid": dataTes
       <img
         src={logoUrl}
         alt="Tokani TripFlow"
-        className="h-12 w-12 rounded-full shadow-md"
+        className="h-12 w-12 rounded-full shadow-md object-cover"
         data-testid="img-logo"
       />
       <div className="flex flex-col">

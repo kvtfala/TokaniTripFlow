@@ -1,0 +1,89 @@
+You are working in the Tokani Trip Flow (TTF) app.
+
+I’ve already asked you to:
+- use the new Tokani logo everywhere
+- add a post-login splash screen
+- create a Home / Welcome page instead of naming it "Dashboard"
+
+Now I want you to update the **copy** on the Home screen and splash using the exact wording below, in a role-aware way.
+
+1. Home page titles:
+   - Page label in sidebar: "Home"
+   - Main H1 on the page: "Trip Overview"
+   - Hero heading when user is known:
+     - "Bula, {{firstName}} 👋"
+   - If firstName is not available:
+     - "Bula & welcome to Tokani Trip Flow 👋"
+   - Hero subtitle (same for all roles):
+     - "Here’s a quick snapshot of your organisation’s travel activity today."
+
+2. Primary CTAs:
+   - Main primary button: "New Travel Request"
+   - Secondary buttons shown based on role:
+     - employee: "View My Trips"
+     - coordinator: "View Team Requests"
+     - manager: "View Approvals"
+     - finance_admin: "Open Finance Queue"
+     - travel_admin: "Open Ticketing Queue"
+
+3. Summary cards (top row):
+   - Card 1:
+     - Title: "Needs Your Attention"
+     - Helper text: "Click to jump straight into the queue."
+   - Card 2:
+     - Title: "Upcoming Trips"
+     - Helper text: "Approved trips starting in the next 30 days."
+     - Empty state text: "No upcoming trips yet. You can create a new request to get started."
+   - Card 3:
+     - Title: "Travellers On The Move"
+     - Helper text: "Active trips in progress right now."
+     - Empty state text: "No one is travelling right now."
+   - Card 4 (if a monthly spend card exists):
+     - Title: "Approved Travel This Month"
+     - Helper text: "Total value of trips approved in the current month."
+
+4. Left column section on Home:
+   - Section title: "Your Tasks"
+   - Subtitle (per role):
+     - employee: "Track your requests and see what needs your input."
+     - coordinator: "Manage team requests, RFQs, and follow-ups."
+     - manager: "Review and approve travel requests from your team."
+     - finance_admin: "Review high-value approvals and finance checks."
+     - travel_admin: "Process approved trips and keep itineraries moving."
+   - Table/list heading per role:
+     - employee: "My pending requests"
+     - coordinator: "Pending team requests"
+     - manager: "Requests waiting for your approval"
+     - finance_admin: "Finance approvals queue"
+     - travel_admin: "Ready for ticketing"
+   - When there is nothing in the list, show:
+     - "Nothing needs your attention right now."
+     - Secondary line: "You’re all caught up ✨."
+
+5. Right column section on Home:
+   - Default title: "Recent Activity"
+   - Subtitle: "The latest travel requests and updates you’re involved in."
+   - For employees only:
+     - Title: "My Recent Trips"
+     - Subtitle: "The latest requests you’ve submitted or had approved."
+   - Empty state text:
+     - "No recent activity yet. Once requests start moving, you’ll see updates here."
+
+6. Brand strip at bottom of Home (if there is a footer or info area):
+   - Title: "Powered by Tokani Trip Flow"
+   - Text: "Built for Pacific organisations that need clear approvals, better duty of care, and less email chasing."
+   - Optional link/button label: "Learn how Tokani works"
+
+7. Splash screen copy:
+   - Main text: "Loading Tokani Trip Flow…"
+   - Subtitle: choose one of these messages (or rotate them):
+     - "Preparing your travel overview…"
+     - "Fetching your latest trips and approvals…"
+     - "Bringing your travel policies to life…"
+
+Important:
+- Do NOT change any existing business logic or routing.
+- Only update text/labels and, where needed, minor layout tweaks for these new headings and sections.
+- Keep all role logic intact; just adjust what is displayed per role as described.
+
+When done, summarise which components you changed and show me where in the UI these new texts now appear.
