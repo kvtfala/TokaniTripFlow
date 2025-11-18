@@ -146,7 +146,16 @@ export default function MyTrips() {
           comparison = a.destination.city.localeCompare(b.destination.city);
           break;
         case "status":
-          const statusOrder = { draft: 1, submitted: 2, in_review: 3, approved: 4, rejected: 5 };
+          const statusOrder = { 
+            draft: 1, 
+            submitted: 2, 
+            in_review: 3, 
+            awaiting_quotes: 4,
+            quotes_submitted: 5,
+            approved: 6, 
+            rejected: 7,
+            ticketed: 8
+          };
           comparison = statusOrder[a.status] - statusOrder[b.status];
           break;
       }
@@ -172,9 +181,9 @@ export default function MyTrips() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto p-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">My Travel Requests</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">My Travel Requests</h1>
           <p className="text-muted-foreground">View and manage your travel history</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -197,30 +206,30 @@ export default function MyTrips() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">My Travel Requests</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">My Travel Requests</h1>
         <p className="text-muted-foreground">View and manage your travel history</p>
       </div>
 
-      {/* Statistics Cards - Pacific Theme */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-gradient-to-br from-[hsl(var(--lagoon-light))] to-[hsl(var(--lagoon-light))] dark:from-[hsl(var(--lagoon-light))] dark:to-[hsl(var(--lagoon-light))] border-[hsl(var(--lagoon))] border-opacity-20">
+        <Card>
           <CardContent className="p-6">
-            <div className="text-3xl font-bold text-[hsl(var(--lagoon))]" data-testid="stat-upcoming">{stats.upcoming}</div>
-            <div className="text-sm font-medium text-muted-foreground mt-1">Upcoming Trips</div>
+            <div className="text-3xl font-bold text-primary" data-testid="stat-upcoming">{stats.upcoming}</div>
+            <div className="text-sm font-semibold text-muted-foreground mt-1">Upcoming Trips</div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[hsl(var(--ocean-light))] to-[hsl(var(--ocean-light))] dark:from-[hsl(var(--ocean-light))] dark:to-[hsl(var(--ocean-light))] border-[hsl(var(--ocean))] border-opacity-20">
+        <Card>
           <CardContent className="p-6">
-            <div className="text-3xl font-bold text-[hsl(var(--ocean))]" data-testid="stat-past">{stats.past}</div>
-            <div className="text-sm font-medium text-muted-foreground mt-1">Past Trips</div>
+            <div className="text-3xl font-bold text-success" data-testid="stat-past">{stats.past}</div>
+            <div className="text-sm font-semibold text-muted-foreground mt-1">Past Trips</div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[hsl(var(--sand-light))] to-[hsl(var(--sand-light))] dark:from-[hsl(var(--sand-light))] dark:to-[hsl(var(--sand-light))] border-[hsl(var(--sand))] border-opacity-20">
+        <Card>
           <CardContent className="p-6">
-            <div className="text-3xl font-bold text-[hsl(var(--ocean))]" data-testid="stat-drafts">{stats.drafts}</div>
-            <div className="text-sm font-medium text-muted-foreground mt-1">In Progress</div>
+            <div className="text-3xl font-bold text-warning" data-testid="stat-drafts">{stats.drafts}</div>
+            <div className="text-sm font-semibold text-muted-foreground mt-1">In Progress</div>
           </CardContent>
         </Card>
       </div>
