@@ -25,18 +25,18 @@ import type { TravelRequest, RequestStatus } from "@shared/types";
 import { useRole } from "@/contexts/RoleContext";
 
 export default function CoordinatorDashboard() {
-  const { role } = useRole();
+  const { currentUser } = useRole();
   
   // TODO: Production - Add proper authentication and authorization
   // For demo: Allow coordinator and manager roles
-  if (role !== "coordinator" && role !== "manager") {
+  if (currentUser.role !== "coordinator" && currentUser.role !== "manager") {
     return (
       <div className="container mx-auto p-4 md:p-6">
         <Alert variant="destructive">
           <ShieldAlert className="w-5 h-5" />
           <AlertDescription className="ml-2">
             <strong>Access Denied:</strong> This page is only accessible to coordinators and managers. 
-            Your current role is "{role}".
+            Your current role is "{currentUser.role}".
           </AlertDescription>
         </Alert>
         <Link href="/">
@@ -79,6 +79,8 @@ export default function CoordinatorDashboard() {
       draft: { variant: "secondary", label: "Draft" },
       submitted: { variant: "outline", label: "Submitted" },
       in_review: { variant: "default", label: "In Review" },
+      awaiting_quotes: { variant: "outline", label: "Awaiting Quotes" },
+      quotes_submitted: { variant: "default", label: "Quotes Submitted" },
       approved: { variant: "default", label: "Approved" },
       rejected: { variant: "destructive", label: "Rejected" },
       ticketed: { variant: "default", label: "Ticketed" },
@@ -87,17 +89,17 @@ export default function CoordinatorDashboard() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Bula! Travel Coordinator</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Bula! Travel Coordinator</h1>
           <p className="text-muted-foreground mt-1">
             Manage travel requests for your team
           </p>
         </div>
         <Link href="/request/new">
-          <Button size="lg" data-testid="button-new-request">
+          <Button size="lg" variant="secondary" data-testid="button-new-request">
             <Plus className="w-5 h-5 mr-2" />
             New Travel Request
           </Button>
@@ -117,11 +119,11 @@ export default function CoordinatorDashboard() {
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Pending</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-500" />
+              <Clock className="w-5 h-5 text-warning" />
               <span className="text-3xl font-bold" data-testid="stat-pending">{stats.pending}</span>
             </div>
           </CardContent>
@@ -129,11 +131,11 @@ export default function CoordinatorDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Approved</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Approved</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <CheckCircle className="w-5 h-5 text-success" />
               <span className="text-3xl font-bold" data-testid="stat-approved">{stats.approved}</span>
             </div>
           </CardContent>
@@ -141,11 +143,11 @@ export default function CoordinatorDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Rejected</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Rejected</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-500" />
+              <XCircle className="w-5 h-5 text-destructive" />
               <span className="text-3xl font-bold" data-testid="stat-rejected">{stats.rejected}</span>
             </div>
           </CardContent>

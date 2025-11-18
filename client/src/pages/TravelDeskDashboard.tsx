@@ -29,8 +29,8 @@ export default function TravelDeskDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   
   // TODO: Production - Add proper authentication and authorization
-  // For demo: Allow travel_admin role only
-  if (!hasRole(["travel_admin", "manager"])) {
+  // For demo: Allow travel_desk role only
+  if (!hasRole(["travel_desk", "manager"])) {
     return (
       <div className="container mx-auto p-4 md:p-6">
         <Alert variant="destructive">
@@ -113,10 +113,10 @@ export default function TravelDeskDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold mb-2" data-testid="heading-travel-desk">
+        <h1 className="text-3xl font-bold tracking-tight mb-2" data-testid="heading-travel-desk">
           Bula! Travel Desk
         </h1>
         <p className="text-muted-foreground">

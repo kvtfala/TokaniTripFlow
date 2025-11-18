@@ -22,18 +22,18 @@ import type { TravelRequest } from "@shared/types";
 import { useRole } from "@/contexts/RoleContext";
 
 export default function ManagerDashboard() {
-  const { role } = useRole();
+  const { currentUser } = useRole();
   
   // TODO: Production - Add proper authentication and authorization
   // For demo: Simple role check against mock RoleContext
-  if (role !== "manager") {
+  if (currentUser.role !== "manager") {
     return (
       <div className="container mx-auto p-4 md:p-6">
         <Alert variant="destructive">
           <ShieldAlert className="w-5 h-5" />
           <AlertDescription className="ml-2">
             <strong>Access Denied:</strong> This page is only accessible to managers. 
-            Your current role is "{role}".
+            Your current role is "{currentUser.role}".
           </AlertDescription>
         </Alert>
         <Link href="/">
@@ -100,10 +100,10 @@ export default function ManagerDashboard() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Bula! Manager Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Bula! Manager Dashboard</h1>
         <p className="text-muted-foreground mt-1">
           Review and approve travel requests from your team
         </p>
@@ -123,11 +123,11 @@ export default function ManagerDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Approvals</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Pending Approvals</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-500" />
+              <Clock className="w-5 h-5 text-warning" />
               <span className="text-3xl font-bold" data-testid="stat-pending">{stats.pendingCount}</span>
             </div>
           </CardContent>
@@ -135,11 +135,11 @@ export default function ManagerDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Urgent</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Urgent</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <AlertTriangle className="w-5 h-5 text-destructive" />
               <span className="text-3xl font-bold" data-testid="stat-urgent">{stats.urgentCount}</span>
             </div>
           </CardContent>
@@ -147,11 +147,11 @@ export default function ManagerDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Out of Policy</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Out of Policy</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <AlertTriangle className="w-5 h-5 text-warning" />
               <span className="text-3xl font-bold" data-testid="stat-out-of-policy">{stats.outOfPolicyCount}</span>
             </div>
           </CardContent>
@@ -159,11 +159,11 @@ export default function ManagerDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Approved This Week</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Approved This Week</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
+              <TrendingUp className="w-5 h-5 text-success" />
               <span className="text-3xl font-bold" data-testid="stat-approved-week">{stats.approvedThisWeek}</span>
             </div>
           </CardContent>
