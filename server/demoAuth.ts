@@ -64,37 +64,46 @@ export function setupDemoAuth(app: Express) {
       });
     }
 
-    // Create session - demo sessions don't use OIDC tokens
-    // Set shorter expiry to require explicit re-login instead of refresh
-    const demoUser = {
-      isDemo: true, // Flag to indicate this is a demo session
+    // Create session matching OIDC structure but flagged as demo
+    // Demo sessions expire in 24 hours and require explicit re-login (no OIDC refresh)
+    const demoSession = {
+      isDemo: true, // Flag to indicate this is a demo session (skips OIDC refresh)
       claims: {
-        sub: user.id,
+        sub: user.id,           // User ID for storage lookups
         email: user.email,
         first_name: user.firstName,
         last_name: user.lastName,
         profile_image_url: user.profileImageUrl,
+        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
       },
-      // Demo sessions expire in 24 hours and require explicit re-login
       expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
     };
 
     // Establish session using Passport's login method
-    req.login(demoUser, (err) => {
+    req.login(demoSession, (err) => {
       if (err) {
+        console.error("Demo login session creation failed:", err);
         return res.status(500).json({ message: "Failed to create session" });
       }
 
-      return res.json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          companyCode: user.companyCode,
+      // Explicitly save the session to PostgreSQL before responding
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error("Demo login session save failed:", saveErr);
+          return res.status(500).json({ message: "Failed to save session" });
         }
+
+        return res.json({
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            companyCode: user.companyCode,
+          }
+        });
       });
     });
   });

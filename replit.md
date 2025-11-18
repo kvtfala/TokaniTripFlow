@@ -27,14 +27,29 @@ Preferred communication style: Simple, everyday language.
 - **Data Model Highlights**: `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, with an adapter pattern for storage flexibility.
 
 ### Authentication and Authorization
-- **Production-Ready Replit Auth**: Integrated OpenID Connect authentication with PostgreSQL session storage
+- **Dual Authentication System**: Supports both production Replit Auth and demo login for testing
+  
+- **Production Replit Auth**: Integrated OpenID Connect authentication with PostgreSQL session storage
   * **Identity Providers**: Google, GitHub, Email/Password via Replit Auth
-  * **Session Management**: PostgreSQL-backed sessions using `connect-pg-simple`, 1-week TTL, secure httpOnly cookies
+  * **Session Management**: PostgreSQL-backed sessions using `connect-pg-simple`, 1-week TTL with automatic OIDC token refresh
   * **Frontend Auth**: `useAuth()` hook with proper 401 handling, Landing page for logged-out users
-  * **Backend Protection**: `isAuthenticated` Express middleware with automatic token refresh
+  * **Backend Protection**: `isAuthenticated` Express middleware with automatic token refresh for OIDC sessions
   * **Database**: `users` table stores email, firstName, lastName, profileImageUrl; `sessions` table for session persistence
   * **Routes**: `/api/login` (starts auth flow), `/api/callback` (OIDC callback), `/api/logout` (session cleanup), `/api/auth/user` (current user)
-  * **Auth Flow**: Landing page → Sign In button → Replit OIDC → Callback → Session creation → Authenticated app
+  * **Auth Flow**: Landing page → Sign In with Replit → Replit OIDC → Callback → Session creation → Authenticated app
+
+- **Demo Login (Island Travel Technologies)**: Email/password authentication for demo environment
+  * **Implementation**: `server/demoAuth.ts` with bcrypt password verification, `shared/demoSchema.ts` for Zod validation
+  * **Frontend**: `DemoLogin` component using shadcn Form + react-hook-form + zodResolver + TanStack Query mutation
+  * **Session Management**: Demo sessions flagged with `isDemo: true`, 24-hour expiry, requires explicit re-login (no OIDC refresh)
+  * **Credentials**: 
+    - Company Code: `itt001`
+    - Email: `desmond.bale@islandtraveltech.com`
+    - Password: `itt1235*` (bcrypt hash stored in database)
+    - Role: `manager` (full access to all features and dashboards)
+  * **Route**: `/api/demo-login` (POST with companyCode, email, password)
+  * **Auth Flow**: Landing page → Try Demo → Fill credentials → Demo login → Session creation → Authenticated app
+  * **Security**: Bcrypt password hashing (10 rounds), session-based auth, no refresh token for demo sessions
 - **Current Auth State**: 
   * **RoleContext Update (Nov 2025)**: Refactored to fetch authenticated user from `/api/auth/user` via TanStack Query instead of hardcoded DEFAULT_USER
     - Uses `useQuery` with retry:false, 5-minute staleTime
@@ -46,14 +61,11 @@ Preferred communication style: Simple, everyday language.
   * RequestDetail approval actions use hardcoded `currentManagerId = "manager"` matching backend validation
   * TODO: Replace hardcoded IDs with dynamic `req.user` from session after Replit Auth testing
 - **Role Types**: `UserRole`: employee, coordinator, manager, finance_admin, travel_admin
-- **Test Credentials**: Five test users created in PostgreSQL database with auto-role assignment based on email
-  * **Employee**: employee@pacificfoods.fj (Mereani Tukana)
-  * **Coordinator**: coordinator@pacificfoods.fj (Jone Navuso)
-  * **Manager**: manager@pacificfoods.fj (Litiana Ravouvou)
-  * **Finance Admin**: finance@pacificfoods.fj (Ratu Cakobau)
-  * **Travel Desk**: traveldesk@pacificfoods.fj (Setareki Tukana)
-  * System automatically assigns roles when users sign in with these exact email addresses
-  * See TEST_CREDENTIALS.md for detailed testing instructions
+- **Demo Environment**: Island Travel Technologies (ITT) seed data
+  * Demo user: Desmond Bale (manager role, full access)
+  * 11 sample travel requests demonstrating all workflow stages
+  * Cost centres, departments, approval flows, quotes, and history entries
+  * All Pacific Foods Group references replaced with Island Travel Technologies (ITT-* employee numbers)
 - **Next Steps**: Migrate from hardcoded user IDs to session-based user identification, add role-based permissions middleware, implement delegation system, add proper authorization checks on all API routes.
 
 ### Technical Implementations
