@@ -1,114 +1,216 @@
+// Tokani TripFlow - Official Branded Landing Page
 // Replit Auth Integration - Landing page for logged-out users
-// Reference: blueprint:javascript_log_in_with_replit
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plane, Shield, TrendingUp, Users } from "lucide-react";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, Users, DollarSign, ExternalLink } from "lucide-react";
+import logoUrl from "@assets/Red and Blue Logo for Tokani Trip Flow_1761166715410.png";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Plane className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold">Tokani TripFlow</h1>
+      <header className="bg-white dark:bg-card border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img 
+                src={logoUrl} 
+                alt="Tokani TripFlow Logo" 
+                className="h-12 w-12 rounded-lg shadow-sm" 
+                data-testid="img-logo"
+              />
+              <div className="flex flex-col">
+                <h1 className="text-xl font-bold text-foreground">Tokani TripFlow</h1>
+                <span className="text-xs text-muted-foreground">Enterprise Travel Management</span>
+              </div>
+            </div>
+            <a href="/api/login">
+              <Button 
+                size="lg" 
+                variant="secondary"
+                className="bg-[#E94A64] hover:bg-[#C7344E] text-white border-0"
+                data-testid="button-login"
+              >
+                Sign In
+              </Button>
+            </a>
           </div>
-          <a href="/api/login">
-            <Button size="lg" data-testid="button-login">
-              Sign In
-            </Button>
-          </a>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="container mx-auto px-4 py-16 md:py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Bula! Welcome to TripFlow
-          </h2>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Streamline your travel management from request to reconciliation with enterprise-grade workflows built for the Pacific
-          </p>
-          <a href="/api/login">
-            <Button size="lg" className="text-lg px-8 py-6" data-testid="button-get-started">
-              Get Started
-            </Button>
-          </a>
-        </div>
+      {/* Hero Section with Full-Width Gradient */}
+      <section className="relative overflow-hidden">
+        {/* Gradient Background: Coral → Lagoon → Dusk */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#E94A64] via-[#3C7DD9] to-[#0F1A34]" />
+        
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
+        
+        {/* Hero Content */}
+        <div className="relative container mx-auto px-4 py-20 md:py-32">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <img 
+                src={logoUrl} 
+                alt="Tokani TripFlow" 
+                className="h-24 w-24 md:h-32 md:w-32 rounded-2xl shadow-2xl border-4 border-white/20" 
+                data-testid="img-hero-logo"
+              />
+            </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          <Card className="hover-elevate">
-            <CardHeader>
-              <Plane className="w-10 h-10 mb-4 text-primary" />
-              <CardTitle>Smart Workflows</CardTitle>
-              <CardDescription>
-                Multi-level approval flows with automated routing and delegation support
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            {/* Main Headline */}
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+              Tokani TripFlow
+            </h2>
 
-          <Card className="hover-elevate">
-            <CardHeader>
-              <TrendingUp className="w-10 h-10 mb-4 text-primary" />
-              <CardTitle>Cost Control</CardTitle>
-              <CardDescription>
-                Automated per-diem calculations, budget tracking, and expense reconciliation
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            {/* Tagline */}
+            <p className="text-xl md:text-3xl text-white/95 font-medium mb-12 leading-relaxed">
+              Your Trusted Partner For Travel Approvals.
+            </p>
 
-          <Card className="hover-elevate">
-            <CardHeader>
-              <Shield className="w-10 h-10 mb-4 text-primary" />
-              <CardTitle>Compliance Ready</CardTitle>
-              <CardDescription>
-                Visa checking, audit trails, and FRCS-friendly record keeping
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="hover-elevate">
-            <CardHeader>
-              <Users className="w-10 h-10 mb-4 text-primary" />
-              <CardTitle>Role-Based Access</CardTitle>
-              <CardDescription>
-                Coordinators, managers, and travel desk with personalized dashboards
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* CTA Section */}
-        <div className="mt-24 text-center">
-          <Card className="max-w-2xl mx-auto bg-primary text-primary-foreground">
-            <CardHeader>
-              <CardTitle className="text-2xl md:text-3xl">
-                Ready to transform your travel management?
-              </CardTitle>
-              <CardDescription className="text-primary-foreground/80 text-lg">
-                Sign in to access your personalized dashboard and start managing travel requests efficiently
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a href="/api/login">
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-6" data-testid="button-sign-in-cta">
-                  Sign In to Your Account
+                <Button 
+                  size="lg" 
+                  className="text-lg px-10 py-7 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0 shadow-xl w-full sm:w-auto"
+                  data-testid="button-sign-in-hero"
+                >
+                  Sign In
                 </Button>
               </a>
-            </CardContent>
-          </Card>
+              <a href="#about" className="w-full sm:w-auto">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full"
+                  data-testid="button-about-tokani"
+                >
+                  <span>About Tokani</span>
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
+              </a>
+            </div>
+          </div>
         </div>
-      </main>
+
+        {/* Wave Divider */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 120" className="w-full h-12 md:h-20 fill-background">
+            <path d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,58.7C960,64,1056,64,1152,58.7C1248,53,1344,43,1392,37.3L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+          </svg>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="about" className="py-20 md:py-28 bg-background">
+        <div className="container mx-auto px-4">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Built for the Pacific
+            </h3>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Streamline your travel management from request to reconciliation with enterprise-grade workflows
+            </p>
+          </div>
+
+          {/* 3-Column Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Feature 1: Travel Policy Automation */}
+            <Card className="hover-elevate border-2 transition-all duration-300">
+              <CardHeader className="text-center p-8">
+                <div className="flex justify-center mb-6">
+                  <div className="p-4 bg-[#3C7DD9]/10 rounded-xl">
+                    <CheckCircle2 className="w-12 h-12 text-[#3C7DD9]" />
+                  </div>
+                </div>
+                <CardTitle className="text-2xl mb-4">Travel Policy Automation</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Automated per-diem calculations, visa checks, and policy compliance ensure every request meets standards before approval
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* Feature 2: Multi-Level Approvals */}
+            <Card className="hover-elevate border-2 transition-all duration-300">
+              <CardHeader className="text-center p-8">
+                <div className="flex justify-center mb-6">
+                  <div className="p-4 bg-[#E94A64]/10 rounded-xl">
+                    <Users className="w-12 h-12 text-[#E94A64]" />
+                  </div>
+                </div>
+                <CardTitle className="text-2xl mb-4">Multi-Level Approvals</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Smart routing through coordinator, manager, and finance approvals with delegation support and audit trails
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* Feature 3: Corporate-Ready RFQ Flow */}
+            <Card className="hover-elevate border-2 transition-all duration-300">
+              <CardHeader className="text-center p-8">
+                <div className="flex justify-center mb-6">
+                  <div className="p-4 bg-[#0F1A34]/10 dark:bg-[#3C7DD9]/10 rounded-xl">
+                    <DollarSign className="w-12 h-12 text-[#0F1A34] dark:text-[#3C7DD9]" />
+                  </div>
+                </div>
+                <CardTitle className="text-2xl mb-4">Corporate-Ready RFQ Flow</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Request for Quote workflow with vendor management, quote comparison, and policy-based vendor selection
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+
+          {/* Additional Info */}
+          <div className="mt-20 text-center max-w-3xl mx-auto">
+            <Card className="bg-gradient-to-br from-[#3C7DD9]/5 to-[#E94A64]/5 border-2">
+              <CardHeader className="p-8 md:p-12">
+                <CardTitle className="text-2xl md:text-3xl mb-4 text-foreground">
+                  Ready to transform your travel management?
+                </CardTitle>
+                <CardDescription className="text-base md:text-lg mb-8 text-muted-foreground">
+                  Join Pacific Foods Group and other leading organizations managing travel with confidence
+                </CardDescription>
+                <a href="/api/login">
+                  <Button 
+                    size="lg" 
+                    className="text-lg px-10 py-6 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0"
+                    data-testid="button-get-started-cta"
+                  >
+                    Get Started Today
+                  </Button>
+                </a>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-16 border-t">
-        <div className="text-center text-muted-foreground">
-          <p>Tokani TripFlow - Enterprise Travel Management for the Pacific Region</p>
-          <p className="text-sm mt-2">Built for Pacific Foods Group Pte Ltd</p>
+      <footer className="bg-[#0F1A34] text-white py-12 border-t-4 border-[#3C7DD9]">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-3">
+              <img 
+                src={logoUrl} 
+                alt="Tokani TripFlow" 
+                className="h-10 w-10 rounded-lg" 
+                data-testid="img-footer-logo"
+              />
+              <div className="flex flex-col">
+                <span className="font-bold text-lg">Tokani TripFlow</span>
+                <span className="text-sm text-white/70">Enterprise Travel Management</span>
+              </div>
+            </div>
+            <div className="text-center md:text-right">
+              <p className="text-white/90">Built for Pacific Foods Group Pte Ltd</p>
+              <p className="text-sm text-white/60 mt-1">© 2025 Tokani TripFlow. All rights reserved.</p>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

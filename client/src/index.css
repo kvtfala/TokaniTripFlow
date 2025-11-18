@@ -19,80 +19,80 @@ html, body {
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Tokani TripFlow Brand Theme - Light Mode */
-  --background: 0 0% 98%;  /* Clean off-white background */
+  /* Tokani TripFlow Official Brand Theme - Light Mode */
+  --background: 29 47% 96%;  /* Soft Sand tint background */
 
-  --foreground: 210 35% 20%;  /* Dark blue-gray for high contrast (WCAG AA) */
+  --foreground: 218 54% 13%;  /* Dusk Navy for high contrast (WCAG AA) */
 
-  --border: 210 15% 88%;  /* Subtle blue-gray borders */
+  --border: 217 30% 88%;  /* Light Lagoon borders */
 
   --card: 0 0% 100%;  /* Pure white cards */
 
-  --card-foreground: 210 35% 20%;  /* Dark blue-gray text */
+  --card-foreground: 218 54% 13%;  /* Dusk Navy text */
 
-  --card-border: 210 12% 90%;  /* Subtle borders */
+  --card-border: 217 20% 90%;  /* Subtle Lagoon borders */
 
-  --sidebar: 210 20% 96%;  /* Light blue-gray sidebar */
+  --sidebar: 217 40% 96%;  /* Light Lagoon sidebar */
 
-  --sidebar-foreground: 210 35% 20%;  /* Dark blue-gray text */
+  --sidebar-foreground: 218 54% 13%;  /* Dusk Navy text */
 
-  --sidebar-border: 210 15% 88%;  /* Blue-gray borders */
+  --sidebar-border: 217 30% 88%;  /* Lagoon borders */
 
-  --sidebar-primary: 210 30% 37%;  /* Navy blue from logo (#3D5A80) */
+  --sidebar-primary: 217 63% 33%;  /* Deep Lagoon (#1E4E89) */
 
   --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
-  --sidebar-accent: 210 20% 92%;  /* Subtle blue-gray accent */
+  --sidebar-accent: 217 40% 92%;  /* Light Lagoon accent */
 
-  --sidebar-accent-foreground: 210 35% 20%;  /* Dark text */
+  --sidebar-accent-foreground: 218 54% 13%;  /* Dusk Navy text */
 
-  --sidebar-ring: 210 30% 37%;  /* Navy blue ring */
+  --sidebar-ring: 217 63% 33%;  /* Deep Lagoon ring */
 
   --popover: 0 0% 100%;  /* White popovers */
 
-  --popover-foreground: 210 35% 20%;  /* Dark blue-gray text */
+  --popover-foreground: 218 54% 13%;  /* Dusk Navy text */
 
-  --popover-border: 210 12% 90%;  /* Blue-gray border */
+  --popover-border: 217 20% 90%;  /* Lagoon border */
 
-  --primary: 210 30% 37%;  /* Navy blue from logo (#3D5A80) */
+  --primary: 217 65% 54%;  /* Lagoon Blue (#3C7DD9) */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 355 77% 45%;  /* Darker red for WCAG AA compliance (#CC2A39) */
+  --secondary: 349 78% 60%;  /* Coral Red (#E94A64) */
 
   --secondary-foreground: 0 0% 100%;  /* White text */
 
-  --muted: 210 20% 94%;  /* Light blue-gray muted */
+  --muted: 29 47% 94%;  /* Light Sand muted */
 
-  --muted-foreground: 210 20% 45%;  /* Medium blue-gray for labels */
+  --muted-foreground: 217 40% 45%;  /* Medium Lagoon for labels */
 
-  --accent: 210 20% 92%;  /* Blue-gray accent */
+  --accent: 29 47% 91%;  /* Soft Sand accent */
 
-  --accent-foreground: 210 35% 20%;  /* Dark text */
+  --accent-foreground: 218 54% 13%;  /* Dusk Navy text */
 
-  --destructive: 355 77% 45%;  /* Darker red for WCAG AA compliance (#CC2A39) */
+  --destructive: 349 60% 49%;  /* Deep Coral (#C7344E) */
 
   --destructive-foreground: 0 0% 100%;  /* White text */
 
-  --input: 210 15% 70%;  /* Medium blue-gray for inputs */
-  --ring: 210 30% 37%;  /* Navy blue ring for focus */
+  --input: 217 30% 70%;  /* Medium Lagoon for inputs */
+  --ring: 217 65% 54%;  /* Lagoon Blue ring for focus */
   
-  /* Chart colors - Red & Blue theme */
-  --chart-1: 210 30% 37%;  /* Navy blue */
-  --chart-2: 355 77% 58%;  /* Red */
-  --chart-3: 210 50% 55%;  /* Medium blue */
-  --chart-4: 355 60% 70%;  /* Light red */
-  --chart-5: 210 25% 60%;  /* Gray-blue */
+  /* Chart colors - TTF Official theme */
+  --chart-1: 217 65% 54%;  /* Lagoon Blue */
+  --chart-2: 349 78% 60%;  /* Coral Red */
+  --chart-3: 217 63% 33%;  /* Deep Lagoon */
+  --chart-4: 349 60% 49%;  /* Deep Coral */
+  --chart-5: 218 54% 13%;  /* Dusk Navy */
 
-  /* Pacific Theme Colors (Ocean/Coral/Lagoon/Sand) - WCAG 2.1 AA Compliant */
-  --ocean: 210 30% 37%;  /* Deep ocean blue (#3D5A80) - WCAG AA with white */
-  --ocean-light: 210 40% 92%;  /* Light ocean mist */
-  --coral: 355 77% 48%;  /* Darker coral (#CC2A39) - WCAG AA with white */
-  --coral-light: 8 100% 92%;  /* Light coral */
-  --lagoon: 185 100% 24%;  /* Darker turquoise (#007A88) - WCAG AA ≥4.5:1 with white */
-  --lagoon-light: 185 85% 92%;  /* Light lagoon */
-  --sand: 42 62% 85%;  /* Warm sand (#F4E4C1) */
-  --sand-light: 42 60% 95%;  /* Light sand */
+  /* TTF Official Brand Colors - WCAG 2.1 AA Compliant */
+  --ocean: 217 63% 33%;  /* Deep Lagoon (#1E4E89) - WCAG AA with white */
+  --ocean-light: 217 65% 92%;  /* Light Lagoon mist */
+  --coral: 349 78% 60%;  /* Coral Red (#E94A64) - WCAG AA */
+  --coral-light: 349 78% 92%;  /* Light Coral */
+  --lagoon: 217 65% 54%;  /* Lagoon Blue (#3C7DD9) - WCAG AA */
+  --lagoon-light: 217 65% 92%;  /* Light Lagoon */
+  --sand: 29 47% 91%;  /* Soft Sand (#F5E8DC) */
+  --sand-light: 29 47% 96%;  /* Extra Light Sand */
 
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, serif;
@@ -150,80 +150,80 @@ html, body {
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* Tokani TripFlow Brand Theme - Dark Mode */
-  --background: 210 30% 10%;  /* Deep navy background */
+  /* Tokani TripFlow Official Brand Theme - Dark Mode */
+  --background: 218 54% 10%;  /* Dusk Navy background */
 
-  --foreground: 0 0% 95%;  /* Off-white text */
+  --foreground: 29 47% 95%;  /* Soft Sand text */
 
-  --border: 210 20% 20%;  /* Dark blue-gray borders */
+  --border: 217 40% 20%;  /* Dark Lagoon borders */
 
-  --card: 210 25% 14%;  /* Slightly lighter navy cards */
+  --card: 218 54% 14%;  /* Slightly lighter Dusk cards */
 
-  --card-foreground: 0 0% 95%;  /* Off-white text */
+  --card-foreground: 29 47% 95%;  /* Soft Sand text */
 
-  --card-border: 210 20% 18%;  /* Dark blue-gray borders */
+  --card-border: 217 40% 18%;  /* Dark Lagoon borders */
 
-  --sidebar: 210 28% 12%;  /* Deep navy sidebar */
+  --sidebar: 218 54% 12%;  /* Deep Dusk sidebar */
 
-  --sidebar-foreground: 0 0% 95%;  /* Off-white text */
+  --sidebar-foreground: 29 47% 95%;  /* Soft Sand text */
 
-  --sidebar-border: 210 20% 16%;  /* Dark borders */
+  --sidebar-border: 217 40% 16%;  /* Dark Lagoon borders */
 
-  --sidebar-primary: 210 50% 55%;  /* Brighter blue for dark bg */
+  --sidebar-primary: 217 65% 60%;  /* Bright Lagoon for dark bg */
 
   --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
-  --sidebar-accent: 210 18% 18%;  /* Dark navy accent */
+  --sidebar-accent: 218 40% 18%;  /* Dark Dusk accent */
 
-  --sidebar-accent-foreground: 0 0% 95%;  /* Off-white text */
+  --sidebar-accent-foreground: 29 47% 95%;  /* Soft Sand text */
 
-  --sidebar-ring: 210 50% 55%;  /* Bright blue ring */
+  --sidebar-ring: 217 65% 60%;  /* Bright Lagoon ring */
 
-  --popover: 210 25% 16%;  /* Dark navy popover */
+  --popover: 218 54% 16%;  /* Dark Dusk popover */
 
-  --popover-foreground: 0 0% 95%;  /* Off-white text */
+  --popover-foreground: 29 47% 95%;  /* Soft Sand text */
 
-  --popover-border: 210 20% 20%;  /* Dark border */
+  --popover-border: 217 40% 20%;  /* Dark Lagoon border */
 
-  --primary: 210 50% 55%;  /* Brighter navy blue for visibility */
+  --primary: 217 65% 60%;  /* Bright Lagoon Blue for visibility */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 355 77% 48%;  /* Darker red for WCAG AA in dark mode */
+  --secondary: 349 78% 65%;  /* Bright Coral for dark mode */
 
   --secondary-foreground: 0 0% 100%;  /* White text */
 
-  --muted: 210 16% 18%;  /* Dark navy muted */
+  --muted: 218 40% 18%;  /* Dark Dusk muted */
 
-  --muted-foreground: 0 0% 70%;  /* Light gray for labels */
+  --muted-foreground: 29 30% 70%;  /* Light Sand for labels */
 
-  --accent: 210 16% 18%;  /* Dark navy accent */
+  --accent: 218 40% 18%;  /* Dark Dusk accent */
 
-  --accent-foreground: 0 0% 95%;  /* Off-white text */
+  --accent-foreground: 29 47% 95%;  /* Soft Sand text */
 
-  --destructive: 355 77% 48%;  /* Darker red for WCAG AA in dark mode */
+  --destructive: 349 60% 55%;  /* Deep Coral for dark mode */
 
   --destructive-foreground: 0 0% 100%;  /* White text */
 
-  --input: 210 20% 30%;  /* Medium blue-gray inputs */
-  --ring: 210 50% 55%;  /* Bright blue ring */
+  --input: 217 40% 30%;  /* Medium Lagoon inputs */
+  --ring: 217 65% 60%;  /* Bright Lagoon ring */
   
-  /* Chart colors - Red & Blue theme (dark mode) */
-  --chart-1: 210 50% 55%;  /* Bright navy blue */
-  --chart-2: 355 70% 65%;  /* Bright red */
-  --chart-3: 210 40% 65%;  /* Medium blue */
-  --chart-4: 355 60% 75%;  /* Light red */
-  --chart-5: 210 30% 50%;  /* Gray-blue */
+  /* Chart colors - TTF Official theme (dark mode) */
+  --chart-1: 217 65% 60%;  /* Bright Lagoon Blue */
+  --chart-2: 349 78% 65%;  /* Bright Coral Red */
+  --chart-3: 217 63% 40%;  /* Medium Lagoon */
+  --chart-4: 349 60% 55%;  /* Deep Coral */
+  --chart-5: 218 54% 25%;  /* Medium Dusk */
 
-  /* Pacific Theme Colors - Dark Mode - WCAG 2.1 AA Compliant */
-  --ocean: 210 50% 65%;  /* Bright ocean for badge text - WCAG AA ≥4.5:1 over dark bg */
-  --ocean-light: 210 30% 20%;  /* Dark ocean accent for badge backgrounds */
-  --coral: 355 77% 45%;  /* Darker coral for buttons - WCAG AA ≥4.5:1 with white */
-  --coral-light: 8 70% 25%;  /* Dark coral accent for badge backgrounds */
-  --lagoon: 185 100% 25%;  /* Darker lagoon for buttons - WCAG AA ≥4.5:1 with white */
-  --lagoon-light: 185 60% 22%;  /* Dark lagoon accent for badge backgrounds */
-  --sand: 42 40% 60%;  /* Desaturated sand */
-  --sand-light: 42 30% 18%;  /* Dark sand accent for badge backgrounds */
+  /* TTF Official Brand Colors - Dark Mode - WCAG 2.1 AA Compliant */
+  --ocean: 217 65% 65%;  /* Bright Lagoon for badge text - WCAG AA */
+  --ocean-light: 217 50% 20%;  /* Dark Lagoon accent for badge backgrounds */
+  --coral: 349 78% 65%;  /* Bright Coral for buttons - WCAG AA */
+  --coral-light: 349 60% 25%;  /* Dark Coral accent for badge backgrounds */
+  --lagoon: 217 65% 60%;  /* Lagoon Blue - WCAG AA */
+  --lagoon-light: 217 50% 22%;  /* Dark Lagoon accent for badge backgrounds */
+  --sand: 29 40% 60%;  /* Desaturated Sand */
+  --sand-light: 29 30% 18%;  /* Dark Sand accent for badge backgrounds */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.20);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);
