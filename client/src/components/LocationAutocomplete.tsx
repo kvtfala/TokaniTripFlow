@@ -13,14 +13,36 @@ interface LocationAutocompleteProps {
 
 // todo: remove mock functionality - replace with actual Amadeus API
 const mockLocations: Location[] = [
+  // Fiji
   { code: "NAN", city: "Nadi", country: "Fiji" },
   { code: "SUV", city: "Suva", country: "Fiji" },
-  { code: "SYD", city: "Sydney", country: "Australia" },
-  { code: "MEL", city: "Melbourne", country: "Australia" },
+  
+  // Pacific
   { code: "AKL", city: "Auckland", country: "New Zealand" },
   { code: "WLG", city: "Wellington", country: "New Zealand" },
+  { code: "CHC", city: "Christchurch", country: "New Zealand" },
+  { code: "SYD", city: "Sydney", country: "Australia" },
+  { code: "MEL", city: "Melbourne", country: "Australia" },
   { code: "BNE", city: "Brisbane", country: "Australia" },
+  { code: "PER", city: "Perth", country: "Australia" },
+  
+  // Asia-Pacific Business Hubs
+  { code: "SIN", city: "Singapore", country: "Singapore" },
+  { code: "HKG", city: "Hong Kong", country: "Hong Kong" },
+  { code: "NRT", city: "Tokyo", country: "Japan" },
+  { code: "ICN", city: "Seoul", country: "South Korea" },
+  { code: "BKK", city: "Bangkok", country: "Thailand" },
+  { code: "MNL", city: "Manila", country: "Philippines" },
+  
+  // Europe
+  { code: "LHR", city: "London", country: "United Kingdom" },
+  { code: "CDG", city: "Paris", country: "France" },
+  { code: "FRA", city: "Frankfurt", country: "Germany" },
+  
+  // North America
   { code: "LAX", city: "Los Angeles", country: "United States" },
+  { code: "SFO", city: "San Francisco", country: "United States" },
+  { code: "YVR", city: "Vancouver", country: "Canada" },
 ];
 
 export function LocationAutocomplete({ value, onSelect, placeholder = "Select destination..." }: LocationAutocompleteProps) {
