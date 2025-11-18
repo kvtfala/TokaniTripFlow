@@ -31,6 +31,10 @@ localPort = 37503
 externalPort = 4200
 
 [[ports]]
+localPort = 39337
+externalPort = 6800
+
+[[ports]]
 localPort = 39613
 externalPort = 5000
 
@@ -71,4 +75,4 @@ args = "npm run dev"
 waitForPort = 5000
 
 [agent]
-integrations = ["javascript_mem_db:1.0.0", "javascript_object_storage:1.0.0", "firebase_barebones_javascript:1.0.0"]
+integrations = ["javascript_mem_db:1.0.0", "javascript_object_storage:1.0.0", "firebase_barebones_javascript:1.0.0", "javascript_log_in_with_replit:1.0.0"]

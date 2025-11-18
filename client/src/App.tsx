@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
 import { RoleProvider } from "@/contexts/RoleContext";
 import {
   Sidebar,
@@ -42,6 +43,9 @@ import TravelWatch from "@/pages/TravelWatch";
 import CoordinatorDashboard from "@/pages/CoordinatorDashboard";
 import ManagerDashboard from "@/pages/ManagerDashboard";
 import RequestDetail from "@/pages/RequestDetail";
+import TravelDeskDashboard from "@/pages/TravelDeskDashboard";
+import Landing from "@/pages/Landing";
+import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   {
@@ -126,11 +130,25 @@ function AppSidebar() {
 }
 
 function Router() {
+  // Replit Auth Integration - Show Landing page for logged-out users
+  const { isAuthenticated, isLoading } = useAuth();
+
   const style = {
     "--sidebar-width": "13rem",
     "--sidebar-width-icon": "3rem",
   };
 
+  // Show landing page if not authenticated or still loading
+  if (isLoading || !isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route component={Landing} />
+      </Switch>
+    );
+  }
+
+  // Show authenticated app
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
@@ -145,13 +163,21 @@ function Router() {
                 <span className="text-sm text-white/90">Your Trusted Partner for Travel Approvals</span>
               </div>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <a href="/api/logout">
+                <Button variant="ghost" size="sm" data-testid="button-logout">
+                  Sign Out
+                </Button>
+              </a>
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/dashboard/coordinator" component={CoordinatorDashboard} />
               <Route path="/dashboard/manager" component={ManagerDashboard} />
+              <Route path="/dashboard/travel-desk" component={TravelDeskDashboard} />
               <Route path="/request/new" component={NewRequest} />
               <Route path="/requests/:id" component={RequestDetail} />
               <Route path="/approvals" component={Approvals} />

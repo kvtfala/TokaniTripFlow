@@ -1,11 +1,11 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { type User, type UpsertUser } from "@shared/schema";
 import type { TravelRequest, DelegateAssignment, CostCentre, HistoryEntry } from "@shared/types";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // Replit Auth Integration - User operations
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Travel Requests
   getTravelRequests(): Promise<TravelRequest[]>;
@@ -434,21 +434,39 @@ export class MemStorage implements IStorage {
     sampleRequests.forEach(req => this.travelRequests.set(req.id, req));
   }
 
+  // Replit Auth Integration - User operations
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existing = userData.id ? this.users.get(userData.id) : undefined;
+    const now = new Date();
+    
+    if (existing) {
+      // Update existing user
+      const updated: User = {
+        ...existing,
+        ...userData,
+        updatedAt: now,
+      };
+      this.users.set(existing.id, updated);
+      return updated;
+    } else {
+      // Create new user
+      const id = userData.id || randomUUID();
+      const newUser: User = {
+        id,
+        email: userData.email || null,
+        firstName: userData.firstName || null,
+        lastName: userData.lastName || null,
+        profileImageUrl: userData.profileImageUrl || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.users.set(id, newUser);
+      return newUser;
+    }
   }
 
   async getTravelRequests(): Promise<TravelRequest[]> {
