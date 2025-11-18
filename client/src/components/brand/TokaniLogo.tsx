@@ -7,7 +7,7 @@ interface TokaniLogoProps {
 }
 
 export function TokaniLogo({ variant = "full", className, "data-testid": dataTestId }: TokaniLogoProps) {
-  const logoUrl = "/tokani-logo.png";
+  const logoUrl = "/tokani-logo.svg";
   
   if (variant === "icon") {
     return (
