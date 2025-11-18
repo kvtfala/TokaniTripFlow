@@ -1,0 +1,170 @@
+You are working inside my existing app **Tokani Trip Flow (TTF)**.
+
+I will upload a NEW official TTF logo file.  
+Your job is to:
+
+1. Replace ALL previous logos with this new one.
+2. Add a branded loading screen that appears **after sign-in**.
+3. Land the user on a creative **Home / Welcome screen** (NOT called “Dashboard”) that summarises key info.
+4. Keep all existing behaviour, auth logic, and dashboards working exactly as they do now.
+
+Do NOT rewrite major flows. Work with what is already there.
+
+------------------------------------------------
+STEP 0 – DISCOVER WHAT EXISTS
+------------------------------------------------
+1. Search the codebase for:
+   - Existing logo image files (e.g. in `public/`, `/assets/`, `/components/Logo`, etc.).
+   - Any `<Logo />` components or image tags that show the old logo.
+   - The main layout / shell used after login (sidebar + header + content).
+   - The current “Dashboard” or main page the user sees after sign-in.
+   - The Replit Auth callback/sign-in flow (where we redirect after login).
+
+2. Before changing anything, understand:
+   - Which route or component is the current post-login landing page.
+   - How navigation is structured (e.g. `/`, `/dashboard`, `/my-trips`, `/travel-watch`, etc.).
+   - Where global providers/layouts are defined.
+
+------------------------------------------------
+STEP 1 – USE THE NEW LOGO EVERYWHERE
+------------------------------------------------
+1. Assume I have uploaded the new logo as something like:
+   `public/tokani-tripflow-logo.png`
+   (If a different filename/path already exists, standardise on ONE path and use it everywhere.)
+
+2. Create or update a single **Logo component**, for example:
+   `components/brand/TokaniLogo.tsx`
+
+   This component should:
+   - Import and render the new circular logo.
+   - Support a `variant` prop, e.g. `"full"` and `"icon"`:
+     - `full`: full logo with text.
+     - `icon`: small circular badge only (for sidebar/compact spaces).
+
+3. Replace all previous hard-coded logo usages with this component:
+   - Landing/login page
+   - App header
+   - Sidebar
+   - Any “Dashboard” or welcome pages
+   - Any other brand spots (e.g. footer)
+
+Make sure there is now **exactly one** canonical logo path and component used across the app.
+
+------------------------------------------------
+STEP 2 – POST-LOGIN LOADING SCREEN (SPLASH)
+------------------------------------------------
+Goal: After a successful sign-in, show a short **loading/splash screen** with the new logo, then transition to the Home/Welcome page.
+
+Behaviour requirements:
+- Only show this splash **once per login** (not on every route change).
+- Display for either:
+  - A minimum duration of ~1.5–2 seconds, OR
+  - Until essential user/session data is loaded (whichever is later).
+- Include a subtle animation (e.g. fade-in + scale or pulsing glow) around the logo.
+
+Implementation outline:
+1. Create a component, e.g. `components/layout/AuthSplash.tsx` that:
+   - Centers the new logo on a branded background (dark navy / gradient).
+   - Shows a small text like: “Loading Tokani Trip Flow…” or “Preparing your travel overview…”.
+   - Uses a simple animation (CSS keyframes or a small motion library if already used).
+2. Use a small piece of state (e.g. in a global auth/layout provider or context) to track:
+   - `hasSeenSplashThisSession: boolean`
+3. In the **post-auth layout** (the component that wraps all signed-in pages):
+   - If user is authenticated **and** `hasSeenSplashThisSession` is false:
+     - Show `AuthSplash` for ~1.5–2 seconds, then set `hasSeenSplashThisSession = true` and render the real app.
+   - If `hasSeenSplashThisSession` is true:
+     - Render the app immediately with no splash.
+
+Make sure this logic does NOT interfere with existing auth guards or role-based routing.
+
+------------------------------------------------
+STEP 3 – HOME / WELCOME SCREEN (NOT CALLED “DASHBOARD”)
+------------------------------------------------
+Goal: Replace the feeling of “generic dashboard” with a more personal **Home/Welcome** page, while reusing all existing stats/tables where possible.
+
+1. Identify the current “Dashboard” page:
+   - The page that currently shows after login, with tables, stats, etc.
+2. Do NOT break its logic; instead:
+   - Either reuse its data/components inside a new layout, OR
+   - Wrap it with a new “Home” shell.
+
+Changes to make:
+
+A. ROUTING & LABELS
+- Keep the underlying route the same if it’s currently `/` or `/dashboard`, BUT:
+  - Change any visible labels from “Dashboard” to something like:
+    - “Home”
+    - “Trip Overview”
+    - “Welcome”
+- Update sidebar/nav text so the first item says e.g. **“Home”** instead of “Dashboard”.
+
+B. HOME/WELCOME LAYOUT
+Create a **Home** layout that includes:
+
+Top section:
+- Left:
+  - Greeting: “Bula, [FirstName]” or “Welcome back, [FirstName]”
+  - One-line description, e.g.:
+    - “Here’s a snapshot of your organisation’s travel activity.”
+- Right:
+  - New logo in a smaller size or in a hero-style badge.
+
+Main content (reuse existing components where possible):
+- A summary row with 3–4 key cards, such as:
+  - Upcoming trips (count)
+  - Requests awaiting your approval (role-aware)
+  - Active travellers (from Travel Watch)
+  - This month’s approved travel cost (if data available)
+- Below that, two main panels:
+  - Left: “Requests needing your attention”
+    - For managers: approvals queue
+    - For coordinators: drafts or pending RFQs
+    - For employees: their own submitted requests
+  - Right: “My Trips” or “Recent activity”
+    - Recent requests by the logged-in user
+    - Or role-based recent actions
+
+Role awareness:
+- Use the existing `role`/auth logic so Home automatically changes emphasis:
+  - Employee: focus on “My Trips” and “Create New Request”
+  - Coordinator: focus on “Team Requests”, “In-Progress RFQs”
+  - Manager/Finance: focus on “Approvals Needed”
+  - Travel Desk: focus on “Ready for Ticketing”
+
+C. ACTIONS / CTA
+- Include a prominent Coral primary button near the top:
+  - e.g. “New Travel Request”
+- Include secondary CTAs depending on role:
+  - “View My Trips”
+  - “Go to Travel Watch”
+  - “View Approvals”
+
+D. NAMING
+- Do NOT call this page “Dashboard” anywhere in the UI.
+- Use titles like:
+  - “Home”
+  - “Trip Overview”
+  - “Welcome to Tokani Trip Flow”
+
+------------------------------------------------
+STEP 4 – PRESERVE EXISTING FUNCTIONALITY
+------------------------------------------------
+Non-negotiables:
+- Do NOT remove or break:
+  - Replit Auth flow
+  - Role-based dashboards and permissions
+  - Travel Watch, My Trips, Travel Desk views
+  - Existing tables, exports, and per diem logic
+- Reuse existing components and hooks wherever possible instead of reinventing them.
+
+After making changes:
+1. Confirm that each test user role (employee, coordinator, manager, finance_admin, travel_admin) can:
+   - Log in successfully
+   - See the new splash screen once
+   - Land on the new Home/Welcome page
+   - Navigate to their existing pages as before
+2. Provide a short summary of:
+   - Files changed
+   - New components created (`Logo`, `AuthSplash`, `Home`/Welcome adjustments)
+   - How the splash + Home logic works.
+

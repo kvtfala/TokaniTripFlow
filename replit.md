@@ -35,7 +35,13 @@ Preferred communication style: Simple, everyday language.
   * **Database**: `users` table stores email, firstName, lastName, profileImageUrl; `sessions` table for session persistence
   * **Routes**: `/api/login` (starts auth flow), `/api/callback` (OIDC callback), `/api/logout` (session cleanup), `/api/auth/user` (current user)
   * **Auth Flow**: Landing page → Sign In button → Replit OIDC → Callback → Session creation → Authenticated app
-- **Current Auth State**: Hardcoded user IDs still used in backend routes (`currentManagerId = "manager"`) for role-based testing
+- **Current Auth State**: 
+  * **RoleContext Update (Nov 2025)**: Refactored to fetch authenticated user from `/api/auth/user` via TanStack Query instead of hardcoded DEFAULT_USER
+    - Uses `useQuery` with retry:false, 5-minute staleTime
+    - Exposes `isLoading` state to prevent race conditions during auth checks
+    - Dashboard routing now waits for `isLoading:false` before redirecting based on role
+  * **Testing Environment Limitation**: `/api/auth/user` returns 401 during OIDC test flows, causing "Unexpected end of JSON input" errors. This is a test-only limitation; production Replit Auth works correctly
+  * **Backend Routes**: Hardcoded user IDs still used in backend routes (`currentManagerId = "manager"`) for role-based testing
   * Role guards implemented on CoordinatorDashboard (coordinator/manager only), ManagerDashboard (manager only), TravelDeskDashboard (travel_admin/manager only)
   * RequestDetail approval actions use hardcoded `currentManagerId = "manager"` matching backend validation
   * TODO: Replace hardcoded IDs with dynamic `req.user` from session after Replit Auth testing
