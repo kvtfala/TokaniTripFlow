@@ -56,12 +56,29 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  const email = claims["email"];
+  
+  // Auto-assign roles based on email for test users
+  let role = "employee"; // default role
+  if (email === "coordinator@pacificfoods.fj") {
+    role = "coordinator";
+  } else if (email === "manager@pacificfoods.fj") {
+    role = "manager";
+  } else if (email === "finance@pacificfoods.fj") {
+    role = "finance_admin";
+  } else if (email === "traveldesk@pacificfoods.fj") {
+    role = "travel_admin";
+  } else if (email === "employee@pacificfoods.fj") {
+    role = "employee";
+  }
+  
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    role: role,
   });
 }
 

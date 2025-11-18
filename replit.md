@@ -40,6 +40,14 @@ Preferred communication style: Simple, everyday language.
   * RequestDetail approval actions use hardcoded `currentManagerId = "manager"` matching backend validation
   * TODO: Replace hardcoded IDs with dynamic `req.user` from session after Replit Auth testing
 - **Role Types**: `UserRole`: employee, coordinator, manager, finance_admin, travel_admin
+- **Test Credentials**: Five test users created in PostgreSQL database with auto-role assignment based on email
+  * **Employee**: employee@pacificfoods.fj (Mereani Tukana)
+  * **Coordinator**: coordinator@pacificfoods.fj (Jone Navuso)
+  * **Manager**: manager@pacificfoods.fj (Litiana Ravouvou)
+  * **Finance Admin**: finance@pacificfoods.fj (Ratu Cakobau)
+  * **Travel Desk**: traveldesk@pacificfoods.fj (Setareki Tukana)
+  * System automatically assigns roles when users sign in with these exact email addresses
+  * See TEST_CREDENTIALS.md for detailed testing instructions
 - **Next Steps**: Migrate from hardcoded user IDs to session-based user identification, add role-based permissions middleware, implement delegation system, add proper authorization checks on all API routes.
 
 ### Technical Implementations

@@ -36,6 +36,64 @@ export class MemStorage implements IStorage {
   }
 
   private seedSampleData() {
+    // Seed test users for each role
+    // These are test credentials for development/testing
+    const testUsers: User[] = [
+      {
+        id: "user-employee-001",
+        email: "employee@pacificfoods.fj",
+        firstName: "Mereani",
+        lastName: "Tukana",
+        profileImageUrl: null,
+        role: "employee",
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-coordinator-001",
+        email: "coordinator@pacificfoods.fj",
+        firstName: "Jone",
+        lastName: "Navuso",
+        profileImageUrl: null,
+        role: "coordinator",
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-manager-001",
+        email: "manager@pacificfoods.fj",
+        firstName: "Litiana",
+        lastName: "Ravouvou",
+        profileImageUrl: null,
+        role: "manager",
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-finance-001",
+        email: "finance@pacificfoods.fj",
+        firstName: "Ratu",
+        lastName: "Cakobau",
+        profileImageUrl: null,
+        role: "finance_admin",
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-travel-001",
+        email: "traveldesk@pacificfoods.fj",
+        firstName: "Setareki",
+        lastName: "Tukana",
+        profileImageUrl: null,
+        role: "travel_admin",
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+    ];
+
+    // Store test users
+    testUsers.forEach(user => this.users.set(user.id, user));
+
     // Pacific Foods Group Pte Ltd - Enterprise-scale demo dataset
     // 1,759 annual trips | FJD 2.82M annual spend | 480 employees | 11 departments
     const sampleRequests: TravelRequest[] = [
