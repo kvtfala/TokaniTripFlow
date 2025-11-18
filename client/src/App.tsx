@@ -134,7 +134,7 @@ function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   const style = {
-    "--sidebar-width": "13rem",
+    "--sidebar-width": "11rem",
     "--sidebar-width-icon": "3rem",
   };
 
@@ -154,25 +154,25 @@ function Router() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between px-4 py-3 border-b sticky top-0 z-50 bg-primary text-white">
+          <header className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-50 bg-primary text-primary-foreground shadow-sm">
             <div className="flex items-center gap-3">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <img src={logoUrl} alt="Tokani TripFlow Logo" className="h-12 w-12 rounded-full" data-testid="img-logo" />
+              <SidebarTrigger data-testid="button-sidebar-toggle" className="text-primary-foreground" />
+              <img src={logoUrl} alt="Tokani TripFlow Logo" className="h-10 w-10 rounded-lg shadow-sm" data-testid="img-logo" />
               <div className="flex flex-col">
                 <h1 className="text-lg font-semibold">Bula! Tokani TripFlow</h1>
-                <span className="text-sm text-white/90">Your Trusted Partner for Travel Approvals</span>
+                <span className="text-xs opacity-90">Your Trusted Partner for Travel Approvals</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <a href="/api/logout">
-                <Button variant="ghost" size="sm" data-testid="button-logout">
+                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-white/10" data-testid="button-logout">
                   Sign Out
                 </Button>
               </a>
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background">
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/dashboard/coordinator" component={CoordinatorDashboard} />

@@ -74,6 +74,18 @@ html, body {
 
   --destructive-foreground: 0 0% 100%;  /* White text */
 
+  --success: 158 58% 52%;  /* Success Green (#36C08A) - WCAG AA */
+
+  --success-foreground: 0 0% 100%;  /* White text */
+
+  --warning: 43 95% 58%;  /* Warning Amber (#F7B731) - WCAG AA */
+
+  --warning-foreground: 218 54% 13%;  /* Dusk Navy text for contrast */
+
+  --neutral: 218 20% 68%;  /* Neutral Grey (#A7B0C3) */
+
+  --neutral-foreground: 218 54% 13%;  /* Dusk Navy text */
+
   --input: 217 30% 70%;  /* Medium Lagoon for inputs */
   --ring: 217 65% 54%;  /* Lagoon Blue ring for focus */
   
@@ -204,6 +216,18 @@ html, body {
   --destructive: 349 60% 55%;  /* Deep Coral for dark mode */
 
   --destructive-foreground: 0 0% 100%;  /* White text */
+
+  --success: 158 58% 55%;  /* Success Green (brighter for dark mode) */
+
+  --success-foreground: 0 0% 100%;  /* White text */
+
+  --warning: 43 95% 62%;  /* Warning Amber (brighter for dark mode) */
+
+  --warning-foreground: 218 54% 10%;  /* Very dark text */
+
+  --neutral: 218 20% 70%;  /* Neutral Grey (brighter for dark mode) */
+
+  --neutral-foreground: 0 0% 100%;  /* White text */
 
   --input: 217 40% 30%;  /* Medium Lagoon inputs */
   --ring: 217 65% 60%;  /* Bright Lagoon ring */
