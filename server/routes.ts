@@ -106,6 +106,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // FINAL APPROVAL: quotes_submitted → approved
       if (request.status === "quotes_submitted") {
+        // CRITICAL: Validate current user is authorized to approve at this stage
+        const expectedApproverId = request.approverFlow[request.approverIndex];
+        
+        if (currentApproverId !== expectedApproverId) {
+          return res.status(403).json({ 
+            error: "Not authorized to approve this request at this stage" 
+          });
+        }
+
         // Validate quotes exist and meet requirements
         const quotes = await storage.getQuotes(req.params.id);
         const policy = await storage.getQuotePolicy();
@@ -129,8 +138,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           note: comment || "Final approval with selected quote",
         };
 
+        // Advance to next approver or mark as approved
+        const newIndex = request.approverIndex + 1;
+        const isFinalApproval = newIndex >= request.approverFlow.length;
+
         const updates: Partial<TravelRequest> = {
-          status: "approved",
+          approverIndex: newIndex,
+          status: isFinalApproval ? "approved" : "in_review",
           history: [...request.history, historyEntry],
           reviewedAt: new Date().toISOString(),
           reviewedBy: currentApproverId,
