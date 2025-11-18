@@ -27,12 +27,20 @@ Preferred communication style: Simple, everyday language.
 - **Data Model Highlights**: `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, with an adapter pattern for storage flexibility.
 
 ### Authentication and Authorization
-- **Current**: Mock authentication with RoleProvider context, hardcoded user IDs in backend routes (`currentManagerId = "manager"`), and basic role guards on dashboard pages.
-  * Role guards implemented on CoordinatorDashboard (coordinator/manager only) and ManagerDashboard (manager only)
+- **Production-Ready Replit Auth**: Integrated OpenID Connect authentication with PostgreSQL session storage
+  * **Identity Providers**: Google, GitHub, Email/Password via Replit Auth
+  * **Session Management**: PostgreSQL-backed sessions using `connect-pg-simple`, 1-week TTL, secure httpOnly cookies
+  * **Frontend Auth**: `useAuth()` hook with proper 401 handling, Landing page for logged-out users
+  * **Backend Protection**: `isAuthenticated` Express middleware with automatic token refresh
+  * **Database**: `users` table stores email, firstName, lastName, profileImageUrl; `sessions` table for session persistence
+  * **Routes**: `/api/login` (starts auth flow), `/api/callback` (OIDC callback), `/api/logout` (session cleanup), `/api/auth/user` (current user)
+  * **Auth Flow**: Landing page → Sign In button → Replit OIDC → Callback → Session creation → Authenticated app
+- **Current Auth State**: Hardcoded user IDs still used in backend routes (`currentManagerId = "manager"`) for role-based testing
+  * Role guards implemented on CoordinatorDashboard (coordinator/manager only), ManagerDashboard (manager only), TravelDeskDashboard (travel_admin/manager only)
   * RequestDetail approval actions use hardcoded `currentManagerId = "manager"` matching backend validation
-  * TODO: Replace with session-based authentication and dynamic user ID from req.user
+  * TODO: Replace hardcoded IDs with dynamic `req.user` from session after Replit Auth testing
 - **Role Types**: `UserRole`: employee, coordinator, manager, finance_admin, travel_admin
-- **Planned Production**: Session-based authentication (using `connect-pg-simple`), JWT tokens, role-based permissions middleware, delegation system, and proper authorization checks on all API routes.
+- **Next Steps**: Migrate from hardcoded user IDs to session-based user identification, add role-based permissions middleware, implement delegation system, add proper authorization checks on all API routes.
 
 ### Technical Implementations
 - `useMemo` for performance optimization, `data-testid` attributes for testing, comprehensive validation for date inputs.
