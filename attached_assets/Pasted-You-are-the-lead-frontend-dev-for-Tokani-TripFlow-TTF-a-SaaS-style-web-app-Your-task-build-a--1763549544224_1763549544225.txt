@@ -1,0 +1,112 @@
+You are the lead frontend dev for Tokani TripFlow (TTF), a SaaS-style web app. Your task: build a **single-page landing page** for TTF using the existing tech stack in this Replit project.
+
+Follow these rules:
+
+- Detect the stack and fit in naturally:
+  - If this is a React/Next.js/Vite app → create a main LandingPage component and any small subcomponents as needed.
+  - If this is plain HTML/CSS/JS → create a single `index.html` and related CSS.
+  - If there is an existing layout or design system, use it (Tailwind, CSS modules, etc.). Otherwise, create a clean, modern layout with simple, readable CSS.
+
+- Overall goals:
+  - One-page, scrollable landing page.
+  - Looks like a serious SaaS product (clean, modern, not overdesigned).
+  - Mobile-friendly and responsive.
+  - Easy for a non-dev founder to tweak text later.
+
+- Structure the page in this order (each as a clearly separated section with good spacing and headings):
+
+  1. **Hero Section**
+     - Product name: “Tokani TripFlow”
+     - Tagline: “Your Trusted Partner for Travel Approvals.”
+     - Short subtext: Fiji-built travel approval & vendor workflow platform for corporates, NGOs, statutory bodies, and government ministries.
+     - Primary CTA buttons:
+       - “View the Live Demo”
+       - “Request a Discussion”
+     - Optional: small supporting text under CTAs like “Demo-only, pre-pilot version.”
+
+  2. **Mission Section**
+     Heading: “Transforming How Fiji Manages Official Travel”
+     Body: Tokani TripFlow’s mission is to modernise and simplify how organisations in Fiji plan, approve, and manage official travel — delivering transparency, speed, cost savings, and strong governance at every step.
+
+  3. **Problems Section (Fiji Context)**
+     Heading: “The Problems Organisations Face Today”
+     Bullet/column list of issues such as:
+     - Slow, manual approval flows (email, WhatsApp, spreadsheets)
+     - Lost or incomplete RFQs
+     - No procurement oversight or consistent vendor process
+     - Budget leakage from inconsistent pricing
+     - Miscommunication between traveller, manager, and coordinator
+     - No central audit trail or visibility for finance
+     Keep it short and sharp.
+
+  4. **Solution / Key Features Section**
+     Heading: “How Tokani TripFlow Helps”
+     Show feature cards or a clean grid. Include at least:
+     - Structured Travel Request Workflow (Traveller → Manager → Coordinator → Vendor → Finance)
+     - Vendor Management with Approved Vendor Lists (Flights, Hotels, Transfers, Visa services)
+     - RFQ Automation built for Fiji vendors (travel agents for flights only, separate RFQs for hotels/transfers/visa)
+     - Upload & Compare Quotes (cheapest, highest, variance, estimated savings)
+     - Finance & Audit Transparency (timeline, approvals, attachments)
+     - Per Diem & Total Trip Cost Summary
+     Make each feature 1–3 short sentences max.
+
+  5. **Screenshots / UI Preview Section**
+     Heading: “See Tokani TripFlow in Action”
+     For now, use placeholder boxes or images and label them (e.g. “Dashboard”, “Request Details”, “Vendor RFQs”, “Quotes & Approvals”). Make it visually clear that real screenshots can be dropped in later.
+
+  6. **Objectives Section**
+     Heading: “What Tokani TripFlow Aims to Achieve”
+     Use 4–6 concise points:
+     - Faster, cleaner approvals
+     - Stronger procurement governance and vendor control
+     - Empowered travel coordinators with a central workspace
+     - Reduced travel costs through quote comparison and savings visibility
+     - Clear finance visibility and audit-ready records
+     - A system tailored to Fiji’s travel ecosystem
+
+  7. **Roadmap Section**
+     Heading: “Roadmap: From Demo to Full Launch”
+     Use three columns or stacked blocks:
+
+     - **Phase 1 – Working Demo (Completed)**
+       Core workflow from request to approval, RFQs, vendor management, quote upload & comparison, audit timeline, basic dashboards.
+
+     - **Phase 2 – Production Build (Funding Required)**
+       Secure authentication and role-based access, multi-tenant support, database hardening, email template engine, UI/UX upgrade, offline support, performance optimisation.
+
+     - **Phase 3 – Full Launch**
+       Amadeus/GDS integration, mobile app, travel policy automation, advanced analytics & reporting, integrations, enterprise onboarding & training.
+
+  8. **Founder Section**
+     Heading: “About the Founder”
+     Text (you may lightly edit for flow, but keep the meaning):
+
+     “Tokani TripFlow was created by **Desmond Bale**, a corporate travel specialist with over a decade of experience designing, managing, and optimising travel workflows for organisations across Fiji and the Pacific.
+
+     With strong expertise in corporate travel management, regional and multi-sector itinerary planning, high-volume travel coordination for NGOs, corporates, and government bodies, travel policy interpretation and compliance, vendor engagement and procurement alignment, fare analysis and cost-control strategies, and travel systems design and digital process transformation, Desmond has spent years inside Fiji’s real corporate travel environment.
+
+     Tokani TripFlow wasn’t inspired by overseas models. It was shaped by real, lived experience and built to match the way Fiji truly travels. Its purpose is simple: to bring structure, speed, transparency, and cost efficiency to every official trip made in Fiji.”
+
+  9. **Call to Action Section**
+     Heading: “Let’s Transform Travel Management in Fiji”
+     Repeat/echo the CTAs:
+     - “View the Live Demo”
+     - “Request a Call”
+     - Optionally: “Download Product Overview” (link placeholder)
+
+- Design guidelines:
+  - Use a clean, neutral colour palette (you can infer or lightly extend from any existing branding in this repo).
+  - Use clear hierarchy (H1, H2, H3, body, etc.).
+  - Ensure good spacing and readability; avoid cramped content.
+  - Make the CTAs visually prominent.
+  - Make it responsive on mobile and desktop.
+
+- Implementation details:
+  - Reuse existing components/layouts if they already exist (e.g., Layout, Button components).
+  - Group styles logically (e.g., Tailwind utility classes, or a dedicated CSS/SCSS file).
+  - Add meaningful class names or IDs for each section for future navigation (e.g., id="hero", id="mission", id="features", etc.).
+  - Do NOT overcomplicate animations. Light, minimal motion is fine, but focus on clarity and professionalism.
+
+Finally:
+- Implement the landing page in the most idiomatic way for this codebase.
+- Show me the main file(s) you create or edit and briefly explain where to mount/use this landing page in the app (e.g., as `/`, or as a specific route).
