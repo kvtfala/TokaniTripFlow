@@ -164,31 +164,42 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-lagoon-light/20 py-16 md:py-24 lg:py-32">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
-        <div className="container relative mx-auto max-w-6xl px-4 md:px-6">
-          <div className="flex flex-col items-center text-center space-y-8">
-            <Badge variant="outline" className="border-primary/40 text-primary" data-testid="badge-pre-pilot">
+      <section id="hero" className="relative overflow-hidden">
+        {/* Gradient Background: Coral → Lagoon → Dusk */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#E94A64] via-[#3C7DD9] to-[#0F1A34]" />
+        
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
+        
+        {/* Hero Content */}
+        <div className="relative container mx-auto px-4 py-20 md:py-32">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <TokaniLogo variant="icon" className="h-24 w-24 md:h-32 md:w-32 shadow-2xl border-4 border-white/20" data-testid="img-hero-logo" />
+            </div>
+
+            <Badge variant="outline" className="border-white/40 text-white mb-6 bg-white/10 backdrop-blur-sm" data-testid="badge-pre-pilot">
               {CONTENT.hero.demoNote}
             </Badge>
             
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-foreground" data-testid="heading-hero-title">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-white mb-6 leading-tight" data-testid="heading-hero-title">
               {CONTENT.hero.title}
             </h1>
             
-            <p className="text-xl md:text-2xl font-semibold text-primary max-w-3xl" data-testid="text-tagline">
+            <p className="text-xl md:text-3xl font-medium text-white/95 max-w-3xl mx-auto mb-4" data-testid="text-tagline">
               {CONTENT.hero.tagline}
             </p>
             
-            <p className="text-base md:text-lg text-muted-foreground max-w-3xl leading-relaxed" data-testid="text-subtitle">
+            <p className="text-base md:text-lg text-white/90 max-w-3xl mx-auto leading-relaxed mb-12" data-testid="text-subtitle">
               {CONTENT.hero.subtitle}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a href="#demo">
                 <Button 
                   size="lg" 
-                  className="text-base px-8 py-6 h-auto w-full sm:w-auto" 
+                  className="text-lg px-10 py-7 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0 shadow-xl w-full sm:w-auto" 
                   data-testid="button-demo"
                 >
                   {CONTENT.hero.ctaPrimary}
@@ -198,7 +209,7 @@ export default function LandingPage() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                  className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full sm:w-auto"
                   data-testid="button-contact"
                 >
                   Sign In with Replit
@@ -206,6 +217,13 @@ export default function LandingPage() {
               </a>
             </div>
           </div>
+        </div>
+
+        {/* Wave Divider */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 120" className="w-full h-12 md:h-20 fill-background">
+            <path d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,58.7C960,64,1056,64,1152,58.7C1248,53,1344,43,1392,37.3L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+          </svg>
         </div>
       </section>
 
@@ -439,16 +457,22 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Section */}
-      <section id="cta" className="py-16 md:py-24 bg-gradient-to-br from-primary/10 via-background to-lagoon-light/20">
-        <div className="container mx-auto max-w-4xl px-4 md:px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-foreground" data-testid="heading-cta">
+      <section id="cta" className="relative overflow-hidden py-20 md:py-28">
+        {/* Gradient Background: Coral → Lagoon → Dusk */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#E94A64] via-[#3C7DD9] to-[#0F1A34]" />
+        
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
+        
+        <div className="container relative mx-auto max-w-4xl px-4 md:px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white" data-testid="heading-cta">
             {CONTENT.cta.heading}
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a href="#demo">
               <Button
                 size="lg"
-                className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                className="text-lg px-10 py-7 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0 shadow-xl w-full sm:w-auto"
                 data-testid="button-cta-0"
               >
                 View the Live Demo
@@ -458,7 +482,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full sm:w-auto"
                 data-testid="button-cta-1"
               >
                 Sign In with Replit
@@ -468,7 +492,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full sm:w-auto"
                 data-testid="button-cta-2"
               >
                 Request a Discussion
