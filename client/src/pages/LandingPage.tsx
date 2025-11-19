@@ -163,15 +163,6 @@ const CONTENT = {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white dark:bg-card border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center">
-            <TokaniLogo variant="full" />
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-lagoon-light/20 py-16 md:py-24 lg:py-32">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
