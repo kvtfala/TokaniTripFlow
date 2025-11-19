@@ -7,6 +7,7 @@ import { Redirect } from "wouter";
 import { VendorManagement } from "@/components/admin/VendorManagement";
 import { EmailTemplateManagement } from "@/components/admin/EmailTemplateManagement";
 import { PerDiemRatesManagement } from "@/components/admin/PerDiemRatesManagement";
+import { SystemNotificationsManagement } from "@/components/admin/SystemNotificationsManagement";
 
 export default function AdminPortal() {
   const { currentUser, isLoading } = useRole();
@@ -167,7 +168,7 @@ export default function AdminPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Notification publisher coming soon...</p>
+              <SystemNotificationsManagement />
             </CardContent>
           </Card>
         </TabsContent>
