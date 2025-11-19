@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Package, Mail, DollarSign, FileText, GitBranch, Bell, History } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { Redirect } from "wouter";
+import { VendorManagement } from "@/components/admin/VendorManagement";
 
 export default function AdminPortal() {
   const { currentUser, isLoading } = useRole();
@@ -79,7 +80,7 @@ export default function AdminPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Vendor management UI coming soon...</p>
+              <VendorManagement />
             </CardContent>
           </Card>
         </TabsContent>
