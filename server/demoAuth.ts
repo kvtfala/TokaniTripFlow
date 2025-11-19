@@ -6,10 +6,23 @@ import bcrypt from "bcryptjs";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
 
-// Demo credentials (hardcoded for demo environment)
-const DEMO_COMPANY_CODE = "itt001";
-const DEMO_EMAIL = "desmond.bale@islandtraveltech.com";
-const DEMO_PASSWORD = "itt1235*";
+// Demo credentials loaded from environment variables
+// IMPORTANT: Override these in production via Replit Secrets or .env file
+// These defaults are INSECURE and only for local development convenience
+const DEMO_COMPANY_CODE = process.env.DEMO_COMPANY_CODE ?? "demo-changeme";
+const DEMO_EMAIL = process.env.DEMO_EMAIL ?? "demo@example.com";
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "changeme-insecure-default";
+
+// Security warning: alert developer if using insecure defaults
+if (DEMO_PASSWORD === "changeme-insecure-default") {
+  console.warn("⚠️  WARNING: Using insecure default DEMO_PASSWORD. Set DEMO_PASSWORD environment variable!");
+}
+if (DEMO_EMAIL === "demo@example.com") {
+  console.warn("⚠️  WARNING: Using default DEMO_EMAIL. Set DEMO_EMAIL environment variable!");
+}
+if (DEMO_COMPANY_CODE === "demo-changeme") {
+  console.warn("⚠️  WARNING: Using default DEMO_COMPANY_CODE. Set DEMO_COMPANY_CODE environment variable!");
+}
 
 /**
  * Demo login endpoint - validates company code, email, and password
@@ -111,7 +124,7 @@ export function setupDemoAuth(app: Express) {
 
 /**
  * Hash a password for demo user seeding
- * DEMO USE ONLY - Password: "itt1235*"
+ * DEMO USE ONLY - Password from DEMO_PASSWORD environment variable
  */
 export async function hashDemoPassword(): Promise<string> {
   return await bcrypt.hash(DEMO_PASSWORD, 10);
