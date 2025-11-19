@@ -6,6 +6,7 @@ import { useRole } from "@/contexts/RoleContext";
 import { Redirect } from "wouter";
 import { VendorManagement } from "@/components/admin/VendorManagement";
 import { EmailTemplateManagement } from "@/components/admin/EmailTemplateManagement";
+import { PerDiemRatesManagement } from "@/components/admin/PerDiemRatesManagement";
 
 export default function AdminPortal() {
   const { currentUser, isLoading } = useRole();
@@ -115,7 +116,7 @@ export default function AdminPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Per diem rate configuration coming soon...</p>
+              <PerDiemRatesManagement />
             </CardContent>
           </Card>
         </TabsContent>
