@@ -1,0 +1,59 @@
+You are working on the Tokani TripFlow (TTF) project.
+
+Goal:
+Replace the current logo used in the app with a new PNG file I’ve uploaded called:
+`tokani-tripflow-logo.png`
+
+Assume this file now exists in:
+- EITHER: `public/tokani-tripflow-logo.png`
+- OR: `src/assets/tokani-tripflow-logo.png`
+Use whichever location actually exists in this repo.
+
+Tasks:
+
+1. Locate all existing logo references:
+   - Search for:
+     - "logo.svg"
+     - "logo.png"
+     - "tokani"
+     - any `<img>` or imported image used as the main app logo in the header/navbar/landing page.
+   - This might be in files like `App.tsx`, `App.jsx`, a `Header`/`Navbar` component, `Layout` components, or `index.html`.
+
+2. Replace the logo source with the new file:
+   - If the project uses React and the logo is in `public/`:
+     ```jsx
+     <img
+       src="/tokani-tripflow-logo.png"
+       alt="Tokani TripFlow"
+     />
+     ```
+   - If the project uses React and the logo is in `src/assets/`:
+     ```tsx
+     import tokaniLogo from "../assets/tokani-tripflow-logo.png";
+
+     <img
+       src={tokaniLogo}
+       alt="Tokani TripFlow"
+     />
+     ```
+     Adjust the relative path as needed based on where the component file lives.
+   - If this is plain HTML, make sure the `<img>` tag points to the correct relative path:
+     ```html
+     <img src="/tokani-tripflow-logo.png" alt="Tokani TripFlow">
+     ```
+
+3. Keep layout and styling:
+   - Preserve the existing header/nav layout and CSS.
+   - Only change the image source (and import if needed).
+   - If necessary, slightly adjust width/height so the new circular logo looks clean (e.g. fixed height like `40–64px`), but don’t redesign the header.
+
+4. Clean up old imports:
+   - Remove unused imports like `logo.svg` or old logo files if they are no longer referenced.
+   - Make sure there is a single, consistent logo usage for the main brand.
+
+5. Update alt text:
+   - Use `alt="Tokani TripFlow"` (or similar) for accessibility and consistency.
+
+6. Show me what you changed:
+   - Show the final JSX/HTML snippet for the header/navbar/landing logo.
+   - Tell me which file the logo asset is being loaded from (`public/` or `src/assets/`) and confirm that there are no remaining broken logo references.
