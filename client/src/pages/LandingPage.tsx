@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TokaniLogo } from "@/components/brand/TokaniLogo";
+import { DemoLogin } from "@/components/DemoLogin";
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -159,18 +161,27 @@ const CONTENT = {
 };
 
 export default function LandingPage() {
-  const scrollToDemo = () => {
-    // Placeholder for demo navigation
-    console.log("Navigate to demo");
-  };
-
-  const requestDiscussion = () => {
-    // Placeholder for contact form
-    console.log("Request discussion");
-  };
-
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-white dark:bg-card border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <TokaniLogo variant="full" />
+            <a href="/api/login">
+              <Button 
+                size="lg" 
+                variant="secondary"
+                className="bg-secondary hover:bg-secondary/90 text-white border-0"
+                data-testid="button-login"
+              >
+                Sign In
+              </Button>
+            </a>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-lagoon-light/20 py-16 md:py-24 lg:py-32">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
@@ -193,25 +204,42 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button 
-                size="lg" 
-                className="text-base px-8 py-6 h-auto" 
-                onClick={scrollToDemo}
-                data-testid="button-demo"
-              >
-                {CONTENT.hero.ctaPrimary}
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="text-base px-8 py-6 h-auto"
-                onClick={requestDiscussion}
-                data-testid="button-contact"
-              >
-                {CONTENT.hero.ctaSecondary}
-              </Button>
+              <a href="#demo">
+                <Button 
+                  size="lg" 
+                  className="text-base px-8 py-6 h-auto w-full sm:w-auto" 
+                  data-testid="button-demo"
+                >
+                  {CONTENT.hero.ctaPrimary}
+                </Button>
+              </a>
+              <a href="/api/login">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                  data-testid="button-contact"
+                >
+                  Sign In with Replit
+                </Button>
+              </a>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Demo Login Section */}
+      <section id="demo" className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-testid="heading-demo">
+              Try The Demo
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Experience Tokani TripFlow with full manager access to all features and dashboards
+            </p>
+          </div>
+          <DemoLogin />
         </div>
       </section>
 
@@ -436,18 +464,35 @@ export default function LandingPage() {
             {CONTENT.cta.heading}
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {CONTENT.cta.buttons.map((button, idx) => (
+            <a href="#demo">
               <Button
-                key={idx}
                 size="lg"
-                variant={button.primary ? "default" : "outline"}
-                className="text-base px-8 py-6 h-auto"
-                onClick={button.text.includes("Demo") ? scrollToDemo : requestDiscussion}
-                data-testid={`button-cta-${idx}`}
+                className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                data-testid="button-cta-0"
               >
-                {button.text}
+                View the Live Demo
               </Button>
-            ))}
+            </a>
+            <a href="/api/login">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                data-testid="button-cta-1"
+              >
+                Sign In with Replit
+              </Button>
+            </a>
+            <a href="mailto:contact@tokani.com">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base px-8 py-6 h-auto w-full sm:w-auto"
+                data-testid="button-cta-2"
+              >
+                Request a Discussion
+              </Button>
+            </a>
           </div>
         </div>
       </section>
