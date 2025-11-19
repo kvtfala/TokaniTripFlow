@@ -18,8 +18,7 @@ export default function Landing() {
             <a href="/api/login">
               <Button 
                 size="lg" 
-                variant="secondary"
-                className="bg-[#1FBED6] hover:bg-[#189FB1] text-white border-0"
+                variant="default"
                 data-testid="button-login"
               >
                 Sign In
@@ -32,10 +31,10 @@ export default function Landing() {
       {/* Hero Section with Full-Width Gradient */}
       <section className="relative overflow-hidden">
         {/* Gradient Background: Tokani Blue → Aqua → Navy */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0057B8] via-[#1FBED6] to-[#002A52]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-[hsl(var(--ttf-navy))]" />
         
-        {/* Subtle overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
+        {/* Dark overlay for accessibility (WCAG AA) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/50" />
         
         {/* Hero Content */}
         <div className="relative container mx-auto px-4 py-20 md:py-32">
@@ -60,7 +59,8 @@ export default function Landing() {
               <a href="#demo">
                 <Button 
                   size="lg" 
-                  className="text-lg px-10 py-7 bg-[#0057B8] hover:bg-[#003D82] text-white border-0 shadow-xl w-full sm:w-auto"
+                  variant="default"
+                  className="text-lg px-10 py-7 shadow-xl w-full sm:w-auto"
                   data-testid="button-try-demo"
                 >
                   Try Demo
@@ -122,8 +122,8 @@ export default function Landing() {
             <Card className="hover-elevate border-2 transition-all duration-300">
               <CardHeader className="text-center p-8">
                 <div className="flex justify-center mb-6">
-                  <div className="p-4 bg-[#3C7DD9]/10 rounded-xl">
-                    <CheckCircle2 className="w-12 h-12 text-[#3C7DD9]" />
+                  <div className="p-4 bg-primary/10 rounded-xl">
+                    <CheckCircle2 className="w-12 h-12 text-primary" />
                   </div>
                 </div>
                 <CardTitle className="text-2xl mb-4">Travel Policy Automation</CardTitle>
@@ -137,8 +137,8 @@ export default function Landing() {
             <Card className="hover-elevate border-2 transition-all duration-300">
               <CardHeader className="text-center p-8">
                 <div className="flex justify-center mb-6">
-                  <div className="p-4 bg-[#E94A64]/10 rounded-xl">
-                    <Users className="w-12 h-12 text-[#E94A64]" />
+                  <div className="p-4 bg-secondary/10 rounded-xl">
+                    <Users className="w-12 h-12 text-secondary" />
                   </div>
                 </div>
                 <CardTitle className="text-2xl mb-4">Multi-Level Approvals</CardTitle>
@@ -152,8 +152,8 @@ export default function Landing() {
             <Card className="hover-elevate border-2 transition-all duration-300">
               <CardHeader className="text-center p-8">
                 <div className="flex justify-center mb-6">
-                  <div className="p-4 bg-[#0F1A34]/10 dark:bg-[#3C7DD9]/10 rounded-xl">
-                    <DollarSign className="w-12 h-12 text-[#0F1A34] dark:text-[#3C7DD9]" />
+                  <div className="p-4 bg-[hsl(var(--ttf-navy))]/10 dark:bg-primary/10 rounded-xl">
+                    <DollarSign className="w-12 h-12 text-[hsl(var(--ttf-navy))] dark:text-primary" />
                   </div>
                 </div>
                 <CardTitle className="text-2xl mb-4">Corporate-Ready RFQ Flow</CardTitle>
@@ -166,7 +166,7 @@ export default function Landing() {
 
           {/* Additional Info */}
           <div className="mt-20 text-center max-w-3xl mx-auto">
-            <Card className="bg-gradient-to-br from-[#3C7DD9]/5 to-[#E94A64]/5 border-2">
+            <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-2">
               <CardHeader className="p-8 md:p-12">
                 <CardTitle className="text-2xl md:text-3xl mb-4 text-foreground">
                   Ready to transform your travel management?
@@ -177,7 +177,8 @@ export default function Landing() {
                 <a href="/api/login">
                   <Button 
                     size="lg" 
-                    className="text-lg px-10 py-6 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0"
+                    variant="default"
+                    className="text-lg px-10 py-6"
                     data-testid="button-get-started-cta"
                   >
                     Get Started Today
@@ -190,7 +191,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#0F1A34] text-white py-12 border-t-4 border-[#3C7DD9]">
+      <footer className="bg-[hsl(var(--ttf-navy))] text-white py-12 border-t-4 border-primary">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">

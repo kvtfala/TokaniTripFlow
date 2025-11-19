@@ -141,7 +141,8 @@ export function DemoLogin() {
             <div className="space-y-2">
               <Button 
                 type="submit" 
-                className="w-full bg-[#0057B8] hover:bg-[#003D82] text-white"
+                variant="default"
+                className="w-full"
                 disabled={loginMutation.isPending}
                 data-testid="button-demo-login"
               >
