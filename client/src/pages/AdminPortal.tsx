@@ -5,6 +5,7 @@ import { Settings, Package, Mail, DollarSign, FileText, GitBranch, Bell, History
 import { useRole } from "@/contexts/RoleContext";
 import { Redirect } from "wouter";
 import { VendorManagement } from "@/components/admin/VendorManagement";
+import { EmailTemplateManagement } from "@/components/admin/EmailTemplateManagement";
 
 export default function AdminPortal() {
   const { currentUser, isLoading } = useRole();
@@ -97,7 +98,7 @@ export default function AdminPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Email template editor coming soon...</p>
+              <EmailTemplateManagement />
             </CardContent>
           </Card>
         </TabsContent>
