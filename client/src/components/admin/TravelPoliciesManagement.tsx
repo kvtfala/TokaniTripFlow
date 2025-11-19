@@ -102,13 +102,24 @@ export function TravelPoliciesManagement() {
   // Create policy mutation
   const createMutation = useMutation({
     mutationFn: async (data: PolicyFormValues) => {
+      // Parse JSON separately to avoid mislabeling API errors
+      let conditions, actions;
+      try {
+        conditions = JSON.parse(data.conditions);
+        actions = JSON.parse(data.actions);
+      } catch (error) {
+        throw new Error("Invalid JSON in conditions or actions fields");
+      }
+
       const payload = {
         ...data,
         priority: parseInt(data.priority),
-        conditions: JSON.parse(data.conditions),
-        actions: JSON.parse(data.actions),
+        conditions,
+        actions,
         createdBy: currentUser?.id || "system",
       };
+      
+      // API errors will propagate naturally with their own messages
       return await apiRequest("POST", "/api/admin/travel-policies", payload);
     },
     onSuccess: () => {
@@ -119,10 +130,10 @@ export function TravelPoliciesManagement() {
         description: "Travel policy has been created successfully.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to create travel policy.",
+        description: error.message || "Failed to create travel policy.",
         variant: "destructive",
       });
     },
@@ -131,6 +142,7 @@ export function TravelPoliciesManagement() {
   // Update policy mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // JSON parsing happens in onSubmit, this just calls API
       return await apiRequest("PATCH", `/api/admin/travel-policies/${id}`, data);
     },
     onSuccess: () => {
@@ -141,10 +153,10 @@ export function TravelPoliciesManagement() {
         description: "Travel policy has been updated successfully.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to update travel policy.",
+        description: error.message || "Failed to update travel policy.",
         variant: "destructive",
       });
     },
@@ -320,13 +332,22 @@ export function TravelPoliciesManagement() {
                               requiresCompliance: policy.requiresCompliance,
                             }}
                             onSubmit={(values) => {
-                              const payload = {
-                                ...values,
-                                priority: parseInt(values.priority),
-                                conditions: JSON.parse(values.conditions),
-                                actions: JSON.parse(values.actions),
-                              };
-                              updateMutation.mutate({ id: policy.id, data: payload });
+                              try {
+                                const payload = {
+                                  ...values,
+                                  priority: parseInt(values.priority),
+                                  conditions: JSON.parse(values.conditions),
+                                  actions: JSON.parse(values.actions),
+                                };
+                                updateMutation.mutate({ id: policy.id, data: payload });
+                              } catch (error) {
+                                toast({
+                                  title: "Invalid JSON",
+                                  description: "Please check your JSON configuration in conditions and actions fields.",
+                                  variant: "destructive",
+                                });
+                                return; // Early return prevents mutation from running
+                              }
                             }}
                             isPending={updateMutation.isPending}
                           />

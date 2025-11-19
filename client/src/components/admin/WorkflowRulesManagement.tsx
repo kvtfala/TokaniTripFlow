@@ -140,18 +140,26 @@ export function WorkflowRulesManagement() {
   // Create workflow mutation
   const createMutation = useMutation({
     mutationFn: async (data: WorkflowFormValues) => {
+      // Parse JSON separately to avoid mislabeling API errors
+      let triggerConditions, stages, escalationPath;
       try {
-        const payload = {
-          ...data,
-          triggerConditions: JSON.parse(data.triggerConditions),
-          stages: JSON.parse(data.stages),
-          escalationPath: data.escalationPath ? JSON.parse(data.escalationPath) : null,
-          createdBy: currentUser?.id || "system",
-        };
-        return await apiRequest("POST", "/api/admin/workflow-rules", payload);
+        triggerConditions = JSON.parse(data.triggerConditions);
+        stages = JSON.parse(data.stages);
+        escalationPath = data.escalationPath ? JSON.parse(data.escalationPath) : null;
       } catch (error) {
         throw new Error("Invalid JSON in workflow configuration");
       }
+
+      const payload = {
+        ...data,
+        triggerConditions,
+        stages,
+        escalationPath,
+        createdBy: currentUser?.id || "system",
+      };
+      
+      // API errors will propagate naturally with their own messages
+      return await apiRequest("POST", "/api/admin/workflow-rules", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/workflow-rules"] });
@@ -173,11 +181,8 @@ export function WorkflowRulesManagement() {
   // Update workflow mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      try {
-        return await apiRequest("PATCH", `/api/admin/workflow-rules/${id}`, data);
-      } catch (error) {
-        throw new Error("Invalid JSON in workflow configuration");
-      }
+      // JSON parsing happens in onSubmit, this just calls API
+      return await apiRequest("PATCH", `/api/admin/workflow-rules/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/workflow-rules"] });
@@ -393,6 +398,7 @@ export function WorkflowRulesManagement() {
                                   description: "Please check your JSON configuration.",
                                   variant: "destructive",
                                 });
+                                return; // Early return prevents mutation from running
                               }
                             }}
                             isPending={updateMutation.isPending}
