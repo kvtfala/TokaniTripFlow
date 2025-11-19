@@ -166,18 +166,8 @@ export default function LandingPage() {
       {/* Header */}
       <header className="bg-white dark:bg-card border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <TokaniLogo variant="full" />
-            <a href="/api/login">
-              <Button 
-                size="lg" 
-                variant="secondary"
-                className="bg-secondary hover:bg-secondary/90 text-white border-0"
-                data-testid="button-login"
-              >
-                Sign In
-              </Button>
-            </a>
           </div>
         </div>
       </header>
