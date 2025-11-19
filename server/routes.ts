@@ -4,6 +4,84 @@ import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote } from "@shared/types";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { setupDemoAuth } from "./demoAuth";
+import { 
+  insertVendorSchema, 
+  insertEmailTemplateSchema, 
+  insertPerDiemRateSchema,
+  insertTravelPolicySchema,
+  insertWorkflowRuleSchema,
+  insertSystemNotificationSchema,
+  insertAuditLogSchema
+} from "@shared/schema";
+
+// Helper function to validate request body with Zod schema using safeParse
+function validateRequest<T>(schema: any, data: any): { success: true; data: T } | { success: false; error: string } {
+  // Always apply strict() to reject unknown fields and prevent schema bypass
+  const strictSchema = schema.strict();
+  const result = strictSchema.safeParse(data);
+  
+  if (result.success) {
+    return { success: true, data: result.data as T };
+  } else {
+    const message = result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return { success: false, error: message };
+  }
+}
+
+// Helper function to create audit log with before/after snapshots
+async function logAudit(params: {
+  userId: string;
+  userName: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  previousValue?: any;
+  newValue?: any;
+  metadata?: any;
+}) {
+  // Compute field-level changes, handling null/undefined and nested objects safely
+  let changes: any = null;
+  
+  // Only compute changes if both values are defined (not null/undefined)
+  if (params.previousValue != null && params.newValue != null) {
+    changes = {};
+    const allKeys = new Set([
+      ...Object.keys(params.previousValue),
+      ...Object.keys(params.newValue)
+    ]);
+    
+    for (const key of allKeys) {
+      const oldVal = params.previousValue[key];
+      const newVal = params.newValue[key];
+      
+      // Deep comparison for objects/arrays, shallow for primitives
+      const isDifferent = typeof oldVal === 'object' || typeof newVal === 'object'
+        ? JSON.stringify(oldVal) !== JSON.stringify(newVal)
+        : oldVal !== newVal;
+      
+      if (isDifferent) {
+        changes[key] = { old: oldVal, new: newVal };
+      }
+    }
+    
+    // If no changes detected, set to null
+    if (Object.keys(changes).length === 0) {
+      changes = null;
+    }
+  }
+
+  await storage.createAuditLog({
+    userId: params.userId,
+    userName: params.userName,
+    action: params.action as any,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    previousValue: params.previousValue ?? null,
+    newValue: params.newValue ?? null,
+    changes,
+    metadata: params.metadata ?? null,
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Replit Auth Integration - Setup authentication middleware
@@ -526,6 +604,765 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete delegation" });
+    }
+  });
+
+  // Admin Portal - Role-Based Access Control Middleware
+  const requireRole = (allowedRoles: string[]) => {
+    return async (req: any, res: any, next: any) => {
+      try {
+        // Get user from session or demo session
+        let userId: string;
+        let userRole: string;
+
+        if (req.user?.claims?.sub) {
+          // OIDC session
+          userId = req.user.claims.sub;
+        } else if (req.session?.user) {
+          // Demo session
+          userId = req.session.user.id;
+        } else {
+          return res.status(401).json({ error: "Unauthorized - Please log in" });
+        }
+
+        // Fetch user from storage
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(401).json({ error: "User not found" });
+        }
+
+        userRole = user.role || "employee";
+
+        // Check if user has required role
+        if (!allowedRoles.includes(userRole)) {
+          return res.status(403).json({ 
+            error: "Forbidden - Insufficient permissions",
+            required: allowedRoles,
+            current: userRole
+          });
+        }
+
+        // Attach user to request for use in route handlers
+        req.currentUser = user;
+        next();
+      } catch (error) {
+        console.error("Role check error:", error);
+        res.status(500).json({ error: "Authorization check failed" });
+      }
+    };
+  };
+
+  // Admin Portal - User Management
+  app.get("/api/admin/users", requireRole(["super_admin", "finance_admin", "travel_admin"]), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      const updated = await storage.updateUser(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Audit log
+      await storage.createAuditLog({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "update",
+        entityType: "user",
+        entityId: req.params.id,
+        changes: req.body,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Admin Portal - Vendors
+  app.get("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const vendors = await storage.getVendors(status);
+      res.json(vendors);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vendors" });
+    }
+  });
+
+  app.get("/api/admin/vendors/:id", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const vendor = await storage.getVendor(req.params.id);
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      res.json(vendor);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vendor" });
+    }
+  });
+
+  app.post("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertVendorSchema, req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      const vendor = await storage.createVendor({
+        ...validation.data,
+        proposedBy: req.currentUser.id,
+      });
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "create",
+        entityType: "vendor",
+        entityId: vendor.id,
+        newValue: vendor,
+        metadata: { vendorName: vendor.name },
+      });
+      
+      res.json(vendor);
+    } catch (error) {
+      console.error("Error creating vendor:", error);
+      res.status(500).json({ error: "Failed to create vendor" });
+    }
+  });
+
+  app.patch("/api/admin/vendors/:id", requireRole(["finance_admin", "super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertVendorSchema.partial(), req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Get previous state for audit and clone to prevent mutation
+      const previousVendor = await storage.getVendor(req.params.id);
+      if (!previousVendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      const previousSnapshot = structuredClone(previousVendor);
+
+      await storage.updateVendor(req.params.id, validation.data);
+      
+      // Re-fetch complete entity after update to capture all server-populated fields
+      const vendor = await storage.getVendor(req.params.id);
+      if (!vendor) {
+        return res.status(500).json({ error: "Failed to fetch updated vendor" });
+      }
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "update",
+        entityType: "vendor",
+        entityId: req.params.id,
+        previousValue: previousSnapshot,
+        newValue: vendor,
+        metadata: { vendorName: vendor.name },
+      });
+      
+      res.json(vendor);
+    } catch (error) {
+      console.error("Error updating vendor:", error);
+      res.status(500).json({ error: "Failed to update vendor" });
+    }
+  });
+
+  app.delete("/api/admin/vendors/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      const success = await storage.deleteVendor(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      
+      // Audit log
+      await storage.createAuditLog({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "delete",
+        entityType: "vendor",
+        entityId: req.params.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete vendor" });
+    }
+  });
+
+  // Admin Portal - Email Templates
+  app.get("/api/admin/templates", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const templates = await storage.getEmailTemplates(category);
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  app.get("/api/admin/templates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch template" });
+    }
+  });
+
+  app.post("/api/admin/templates", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertEmailTemplateSchema, req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      const template = await storage.createEmailTemplate({
+        ...validation.data,
+        createdBy: req.currentUser.id,
+      });
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "create",
+        entityType: "email_template",
+        entityId: template.id,
+        newValue: template,
+        metadata: { templateName: template.name },
+      });
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  app.patch("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertEmailTemplateSchema.partial(), req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Get previous state for audit and clone to prevent mutation
+      const previousTemplate = await storage.getEmailTemplate(req.params.id);
+      if (!previousTemplate) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      const previousSnapshot = structuredClone(previousTemplate);
+
+      await storage.updateEmailTemplate(req.params.id, validation.data);
+      
+      // Re-fetch complete entity after update to capture all server-populated fields
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template) {
+        return res.status(500).json({ error: "Failed to fetch updated template" });
+      }
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "update",
+        entityType: "email_template",
+        entityId: req.params.id,
+        previousValue: previousSnapshot,
+        newValue: template,
+        metadata: { templateName: template.name },
+      });
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating template:", error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
+  app.delete("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      const success = await storage.deleteEmailTemplate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      // Audit log
+      await storage.createAuditLog({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "delete",
+        entityType: "email_template",
+        entityId: req.params.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  // Admin Portal - Per Diem Rates
+  app.get("/api/admin/rates", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const rates = await storage.getPerDiemRates();
+      res.json(rates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch rates" });
+    }
+  });
+
+  app.get("/api/admin/rates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const rate = await storage.getPerDiemRate(req.params.id);
+      if (!rate) {
+        return res.status(404).json({ error: "Rate not found" });
+      }
+      res.json(rate);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch rate" });
+    }
+  });
+
+  app.post("/api/admin/rates", requireRole(["finance_admin", "super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertPerDiemRateSchema, req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      const rate = await storage.createPerDiemRate({
+        ...validation.data,
+        createdBy: req.currentUser.id,
+      });
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "create",
+        entityType: "per_diem_rate",
+        entityId: rate.id,
+        newValue: rate,
+        metadata: { location: rate.location, dailyRate: rate.dailyRate },
+      });
+      
+      res.json(rate);
+    } catch (error) {
+      console.error("Error creating rate:", error);
+      res.status(500).json({ error: "Failed to create rate" });
+    }
+  });
+
+  app.patch("/api/admin/rates/:id", requireRole(["finance_admin", "super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertPerDiemRateSchema.partial(), req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Get previous state for audit and clone to prevent mutation
+      const previousRate = await storage.getPerDiemRate(req.params.id);
+      if (!previousRate) {
+        return res.status(404).json({ error: "Rate not found" });
+      }
+      const previousSnapshot = structuredClone(previousRate);
+
+      await storage.updatePerDiemRate(req.params.id, validation.data);
+      
+      // Re-fetch complete entity after update to capture all server-populated fields
+      const rate = await storage.getPerDiemRate(req.params.id);
+      if (!rate) {
+        return res.status(500).json({ error: "Failed to fetch updated rate" });
+      }
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "update",
+        entityType: "per_diem_rate",
+        entityId: req.params.id,
+        previousValue: previousSnapshot,
+        newValue: rate,
+        metadata: { location: rate.location },
+      });
+      
+      res.json(rate);
+    } catch (error) {
+      console.error("Error updating rate:", error);
+      res.status(500).json({ error: "Failed to update rate" });
+    }
+  });
+
+  app.delete("/api/admin/rates/:id", requireRole(["finance_admin", "super_admin"]), async (req: any, res) => {
+    try {
+      const success = await storage.deletePerDiemRate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Rate not found" });
+      }
+      
+      // Audit log
+      await storage.createAuditLog({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "delete",
+        entityType: "per_diem_rate",
+        entityId: req.params.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete rate" });
+    }
+  });
+
+  // Admin Portal - Travel Policies
+  app.get("/api/admin/policies", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const policies = await storage.getTravelPolicies();
+      res.json(policies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch policies" });
+    }
+  });
+
+  app.post("/api/admin/policies", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertTravelPolicySchema, req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      const policy = await storage.createTravelPolicy({
+        ...validation.data,
+        createdBy: req.currentUser.id,
+      });
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "create",
+        entityType: "travel_policy",
+        entityId: policy.id,
+        newValue: policy,
+        metadata: { policyName: policy.name },
+      });
+      
+      res.json(policy);
+    } catch (error) {
+      console.error("Error creating policy:", error);
+      res.status(500).json({ error: "Failed to create policy" });
+    }
+  });
+
+  app.patch("/api/admin/policies/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertTravelPolicySchema.partial(), req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Get previous state for audit and clone to prevent mutation
+      const previousPolicy = await storage.getTravelPolicy(req.params.id);
+      if (!previousPolicy) {
+        return res.status(404).json({ error: "Policy not found" });
+      }
+      const previousSnapshot = structuredClone(previousPolicy);
+
+      await storage.updateTravelPolicy(req.params.id, validation.data);
+      
+      // Re-fetch complete entity after update to capture all server-populated fields
+      const policy = await storage.getTravelPolicy(req.params.id);
+      if (!policy) {
+        return res.status(500).json({ error: "Failed to fetch updated policy" });
+      }
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "update",
+        entityType: "travel_policy",
+        entityId: req.params.id,
+        previousValue: previousSnapshot,
+        newValue: policy,
+        metadata: { policyName: policy.name },
+      });
+      
+      res.json(policy);
+    } catch (error) {
+      console.error("Error updating policy:", error);
+      res.status(500).json({ error: "Failed to update policy" });
+    }
+  });
+
+  app.delete("/api/admin/policies/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      const success = await storage.deleteTravelPolicy(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Policy not found" });
+      }
+      
+      // Audit log
+      await storage.createAuditLog({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "delete",
+        entityType: "travel_policy",
+        entityId: req.params.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete policy" });
+    }
+  });
+
+  // Admin Portal - Workflow Rules
+  app.get("/api/admin/workflows", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const workflows = await storage.getWorkflowRules();
+      res.json(workflows);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  app.post("/api/admin/workflows", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertWorkflowRuleSchema, req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      const workflow = await storage.createWorkflowRule({
+        ...validation.data,
+        createdBy: req.currentUser.id,
+      });
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "create",
+        entityType: "workflow_rule",
+        entityId: workflow.id,
+        newValue: workflow,
+        metadata: { workflowName: workflow.name },
+      });
+      
+      res.json(workflow);
+    } catch (error) {
+      console.error("Error creating workflow:", error);
+      res.status(500).json({ error: "Failed to create workflow" });
+    }
+  });
+
+  app.patch("/api/admin/workflows/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertWorkflowRuleSchema.partial(), req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Get previous state for audit and clone to prevent mutation
+      const previousWorkflow = await storage.getWorkflowRule(req.params.id);
+      if (!previousWorkflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      const previousSnapshot = structuredClone(previousWorkflow);
+
+      await storage.updateWorkflowRule(req.params.id, validation.data);
+      
+      // Re-fetch complete entity after update to capture all server-populated fields
+      const workflow = await storage.getWorkflowRule(req.params.id);
+      if (!workflow) {
+        return res.status(500).json({ error: "Failed to fetch updated workflow" });
+      }
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "update",
+        entityType: "workflow_rule",
+        entityId: req.params.id,
+        previousValue: previousSnapshot,
+        newValue: workflow,
+        metadata: { workflowName: workflow.name },
+      });
+      
+      res.json(workflow);
+    } catch (error) {
+      console.error("Error updating workflow:", error);
+      res.status(500).json({ error: "Failed to update workflow" });
+    }
+  });
+
+  app.delete("/api/admin/workflows/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      const success = await storage.deleteWorkflowRule(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      
+      // Audit log
+      await storage.createAuditLog({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "delete",
+        entityType: "workflow_rule",
+        entityId: req.params.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete workflow" });
+    }
+  });
+
+  // Admin Portal - System Notifications
+  app.get("/api/admin/notifications", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+    try {
+      const published = req.query.published === "true" ? true : req.query.published === "false" ? false : undefined;
+      const notifications = await storage.getSystemNotifications(published);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.post("/api/admin/notifications", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertSystemNotificationSchema, req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      const notification = await storage.createSystemNotification({
+        ...validation.data,
+        createdBy: req.currentUser.id,
+      });
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "create",
+        entityType: "system_notification",
+        entityId: notification.id,
+        newValue: notification,
+        metadata: { title: notification.title },
+      });
+      
+      res.json(notification);
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      res.status(500).json({ error: "Failed to create notification" });
+    }
+  });
+
+  app.patch("/api/admin/notifications/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      // Validate request body
+      const validation = validateRequest(insertSystemNotificationSchema.partial(), req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Get previous state for audit and clone to prevent mutation
+      const previousNotification = await storage.getSystemNotification(req.params.id);
+      if (!previousNotification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      const previousSnapshot = structuredClone(previousNotification);
+
+      await storage.updateSystemNotification(req.params.id, validation.data);
+      
+      // Re-fetch complete entity after update to capture all server-populated fields
+      const notification = await storage.getSystemNotification(req.params.id);
+      if (!notification) {
+        return res.status(500).json({ error: "Failed to fetch updated notification" });
+      }
+      
+      // Enhanced audit log with before/after snapshots
+      await logAudit({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "update",
+        entityType: "system_notification",
+        entityId: req.params.id,
+        previousValue: previousSnapshot,
+        newValue: notification,
+        metadata: { title: notification.title },
+      });
+      
+      res.json(notification);
+    } catch (error) {
+      console.error("Error updating notification:", error);
+      res.status(500).json({ error: "Failed to update notification" });
+    }
+  });
+
+  app.delete("/api/admin/notifications/:id", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      const success = await storage.deleteSystemNotification(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      // Audit log
+      await storage.createAuditLog({
+        userId: req.currentUser.id,
+        userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+        action: "delete",
+        entityType: "system_notification",
+        entityId: req.params.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete notification" });
+    }
+  });
+
+  // Admin Portal - Audit Logs
+  app.get("/api/admin/audit-logs", requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const entityType = req.query.entityType as string | undefined;
+      const entityId = req.query.entityId as string | undefined;
+      const logs = await storage.getAuditLogs(entityType, entityId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch audit logs" });
     }
   });
 

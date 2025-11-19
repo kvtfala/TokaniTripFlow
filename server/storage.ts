@@ -1,4 +1,21 @@
-import { type User, type UpsertUser } from "@shared/schema";
+import { 
+  type User, 
+  type UpsertUser,
+  type Vendor,
+  type InsertVendor,
+  type EmailTemplate,
+  type InsertEmailTemplate,
+  type PerDiemRate,
+  type InsertPerDiemRate,
+  type TravelPolicy,
+  type InsertTravelPolicy,
+  type WorkflowRule,
+  type InsertWorkflowRule,
+  type SystemNotification,
+  type InsertSystemNotification,
+  type AuditLog,
+  type InsertAuditLog,
+} from "@shared/schema";
 import type { TravelRequest, DelegateAssignment, CostCentre, HistoryEntry, TravelQuote, QuotePolicy } from "@shared/types";
 import { randomUUID } from "crypto";
 
@@ -7,6 +24,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   
   // Travel Requests
   getTravelRequests(): Promise<TravelRequest[]>;
@@ -31,6 +50,54 @@ export interface IStorage {
   // Quote Policies
   getQuotePolicy(): Promise<QuotePolicy | undefined>;
   updateQuotePolicy(policy: Partial<QuotePolicy>): Promise<QuotePolicy>;
+  
+  // Admin Portal - Vendors
+  getVendors(status?: string): Promise<Vendor[]>;
+  getVendor(id: string): Promise<Vendor | undefined>;
+  createVendor(vendor: InsertVendor): Promise<Vendor>;
+  updateVendor(id: string, updates: Partial<Vendor>): Promise<Vendor | undefined>;
+  deleteVendor(id: string): Promise<boolean>;
+  
+  // Admin Portal - Email Templates
+  getEmailTemplates(category?: string): Promise<EmailTemplate[]>;
+  getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | undefined>;
+  deleteEmailTemplate(id: string): Promise<boolean>;
+  
+  // Admin Portal - Per Diem Rates
+  getPerDiemRates(): Promise<PerDiemRate[]>;
+  getPerDiemRate(id: string): Promise<PerDiemRate | undefined>;
+  getActivePerDiemRate(location: string, date: Date): Promise<PerDiemRate | undefined>;
+  createPerDiemRate(rate: InsertPerDiemRate): Promise<PerDiemRate>;
+  updatePerDiemRate(id: string, updates: Partial<PerDiemRate>): Promise<PerDiemRate | undefined>;
+  deletePerDiemRate(id: string): Promise<boolean>;
+  
+  // Admin Portal - Travel Policies
+  getTravelPolicies(): Promise<TravelPolicy[]>;
+  getTravelPolicy(id: string): Promise<TravelPolicy | undefined>;
+  createTravelPolicy(policy: InsertTravelPolicy): Promise<TravelPolicy>;
+  updateTravelPolicy(id: string, updates: Partial<TravelPolicy>): Promise<TravelPolicy | undefined>;
+  deleteTravelPolicy(id: string): Promise<boolean>;
+  
+  // Admin Portal - Workflow Rules
+  getWorkflowRules(): Promise<WorkflowRule[]>;
+  getWorkflowRule(id: string): Promise<WorkflowRule | undefined>;
+  createWorkflowRule(rule: InsertWorkflowRule): Promise<WorkflowRule>;
+  updateWorkflowRule(id: string, updates: Partial<WorkflowRule>): Promise<WorkflowRule | undefined>;
+  deleteWorkflowRule(id: string): Promise<boolean>;
+  
+  // Admin Portal - System Notifications
+  getSystemNotifications(published?: boolean): Promise<SystemNotification[]>;
+  getSystemNotification(id: string): Promise<SystemNotification | undefined>;
+  createSystemNotification(notification: InsertSystemNotification): Promise<SystemNotification>;
+  updateSystemNotification(id: string, updates: Partial<SystemNotification>): Promise<SystemNotification | undefined>;
+  deleteSystemNotification(id: string): Promise<boolean>;
+  
+  // Admin Portal - Audit Logs
+  getAuditLogs(entityType?: string, entityId?: string): Promise<AuditLog[]>;
+  getAuditLog(id: string): Promise<AuditLog | undefined>;
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
 }
 
 export class MemStorage implements IStorage {
@@ -39,12 +106,30 @@ export class MemStorage implements IStorage {
   private delegations: Map<string, DelegateAssignment>;
   private quotes: Map<string, TravelQuote>;
   private quotePolicy: QuotePolicy | undefined;
+  
+  // Admin Portal Maps
+  private vendors: Map<string, Vendor>;
+  private emailTemplates: Map<string, EmailTemplate>;
+  private perDiemRates: Map<string, PerDiemRate>;
+  private travelPolicies: Map<string, TravelPolicy>;
+  private workflowRules: Map<string, WorkflowRule>;
+  private systemNotifications: Map<string, SystemNotification>;
+  private auditLogs: Map<string, AuditLog>;
 
   constructor() {
     this.users = new Map();
     this.travelRequests = new Map();
     this.delegations = new Map();
     this.quotes = new Map();
+    
+    // Admin Portal Maps
+    this.vendors = new Map();
+    this.emailTemplates = new Map();
+    this.perDiemRates = new Map();
+    this.travelPolicies = new Map();
+    this.workflowRules = new Map();
+    this.systemNotifications = new Map();
+    this.auditLogs = new Map();
     
     // Seed with sample data
     this.seedSampleData();
@@ -57,7 +142,7 @@ export class MemStorage implements IStorage {
     //   Company Code: itt001
     //   Email: desmond.bale@islandtraveltech.com
     //   Password: itt1235* (stored as bcrypt hash below)
-    //   Role: manager (superuser - full access to all role views)
+    //   Role: super_admin (full admin portal access)
     
     const testUsers: User[] = [
       {
@@ -66,7 +151,7 @@ export class MemStorage implements IStorage {
         firstName: "Desmond",
         lastName: "Bale",
         profileImageUrl: null,
-        role: "manager",
+        role: "super_admin",
         companyCode: "itt001",
         // bcrypt hash of "itt1235*" - generated with: bcrypt.hash("itt1235*", 10)
         passwordHash: "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS",
@@ -77,6 +162,9 @@ export class MemStorage implements IStorage {
 
     // Store demo user
     testUsers.forEach(user => this.users.set(user.id, user));
+
+    // Seed admin portal data
+    this.seedAdminData();
 
     // Island Travel Technologies - Enterprise-scale demo dataset
     // 1,759 annual trips | FJD 2.82M annual spend | 480 employees | 11 departments
@@ -508,6 +596,8 @@ export class MemStorage implements IStorage {
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
         role: userData.role || "employee",
+        companyCode: userData.companyCode || null,
+        passwordHash: userData.passwordHash || null,
         createdAt: now,
         updatedAt: now,
       };
@@ -661,6 +751,752 @@ export class MemStorage implements IStorage {
       createdAt: new Date("2025-01-01T00:00:00Z").toISOString(),
       updatedAt: new Date("2025-01-01T00:00:00Z").toISOString(),
     };
+  }
+
+  private seedAdminData() {
+    const now = new Date("2025-01-01T00:00:00Z");
+    const userId = "user-itt-manager-001";
+
+    // Sample Vendors (5 total: 3 approved, 2 pending)
+    const sampleVendors: Vendor[] = [
+      {
+        id: "vendor-001",
+        name: "Pacific Airways",
+        contactEmail: "bookings@pacificair.fj",
+        contactPhone: "+679-672-0888",
+        services: ["flights"],
+        status: "approved",
+        proposedBy: userId,
+        proposedAt: now,
+        approvedBy: userId,
+        approvedAt: now,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: 4,
+        notes: "Preferred domestic carrier - excellent on-time record",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "vendor-002",
+        name: "Fiji Airways",
+        contactEmail: "corporate@fijiairways.com",
+        contactPhone: "+679-672-0777",
+        services: ["flights"],
+        status: "approved",
+        proposedBy: userId,
+        proposedAt: now,
+        approvedBy: userId,
+        approvedAt: now,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: 5,
+        notes: "Primary international carrier - Star Alliance member",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "vendor-003",
+        name: "Island Stays Hotels",
+        contactEmail: "reservations@islandstays.fj",
+        contactPhone: "+679-330-1234",
+        services: ["hotels"],
+        status: "approved",
+        proposedBy: userId,
+        proposedAt: now,
+        approvedBy: userId,
+        approvedAt: now,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: 4,
+        notes: "Corporate rate agreement in place",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "vendor-004",
+        name: "QuickRide Car Rentals",
+        contactEmail: "info@quickride.fj",
+        contactPhone: "+679-330-5678",
+        services: ["car_rental"],
+        status: "pending_approval",
+        proposedBy: userId,
+        proposedAt: now,
+        approvedBy: null,
+        approvedAt: null,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: null,
+        notes: "New vendor - awaiting contract review",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "vendor-005",
+        name: "Travel Visa Express",
+        contactEmail: "support@visaexpress.com.au",
+        contactPhone: "+61-2-9555-1234",
+        services: ["visa_services"],
+        status: "pending_approval",
+        proposedBy: userId,
+        proposedAt: now,
+        approvedBy: null,
+        approvedAt: null,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: null,
+        notes: "Specialist in Pacific region visa processing",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    sampleVendors.forEach(vendor => this.vendors.set(vendor.id, vendor));
+
+    // Sample Email Templates
+    const sampleTemplates: EmailTemplate[] = [
+      {
+        id: "template-001",
+        name: "approval_notification",
+        description: "Sent when a travel request needs approval",
+        subject: "Travel Request Approval Required: {{travelerName}} - {{destination}}",
+        body: `<p>Dear {{approverName}},</p>
+<p>A travel request requires your approval:</p>
+<ul>
+<li><strong>Traveler:</strong> {{travelerName}}</li>
+<li><strong>Destination:</strong> {{destination}}</li>
+<li><strong>Dates:</strong> {{startDate}} to {{endDate}}</li>
+<li><strong>Purpose:</strong> {{purpose}}</li>
+<li><strong>Estimated Cost:</strong> FJD {{totalCost}}</li>
+</ul>
+<p>Please review and approve at your earliest convenience.</p>
+<p>Best regards,<br>Tokani TripFlow</p>`,
+        placeholders: ["approverName", "travelerName", "destination", "startDate", "endDate", "purpose", "totalCost"],
+        category: "approval",
+        isActive: true,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "template-002",
+        name: "booking_confirmation",
+        description: "Sent when travel is booked by Travel Desk",
+        subject: "Travel Booking Confirmed: {{destination}}",
+        body: `<p>Dear {{travelerName}},</p>
+<p>Your travel has been confirmed:</p>
+<ul>
+<li><strong>Destination:</strong> {{destination}}</li>
+<li><strong>Dates:</strong> {{startDate}} to {{endDate}}</li>
+<li><strong>Flight:</strong> {{flightDetails}}</li>
+<li><strong>Hotel:</strong> {{hotelDetails}}</li>
+<li><strong>PNR:</strong> {{pnr}}</li>
+</ul>
+<p>Please arrive at the airport 2 hours before departure.</p>
+<p>Safe travels,<br>Tokani TripFlow</p>`,
+        placeholders: ["travelerName", "destination", "startDate", "endDate", "flightDetails", "hotelDetails", "pnr"],
+        category: "booking",
+        isActive: true,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "template-003",
+        name: "booking_reminder",
+        description: "Sent 48 hours before departure",
+        subject: "Travel Reminder: Departure in 48 Hours",
+        body: `<p>Dear {{travelerName}},</p>
+<p>This is a friendly reminder that your travel to {{destination}} is coming up:</p>
+<ul>
+<li><strong>Departure:</strong> {{departureDate}} at {{departureTime}}</li>
+<li><strong>Flight:</strong> {{flightNumber}}</li>
+<li><strong>Check-in:</strong> Please arrive 2 hours before departure</li>
+</ul>
+<p>Have you completed your visa requirements?</p>
+<p>Safe travels,<br>Tokani TripFlow</p>`,
+        placeholders: ["travelerName", "destination", "departureDate", "departureTime", "flightNumber"],
+        category: "reminder",
+        isActive: true,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    sampleTemplates.forEach(template => this.emailTemplates.set(template.id, template));
+
+    // Sample Per Diem Rates
+    const sampleRates: PerDiemRate[] = [
+      {
+        id: "rate-001",
+        location: "Fiji - Suva",
+        locationCode: "SUV",
+        dailyRate: "320.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "Domestic per diem for capital city",
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "rate-002",
+        location: "Fiji - Nadi",
+        locationCode: "NAN",
+        dailyRate: "320.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "Domestic per diem for tourist hub",
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "rate-003",
+        location: "Australia - Sydney",
+        locationCode: "SYD",
+        dailyRate: "495.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "International per diem - major city",
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "rate-004",
+        location: "New Zealand - Auckland",
+        locationCode: "AKL",
+        dailyRate: "470.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "International per diem - Pacific region",
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "rate-005",
+        location: "Singapore",
+        locationCode: "SIN",
+        dailyRate: "395.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "International per diem - Asia",
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    sampleRates.forEach(rate => this.perDiemRates.set(rate.id, rate));
+
+    // Sample Travel Policies
+    const samplePolicies: TravelPolicy[] = [
+      {
+        id: "policy-tp-001",
+        name: "Advance Booking Requirement",
+        description: "Minimum advance booking window for travel requests",
+        policyType: "advance_booking",
+        rules: {
+          domestic: { days: 7, description: "Domestic travel must be booked 7 days in advance" },
+          international: { days: 14, description: "International travel must be booked 14 days in advance" },
+          exceptions: ["emergency", "urgent_business"]
+        },
+        isActive: true,
+        priority: 8,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "policy-tp-002",
+        name: "Finance Approval Threshold",
+        description: "Cost thresholds that trigger finance review",
+        policyType: "cost_threshold",
+        rules: {
+          thresholds: [
+            { amount: 3000, currency: "FJD", approvers: ["manager"] },
+            { amount: 5000, currency: "FJD", approvers: ["manager", "finance_admin"] }
+          ],
+          requireQuotes: { above: 2000, minQuotes: 2 }
+        },
+        isActive: true,
+        priority: 9,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    samplePolicies.forEach(policy => this.travelPolicies.set(policy.id, policy));
+
+    // Sample Workflow Rules
+    const sampleWorkflows: WorkflowRule[] = [
+      {
+        id: "workflow-001",
+        name: "High-Value Travel Approval",
+        description: "Require finance review for trips over FJD 5,000",
+        conditions: { costGreaterThan: 5000, currency: "FJD" },
+        actions: { addApprover: "finance_admin", requireQuotes: 3 },
+        stages: ["coordinator", "manager", "finance_admin"],
+        isActive: true,
+        priority: 9,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "workflow-002",
+        name: "International Travel Workflow",
+        description: "Multi-stage approval for international trips",
+        conditions: { isInternational: true },
+        actions: { requireVisaCheck: true, requireQuotes: 3 },
+        stages: ["coordinator", "manager"],
+        isActive: true,
+        priority: 7,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    sampleWorkflows.forEach(workflow => this.workflowRules.set(workflow.id, workflow));
+
+    // Sample System Notifications
+    const sampleNotifications: SystemNotification[] = [
+      {
+        id: "notif-001",
+        title: "System Maintenance Scheduled",
+        message: "Tokani TripFlow will undergo scheduled maintenance on Sunday, December 1st from 2:00 AM to 6:00 AM FJT. The system will be unavailable during this time.",
+        type: "banner",
+        severity: "warning",
+        isPublished: true,
+        publishedAt: now,
+        expiresAt: new Date("2025-12-02T00:00:00Z"),
+        targetRoles: null,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    sampleNotifications.forEach(notif => this.systemNotifications.set(notif.id, notif));
+
+    // Sample Audit Logs (history of admin actions)
+    const sampleAuditLogs: AuditLog[] = [
+      {
+        id: "audit-001",
+        userId,
+        userName: "Desmond Bale",
+        action: "create",
+        entityType: "vendor",
+        entityId: "vendor-001",
+        previousValue: null,
+        newValue: { name: "Pacific Airways", status: "approved" },
+        changes: null,
+        metadata: { vendorName: "Pacific Airways" },
+        ipAddress: null,
+        timestamp: now,
+      },
+      {
+        id: "audit-002",
+        userId,
+        userName: "Desmond Bale",
+        action: "approve",
+        entityType: "vendor",
+        entityId: "vendor-001",
+        previousValue: { status: "pending_approval" },
+        newValue: { status: "approved" },
+        changes: { status: { old: "pending_approval", new: "approved" } },
+        metadata: { vendorName: "Pacific Airways", approvalDate: now },
+        ipAddress: null,
+        timestamp: now,
+      },
+    ];
+
+    sampleAuditLogs.forEach(log => this.auditLogs.set(log.id, log));
+  }
+
+  // Admin Portal - User Management
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).map(u => structuredClone(u));
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const existing = this.users.get(id);
+    if (!existing) return undefined;
+
+    const updated: User = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  // Admin Portal - Vendors
+  async getVendors(status?: string): Promise<Vendor[]> {
+    const allVendors = Array.from(this.vendors.values());
+    if (status) {
+      return allVendors.filter(v => v.status === status).map(v => structuredClone(v));
+    }
+    return allVendors.map(v => structuredClone(v));
+  }
+
+  async getVendor(id: string): Promise<Vendor | undefined> {
+    const vendor = this.vendors.get(id);
+    return vendor ? structuredClone(vendor) : undefined;
+  }
+
+  async createVendor(vendor: InsertVendor): Promise<Vendor> {
+    const id = `vendor-${randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const newVendor: Vendor = {
+      id,
+      name: vendor.name,
+      contactEmail: vendor.contactEmail,
+      contactPhone: vendor.contactPhone || null,
+      services: vendor.services,
+      status: vendor.status || "pending_approval",
+      proposedBy: vendor.proposedBy,
+      proposedAt: vendor.proposedAt || now,
+      approvedBy: vendor.approvedBy || null,
+      approvedAt: vendor.approvedAt || null,
+      rejectionReason: vendor.rejectionReason || null,
+      suspensionReason: vendor.suspensionReason || null,
+      performanceRating: vendor.performanceRating || null,
+      notes: vendor.notes || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.vendors.set(id, newVendor);
+    return newVendor;
+  }
+
+  async updateVendor(id: string, updates: Partial<Vendor>): Promise<Vendor | undefined> {
+    const existing = this.vendors.get(id);
+    if (!existing) return undefined;
+
+    const updated: Vendor = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.vendors.set(id, updated);
+    // Return deep clone to ensure audit logging receives independent object
+    return structuredClone(updated);
+  }
+
+  async deleteVendor(id: string): Promise<boolean> {
+    return this.vendors.delete(id);
+  }
+
+  // Admin Portal - Email Templates
+  async getEmailTemplates(category?: string): Promise<EmailTemplate[]> {
+    const allTemplates = Array.from(this.emailTemplates.values());
+    if (category) {
+      return allTemplates.filter(t => t.category === category).map(t => structuredClone(t));
+    }
+    return allTemplates.map(t => structuredClone(t));
+  }
+
+  async getEmailTemplate(id: string): Promise<EmailTemplate | undefined> {
+    const template = this.emailTemplates.get(id);
+    return template ? structuredClone(template) : undefined;
+  }
+
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const id = `template-${randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const newTemplate: EmailTemplate = {
+      id,
+      name: template.name,
+      description: template.description || null,
+      subject: template.subject,
+      body: template.body,
+      placeholders: template.placeholders || null,
+      category: template.category || null,
+      isActive: template.isActive ?? true,
+      createdBy: template.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.emailTemplates.set(id, newTemplate);
+    return newTemplate;
+  }
+
+  async updateEmailTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | undefined> {
+    const existing = this.emailTemplates.get(id);
+    if (!existing) return undefined;
+
+    const updated: EmailTemplate = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.emailTemplates.set(id, updated);
+    // Return deep clone to ensure audit logging receives independent object
+    return structuredClone(updated);
+  }
+
+  async deleteEmailTemplate(id: string): Promise<boolean> {
+    return this.emailTemplates.delete(id);
+  }
+
+  // Admin Portal - Per Diem Rates
+  async getPerDiemRates(): Promise<PerDiemRate[]> {
+    return Array.from(this.perDiemRates.values()).map(r => structuredClone(r));
+  }
+
+  async getPerDiemRate(id: string): Promise<PerDiemRate | undefined> {
+    const rate = this.perDiemRates.get(id);
+    return rate ? structuredClone(rate) : undefined;
+  }
+
+  async getActivePerDiemRate(location: string, date: Date): Promise<PerDiemRate | undefined> {
+    const rates = Array.from(this.perDiemRates.values());
+    return rates.find(r => {
+      const matchesLocation = r.location.toLowerCase() === location.toLowerCase() || 
+                            r.locationCode?.toLowerCase() === location.toLowerCase();
+      const afterEffectiveFrom = new Date(r.effectiveFrom) <= date;
+      const beforeEffectiveTo = !r.effectiveTo || new Date(r.effectiveTo) >= date;
+      return matchesLocation && afterEffectiveFrom && beforeEffectiveTo;
+    });
+  }
+
+  async createPerDiemRate(rate: InsertPerDiemRate): Promise<PerDiemRate> {
+    const id = `rate-${randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const newRate: PerDiemRate = {
+      id,
+      location: rate.location,
+      locationCode: rate.locationCode || null,
+      dailyRate: rate.dailyRate,
+      currency: rate.currency || "FJD",
+      effectiveFrom: rate.effectiveFrom,
+      effectiveTo: rate.effectiveTo || null,
+      notes: rate.notes || null,
+      createdBy: rate.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.perDiemRates.set(id, newRate);
+    return newRate;
+  }
+
+  async updatePerDiemRate(id: string, updates: Partial<PerDiemRate>): Promise<PerDiemRate | undefined> {
+    const existing = this.perDiemRates.get(id);
+    if (!existing) return undefined;
+
+    const updated: PerDiemRate = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.perDiemRates.set(id, updated);
+    // Return deep clone to ensure audit logging receives independent object
+    return structuredClone(updated);
+  }
+
+  async deletePerDiemRate(id: string): Promise<boolean> {
+    return this.perDiemRates.delete(id);
+  }
+
+  // Admin Portal - Travel Policies
+  async getTravelPolicies(): Promise<TravelPolicy[]> {
+    return Array.from(this.travelPolicies.values()).map(p => structuredClone(p));
+  }
+
+  async getTravelPolicy(id: string): Promise<TravelPolicy | undefined> {
+    const policy = this.travelPolicies.get(id);
+    return policy ? structuredClone(policy) : undefined;
+  }
+
+  async createTravelPolicy(policy: InsertTravelPolicy): Promise<TravelPolicy> {
+    const id = `policy-${randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const newPolicy: TravelPolicy = {
+      id,
+      name: policy.name,
+      description: policy.description || null,
+      policyType: policy.policyType,
+      rules: policy.rules,
+      isActive: policy.isActive ?? true,
+      priority: policy.priority ?? 5,
+      createdBy: policy.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.travelPolicies.set(id, newPolicy);
+    return newPolicy;
+  }
+
+  async updateTravelPolicy(id: string, updates: Partial<TravelPolicy>): Promise<TravelPolicy | undefined> {
+    const existing = this.travelPolicies.get(id);
+    if (!existing) return undefined;
+
+    const updated: TravelPolicy = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.travelPolicies.set(id, updated);
+    // Return deep clone to ensure audit logging receives independent object
+    return structuredClone(updated);
+  }
+
+  async deleteTravelPolicy(id: string): Promise<boolean> {
+    return this.travelPolicies.delete(id);
+  }
+
+  // Admin Portal - Workflow Rules
+  async getWorkflowRules(): Promise<WorkflowRule[]> {
+    return Array.from(this.workflowRules.values()).map(w => structuredClone(w));
+  }
+
+  async getWorkflowRule(id: string): Promise<WorkflowRule | undefined> {
+    const rule = this.workflowRules.get(id);
+    return rule ? structuredClone(rule) : undefined;
+  }
+
+  async createWorkflowRule(rule: InsertWorkflowRule): Promise<WorkflowRule> {
+    const id = `workflow-${randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const newRule: WorkflowRule = {
+      id,
+      name: rule.name,
+      description: rule.description || null,
+      conditions: rule.conditions,
+      actions: rule.actions,
+      stages: rule.stages || null,
+      isActive: rule.isActive ?? true,
+      priority: rule.priority ?? 5,
+      createdBy: rule.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.workflowRules.set(id, newRule);
+    return newRule;
+  }
+
+  async updateWorkflowRule(id: string, updates: Partial<WorkflowRule>): Promise<WorkflowRule | undefined> {
+    const existing = this.workflowRules.get(id);
+    if (!existing) return undefined;
+
+    const updated: WorkflowRule = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.workflowRules.set(id, updated);
+    // Return deep clone to ensure audit logging receives independent object
+    return structuredClone(updated);
+  }
+
+  async deleteWorkflowRule(id: string): Promise<boolean> {
+    return this.workflowRules.delete(id);
+  }
+
+  // Admin Portal - System Notifications
+  async getSystemNotifications(published?: boolean): Promise<SystemNotification[]> {
+    const allNotifications = Array.from(this.systemNotifications.values());
+    if (published !== undefined) {
+      return allNotifications.filter(n => n.isPublished === published).map(n => structuredClone(n));
+    }
+    return allNotifications.map(n => structuredClone(n));
+  }
+
+  async getSystemNotification(id: string): Promise<SystemNotification | undefined> {
+    const notification = this.systemNotifications.get(id);
+    return notification ? structuredClone(notification) : undefined;
+  }
+
+  async createSystemNotification(notification: InsertSystemNotification): Promise<SystemNotification> {
+    const id = `notif-${randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const newNotification: SystemNotification = {
+      id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      severity: notification.severity ?? "info",
+      isPublished: notification.isPublished ?? false,
+      publishedAt: notification.publishedAt || null,
+      expiresAt: notification.expiresAt || null,
+      targetRoles: notification.targetRoles || null,
+      createdBy: notification.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.systemNotifications.set(id, newNotification);
+    return newNotification;
+  }
+
+  async updateSystemNotification(id: string, updates: Partial<SystemNotification>): Promise<SystemNotification | undefined> {
+    const existing = this.systemNotifications.get(id);
+    if (!existing) return undefined;
+
+    const updated: SystemNotification = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.systemNotifications.set(id, updated);
+    // Return deep clone to ensure audit logging receives independent object
+    return structuredClone(updated);
+  }
+
+  async deleteSystemNotification(id: string): Promise<boolean> {
+    return this.systemNotifications.delete(id);
+  }
+
+  // Admin Portal - Audit Logs
+  async getAuditLogs(entityType?: string, entityId?: string): Promise<AuditLog[]> {
+    let logs = Array.from(this.auditLogs.values());
+    
+    if (entityType) {
+      logs = logs.filter(l => l.entityType === entityType);
+    }
+    
+    if (entityId) {
+      logs = logs.filter(l => l.entityId === entityId);
+    }
+    
+    // Sort by timestamp descending (most recent first) and clone each entry
+    return logs
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .map(l => structuredClone(l));
+  }
+
+  async getAuditLog(id: string): Promise<AuditLog | undefined> {
+    const log = this.auditLogs.get(id);
+    return log ? structuredClone(log) : undefined;
+  }
+
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const id = `audit-${randomUUID().slice(0, 8)}`;
+    const newLog: AuditLog = {
+      id,
+      userId: log.userId,
+      userName: log.userName || null,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      changes: log.changes || null,
+      metadata: log.metadata || null,
+      ipAddress: log.ipAddress || null,
+      timestamp: new Date(),
+    };
+    this.auditLogs.set(id, newLog);
+    return newLog;
   }
 }
 
