@@ -32,6 +32,28 @@ Preferred communication style: Simple, everyday language.
   * **Routes Implemented**: Vendors (POST/PATCH with finance approval workflow), Email Templates (POST/PATCH), Per Diem Rates (POST/PATCH), Travel Policies (POST/PATCH), Workflow Rules (POST/PATCH), System Notifications (POST/PATCH)
   * **Vendor Approval Workflow**: Finance admins and super admins must approve vendors before they're available in RFQ dropdowns (status: pending_approval → approved)
   * **Future Improvements**: Extend structuredClone pattern to remaining storage getters (getTravelRequests, getQuotes, getDelegations) for complete system-wide immutability
+  
+### Admin Portal Frontend (Nov 2025)
+- **Complete Implementation**: All 7 admin sections fully functional with comprehensive CRUD operations
+- **Sections Implemented**:
+  1. **Vendor Management**: Finance approval workflow (pending → approved/rejected/suspended), performance ratings, services management, contact details
+  2. **Email Template Management**: Category-based templates (approval_request, trip_reminder, etc.), 11 documented placeholders ({{employee_name}}, {{trip_destination}}, etc.), active/inactive toggle
+  3. **Per Diem Rates Management**: Location-based daily rates, tier filtering (standard/manager/executive), currency support (FJD, USD, AUD, NZD, EUR, GBP), effective date ranges
+  4. **Travel Policies Management**: MVP JSON-driven rule engine with conditions/actions, priority ordering, effective dates, compliance flags, **robust error handling** (3-layer validation)
+  5. **Workflow Rules Management**: MVP JSON-driven multi-stage approval flows, preset template library (Two-Stage, Single Approval), escalation paths, **robust error handling** (3-layer validation)
+  6. **System Notifications Management**: User/role targeting, severity levels (info/warning/critical), publish workflow, expiry dates, dismissible flags
+  7. **Audit Log Viewer**: Read-only compliance viewer, summary statistics, CSV export, before/after JSON comparison, field-level change tracking
+- **Technical Architecture**:
+  * **UI Pattern**: Consistent across all sections - shadcn/ui Table + Dialog forms + AlertDialog confirmations
+  * **State Management**: TanStack Query v5 (useQuery, useMutation) with cache invalidation
+  * **Form Handling**: react-hook-form + zodResolver + insertSchema validation from shared/schema.ts
+  * **Error Handling**: 3-layer JSON validation (Zod `.refine()` → form try/catch → mutation try/catch) prevents error mislabeling
+  * **Components**: Badge for status/severity, Card for documentation, Select for filtering, DatePicker for date ranges
+  * **Testing**: Comprehensive data-testid attributes on all interactive elements
+  * **Access Control**: Role guard (finance_admin || manager || super_admin), backend enforces additional permissions per operation
+- **Routing & Navigation**: `/admin` route in App.tsx, sidebar menu item with Shield icon, 8-tab internal navigation
+- **JSON Configuration Philosophy**: MVP approach uses text-area JSON editors for Travel Policies and Workflow Rules (no visual builders for MVP) with robust validation and error recovery
+- **Known Limitations**: Testing environment may have role assignment mismatches (OIDC claims vs actual user data); individual admin operations have backend role requirements beyond page access
 
 ### Data Storage Solutions
 - **Current**: In-memory storage (`MemStorage`) with seeded sample data.
