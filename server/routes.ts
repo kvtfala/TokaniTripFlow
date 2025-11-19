@@ -101,12 +101,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Demo Login Integration - Setup demo login path (DEMO ONLY)
   setupDemoAuth(app);
 
-  // Replit Auth Integration - User endpoint - DISABLED (Demo-only mode) 
-  // app.get('/api/auth/user', isAuthenticated, asyncHandler(async (req: any, res) => {
-  //   const userId = req.user.claims.sub;
-  //   const user = await storage.getUser(userId);
-  //   res.json(user);
-  // }));
+  // Auth User Endpoint - Works with both Replit Auth and Demo sessions
+  app.get('/api/auth/user', asyncHandler(async (req: any, res) => {
+    // Check if user is authenticated (either via Replit Auth or Demo login)
+    if (!req.user || !req.user.claims) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const userId = req.user.claims.sub;
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  }));
 
   // Travel Requests
   app.get("/api/requests", asyncHandler(async (req, res) => {
