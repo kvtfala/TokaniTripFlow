@@ -94,18 +94,18 @@ async function logAudit(params: {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Replit Auth Integration - Setup authentication middleware
-  await setupAuth(app);
+  // Replit Auth Integration - DISABLED (Demo-only mode)
+  // await setupAuth(app);
   
   // Demo Login Integration - Setup demo login path (DEMO ONLY)
   setupDemoAuth(app);
 
-  // Replit Auth Integration - User endpoint  
-  app.get('/api/auth/user', isAuthenticated, asyncHandler(async (req: any, res) => {
-    const userId = req.user.claims.sub;
-    const user = await storage.getUser(userId);
-    res.json(user);
-  }));
+  // Replit Auth Integration - User endpoint - DISABLED (Demo-only mode) 
+  // app.get('/api/auth/user', isAuthenticated, asyncHandler(async (req: any, res) => {
+  //   const userId = req.user.claims.sub;
+  //   const user = await storage.getUser(userId);
+  //   res.json(user);
+  // }));
 
   // Travel Requests
   app.get("/api/requests", asyncHandler(async (req, res) => {

@@ -13,17 +13,8 @@ export default function Landing() {
       {/* Header */}
       <header className="bg-white dark:bg-card border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <TokaniLogo variant="full" />
-            <a href="/api/login">
-              <Button 
-                size="lg" 
-                variant="default"
-                data-testid="button-login"
-              >
-                Sign In
-              </Button>
-            </a>
           </div>
         </div>
       </header>
@@ -54,8 +45,8 @@ export default function Landing() {
               Your Trusted Partner For Travel Approvals.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {/* CTA Button */}
+            <div className="flex justify-center items-center">
               <a href="#demo">
                 <Button 
                   size="lg" 
@@ -64,16 +55,6 @@ export default function Landing() {
                   data-testid="button-try-demo"
                 >
                   Try Demo
-                </Button>
-              </a>
-              <a href="/api/login">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full"
-                  data-testid="button-sign-in-replit"
-                >
-                  Sign In with Replit
                 </Button>
               </a>
             </div>

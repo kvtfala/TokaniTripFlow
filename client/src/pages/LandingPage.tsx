@@ -195,7 +195,7 @@ export default function LandingPage() {
               {CONTENT.hero.subtitle}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex justify-center items-center">
               <a href="#demo">
                 <Button 
                   size="lg" 
@@ -204,16 +204,6 @@ export default function LandingPage() {
                   data-testid="button-demo"
                 >
                   {CONTENT.hero.ctaPrimary}
-                </Button>
-              </a>
-              <a href="/api/login">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full sm:w-auto"
-                  data-testid="button-contact"
-                >
-                  Sign In with Replit
                 </Button>
               </a>
             </div>
@@ -480,22 +470,12 @@ export default function LandingPage() {
                 View the Live Demo
               </Button>
             </a>
-            <a href="/api/login">
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full sm:w-auto"
-                data-testid="button-cta-1"
-              >
-                Sign In with Replit
-              </Button>
-            </a>
             <a href="mailto:contact@tokani.com">
               <Button
                 size="lg"
                 variant="outline"
                 className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/60 text-white hover:bg-white/20 hover:border-white w-full sm:w-auto"
-                data-testid="button-cta-2"
+                data-testid="button-cta-1"
               >
                 Request a Discussion
               </Button>
