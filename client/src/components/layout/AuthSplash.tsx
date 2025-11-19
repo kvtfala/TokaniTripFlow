@@ -7,7 +7,7 @@ interface AuthSplashProps {
   minDuration?: number;
 }
 
-export function AuthSplash({ onComplete, minDuration = 2000 }: AuthSplashProps) {
+export function AuthSplash({ onComplete, minDuration = 3500 }: AuthSplashProps) {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {

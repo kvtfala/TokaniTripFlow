@@ -191,7 +191,7 @@ function Router() {
           <header className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-50 bg-primary text-primary-foreground shadow-sm">
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" className="text-primary-foreground" />
-              <TokaniLogo variant="icon" className="h-10 w-10 flex-shrink-0" />
+              <TokaniLogo variant="icon" className="h-14 w-14 flex-shrink-0" />
               <div className="flex flex-col min-w-0">
                 <h1 className="text-lg font-semibold whitespace-nowrap">Bula! Tokani TripFlow</h1>
                 <span className="text-xs opacity-90 whitespace-nowrap hidden sm:block">Your Trusted Partner for Travel Approvals</span>
