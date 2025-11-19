@@ -144,27 +144,24 @@ function Router() {
   // Replit Auth Integration - Show Landing page for logged-out users
   const { isAuthenticated, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(false);
-  const [hasSeenSplash, setHasSeenSplash] = useState(() => {
-    // Check sessionStorage to see if splash was shown this session
-    return sessionStorage.getItem("hasSeenSplash") === "true";
-  });
 
   const style = {
     "--sidebar-width": "11rem",
     "--sidebar-width-icon": "3rem",
   };
 
-  // Show splash once after successful authentication
+  // Show splash after successful authentication
   useEffect(() => {
-    if (!isLoading && isAuthenticated && !hasSeenSplash) {
+    if (!isLoading && isAuthenticated) {
       setShowSplash(true);
+    } else if (!isAuthenticated) {
+      // Reset splash when logged out, so it shows again on next login
+      setShowSplash(false);
     }
-  }, [isLoading, isAuthenticated, hasSeenSplash]);
+  }, [isLoading, isAuthenticated]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-    setHasSeenSplash(true);
-    sessionStorage.setItem("hasSeenSplash", "true");
   };
 
   // Show landing page if not authenticated or still loading auth
