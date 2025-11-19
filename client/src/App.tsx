@@ -28,7 +28,8 @@ import {
   BarChart3, 
   UserCog,
   Menu,
-  Map
+  Map,
+  Shield
 } from "lucide-react";
 import { TokaniLogo } from "@/components/brand/TokaniLogo";
 import NotFound from "@/pages/not-found";
@@ -46,6 +47,7 @@ import ManagerDashboard from "@/pages/ManagerDashboard";
 import RequestDetail from "@/pages/RequestDetail";
 import TravelDeskDashboard from "@/pages/TravelDeskDashboard";
 import Landing from "@/pages/Landing";
+import AdminPortal from "@/pages/AdminPortal";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthSplash } from "@/components/layout/AuthSplash";
 import { useState, useEffect } from "react";
@@ -93,6 +95,12 @@ const menuItems = [
     title: "Delegations",
     url: "/delegations",
     icon: UserCog,
+  },
+  {
+    title: "Admin Portal",
+    subtitle: "System Config",
+    url: "/admin",
+    icon: Shield,
   },
 ];
 
@@ -212,6 +220,7 @@ function Router() {
               <Route path="/analytics" component={Analytics} />
               <Route path="/travel-watch" component={TravelWatch} />
               <Route path="/delegations" component={DelegateSettings} />
+              <Route path="/admin" component={AdminPortal} />
               <Route component={NotFound} />
             </Switch>
           </main>
