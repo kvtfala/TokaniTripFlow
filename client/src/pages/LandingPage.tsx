@@ -135,20 +135,71 @@ const CONTENT = {
       }
     ]
   },
-  founder: {
-    heading: "About the Founder",
-    name: "Desmond Bale",
-    bio: "Tokani TripFlow was created by Desmond Bale, a corporate travel specialist with over a decade of experience designing, managing, and optimising travel workflows for organisations across Fiji and the Pacific.",
-    expertise: [
-      "Corporate travel management",
-      "Regional and multi-sector itinerary planning",
-      "High-volume travel coordination for NGOs, corporates, and government bodies",
-      "Travel policy interpretation and compliance",
-      "Vendor engagement and procurement alignment",
-      "Fare analysis and cost-control strategies",
-      "Travel systems design and digital process transformation"
-    ],
-    philosophy: "Tokani TripFlow wasn't inspired by overseas models. It was shaped by real, lived experience and built to match the way Fiji truly travels. Its purpose is simple: to bring structure, speed, transparency, and cost efficiency to every official trip made in Fiji."
+  itt: {
+    heading: "About Island Travel Technologies (ITT)",
+    subtitle: "Fiji's homegrown travel-tech company — with a heart for community innovation.",
+    intro: "Island Travel Technologies (ITT) is a Fiji-based software company specialising in travel systems, travel automation, and workflow technology designed specifically for the Pacific.",
+    coreFocus: {
+      heading: "Our core focus is building high-impact travel applications that improve:",
+      items: [
+        "Corporate travel approvals",
+        "Vendor and procurement workflows",
+        "Travel policy compliance",
+        "Regional coordination",
+        "Cost control and visibility",
+        "Low-bandwidth usability for Pacific environments"
+      ]
+    },
+    tagline: "We build practical, robust travel software tailored to how Fiji truly travels, not what international systems assume.",
+    specialty: {
+      heading: "Our Specialty: Travel Systems Designed for the Pacific",
+      description: "ITT focuses on delivering modern, reliable systems for:",
+      items: [
+        "Travel approvals",
+        "RFQ & vendor workflows",
+        "Corporate mobility",
+        "Group and regional travel planning",
+        "Visa, ticketing, and booking processes",
+        "Travel policy automation",
+        "Corporate dashboards and analytics"
+      ],
+      footer: "This is our primary domain — our expertise. Tokani TripFlow is the flagship example of that capability."
+    },
+    community: {
+      heading: "Beyond Travel: ITT's Commitment to Community Impact",
+      intro: "While travel software is our core business, we believe technology should also uplift Fiji's young people.",
+      purpose: "This is why ITT builds free, student-focused digital tools that create real opportunities:",
+      tools: [
+        {
+          name: "Tokani Resume",
+          description: "A free resume builder for Fiji's secondary and tertiary students — simple, professional, and easy to use."
+        },
+        {
+          name: "Tokani Interview Guide",
+          description: "An AI-powered interview practice assistant helping students prepare confidently for real job interviews."
+        },
+        {
+          name: "Tokani Careers",
+          description: "A guidance tool that matches students' subjects and interests to Fiji-based study paths, institutions, and career options."
+        }
+      ],
+      footer: "These community apps are developed pro bono, as ITT's contribution to youth development, employability, and digital empowerment across Fiji."
+    },
+    purpose: {
+      heading: "Why ITT Exists",
+      intro: "Our purpose is two-fold:",
+      points: [
+        {
+          title: "Build world-class travel systems designed for Fiji.",
+          description: "Reliable, structured, transparent, and built for local realities."
+        },
+        {
+          title: "Use technology to give back to the community.",
+          description: "By creating free tools that help students build careers and gain confidence."
+        }
+      ],
+      conclusion: "This blend of specialisation and social impact defines who we are: a local tech company with global-level ambition and a community-first heart."
+    }
   },
   cta: {
     heading: "Let's Transform Travel Management in Fiji",
@@ -402,46 +453,128 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Founder Section */}
-      <section id="founder" className="py-16 md:py-24 bg-card">
+      {/* ITT Section */}
+      <section id="itt" className="py-16 md:py-24 bg-card">
         <div className="container mx-auto max-w-5xl px-4 md:px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground" data-testid="heading-founder">
-            {CONTENT.founder.heading}
+          {/* Main Heading */}
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-foreground" data-testid="heading-itt">
+            {CONTENT.itt.heading}
           </h2>
-          <Card className="border-primary/20">
-            <CardContent className="pt-8">
-              <div className="flex flex-col md:flex-row gap-8">
-                <div className="flex-shrink-0 mx-auto md:mx-0">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-lagoon/20 flex items-center justify-center">
-                    <User className="w-16 h-16 text-primary" />
+          <p className="text-lg text-center text-muted-foreground mb-12 italic">
+            {CONTENT.itt.subtitle}
+          </p>
+
+          {/* Introduction */}
+          <div className="mb-12">
+            <p className="text-lg md:text-xl text-foreground leading-relaxed mb-6">
+              {CONTENT.itt.intro}
+            </p>
+            
+            {/* Core Focus */}
+            <div className="mb-6">
+              <p className="text-base md:text-lg text-foreground font-semibold mb-3">
+                {CONTENT.itt.coreFocus.heading}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                {CONTENT.itt.coreFocus.items.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">{item}</span>
                   </div>
-                </div>
-                <div className="flex-1 space-y-6">
-                  <div>
-                    <p className="text-lg md:text-xl text-foreground leading-relaxed">
-                      {CONTENT.founder.bio}
+                ))}
+              </div>
+            </div>
+
+            <p className="text-base md:text-lg text-foreground leading-relaxed font-medium italic">
+              {CONTENT.itt.tagline}
+            </p>
+          </div>
+
+          {/* Specialty Section */}
+          <Card className="border-primary/20 mb-8">
+            <CardHeader>
+              <CardTitle className="text-xl md:text-2xl">
+                {CONTENT.itt.specialty.heading}
+              </CardTitle>
+              <CardDescription className="text-base">
+                {CONTENT.itt.specialty.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                {CONTENT.itt.specialty.items.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <Target className="w-4 h-4 text-primary flex-shrink-0 mt-1" />
+                    <span className="text-sm text-muted-foreground">{item}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-base text-foreground leading-relaxed mt-4 pt-4 border-t font-medium">
+                {CONTENT.itt.specialty.footer}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Community Impact Section */}
+          <Card className="border-secondary/20 mb-8">
+            <CardHeader>
+              <CardTitle className="text-xl md:text-2xl">
+                {CONTENT.itt.community.heading}
+              </CardTitle>
+              <CardDescription className="text-base">
+                {CONTENT.itt.community.intro}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-base text-foreground mb-4">
+                {CONTENT.itt.community.purpose}
+              </p>
+              
+              <div className="space-y-4 mb-6">
+                {CONTENT.itt.community.tools.map((tool, idx) => (
+                  <div key={idx} className="border-l-4 border-secondary pl-4 py-2">
+                    <h4 className="font-bold text-foreground mb-1">{tool.name}</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {tool.description}
                     </p>
                   </div>
-                  
-                  <div>
-                    <p className="font-semibold text-foreground mb-3">Expertise includes:</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {CONTENT.founder.expertise.map((skill, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-sm">
-                          <Target className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground">{skill}</span>
-                        </div>
-                      ))}
+                ))}
+              </div>
+
+              <p className="text-base text-muted-foreground leading-relaxed italic pt-4 border-t">
+                {CONTENT.itt.community.footer}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Purpose Section */}
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle className="text-xl md:text-2xl">
+                {CONTENT.itt.purpose.heading}
+              </CardTitle>
+              <CardDescription className="text-base">
+                {CONTENT.itt.purpose.intro}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 mb-6">
+                {CONTENT.itt.purpose.points.map((point, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-1">
+                      <span className="text-primary font-bold">{idx + 1}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground mb-1">{point.title}</h4>
+                      <p className="text-sm text-muted-foreground">{point.description}</p>
                     </div>
                   </div>
-
-                  <div className="pt-4 border-t">
-                    <p className="text-base md:text-lg text-foreground leading-relaxed italic">
-                      "{CONTENT.founder.philosophy}"
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
+
+              <p className="text-base md:text-lg text-foreground leading-relaxed font-medium pt-4 border-t">
+                {CONTENT.itt.purpose.conclusion}
+              </p>
             </CardContent>
           </Card>
         </div>

@@ -1,0 +1,80 @@
+You are editing the Tokani TripFlow landing page.
+
+Goal:
+Replace the existing “Founder” or “About the Founder” section with a new section focused on ITT (Island Travel Technologies) and its capabilities.
+
+Instructions:
+- Find the section that talks about the founder or personal background and remove it.
+- In its place, add a new section titled “About Island Travel Technologies (ITT)”.
+- Keep the existing style and layout conventions of the page (same heading levels, spacing, fonts, etc.).
+- Make sure the new section fits visually and structurally with the rest of the landing page.
+- Do NOT change other sections (Hero, Mission, Features, Roadmap, etc.) unless needed for small consistency tweaks.
+
+Use this copy for the new section (you can lightly adjust line breaks but keep the meaning and wording as close as possible):
+
+---
+SECTION TITLE: About Island Travel Technologies (ITT)
+
+SUBTITLE (optional): Fiji’s homegrown travel-tech company — with a heart for community innovation.
+
+BODY:
+
+Island Travel Technologies (ITT) is a Fiji-based software company specialising in travel systems, travel automation, and workflow technology designed specifically for the Pacific.
+
+Our core focus is building high-impact travel applications that improve:
+- Corporate travel approvals
+- Vendor and procurement workflows
+- Travel policy compliance
+- Regional coordination
+- Cost control and visibility
+- Low-bandwidth usability for Pacific environments
+
+We build practical, robust travel software tailored to how Fiji truly travels, not what international systems assume.
+
+SUBHEADING: Our Specialty: Travel Systems Designed for the Pacific
+
+ITT focuses on delivering modern, reliable systems for:
+- Travel approvals
+- RFQ & vendor workflows
+- Corporate mobility
+- Group and regional travel planning
+- Visa, ticketing, and booking processes
+- Travel policy automation
+- Corporate dashboards and analytics
+
+This is our primary domain — our expertise. Tokani TripFlow is the flagship example of that capability.
+
+SUBHEADING: Beyond Travel: ITT’s Commitment to Community Impact
+
+While travel software is our core business, we believe technology should also uplift Fiji’s young people.
+
+This is why ITT builds free, student-focused digital tools that create real opportunities:
+
+Tokani Resume  
+A free resume builder for Fiji’s secondary and tertiary students — simple, professional, and easy to use.
+
+Tokani Interview Guide  
+An AI-powered interview practice assistant helping students prepare confidently for real job interviews.
+
+Tokani Careers  
+A guidance tool that matches students’ subjects and interests to Fiji-based study paths, institutions, and career options.
+
+These community apps are developed pro bono, as ITT’s contribution to youth development, employability, and digital empowerment across Fiji.
+
+SUBHEADING: Why ITT Exists
+
+Our purpose is two-fold:
+
+1. Build world-class travel systems designed for Fiji.  
+   Reliable, structured, transparent, and built for local realities.
+
+2. Use technology to give back to the community.  
+   By creating free tools that help students build careers and gain confidence.
+
+This blend of specialisation and social impact defines who we are: a local tech company with global-level ambition and a community-first heart.
+---
+
+After updating:
+- Ensure the new section is reachable via scrolling just like the old founder section.
+- Do not break routing or layout.
+- Show me the updated JSX/HTML so I can review it.
