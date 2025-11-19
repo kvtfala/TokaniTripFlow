@@ -118,6 +118,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   }));
 
+  // Logout Endpoint - Destroys session and redirects to landing page
+  app.get("/api/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ error: "Failed to log out" });
+      }
+      
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error("Session destruction error:", destroyErr);
+        }
+        res.redirect("/");
+      });
+    });
+  });
+
   // Travel Requests
   app.get("/api/requests", asyncHandler(async (req, res) => {
     const requests = await storage.getTravelRequests();
