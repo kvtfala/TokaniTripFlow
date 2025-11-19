@@ -1,0 +1,97 @@
+You are refactoring and extending an existing React/TypeScript Tokani TripFlow (TTF) project into a cohesive, professional SaaS app.
+
+From now on, **follow this brand style guide for ALL UI decisions**: layout, colours, typography, spacing, components, charts, and micro-interactions.
+
+---
+
+## 1. Brand Positioning
+
+**Product:** Tokani TripFlow (TTF)  
+**Type:** Corporate travel approval & workflow tool  
+**Audience:** Fiji & Pacific corporates, NGOs, government, and SME agencies  
+**Brand personality:**  
+- Professional, reliable, enterprise-ready  
+- Pacific, travel-focused, but not “touristy”  
+- Calm, efficient, low-friction
+
+**Core UX principles:**
+- Clear, low-cognitive-load layouts  
+- Immediate visibility of next actions (approve, send back, view savings, etc.)  
+- Data-first dashboards that feel “light” not cluttered  
+- Works well on mid-range hardware / average screens (no overly heavy visuals)
+
+---
+
+## 2. Colour System
+
+### 2.1 Brand Palette (Core)
+
+**Primary**
+- `--ttf-blue: #0057B8;`      // Tokani Blue – primary brand & key actions
+- `--ttf-navy: #002A52;`      // Dark Navy – top nav, sidebars, strong headings
+
+**Secondary / Accent**
+- `--ttf-aqua: #1FBED6;`      // Highlights, secondary buttons, chart accents
+- `--ttf-light-sky: #EAF7FF;` // Light backgrounds, subtle cards
+
+**Logo Accent**
+- `--ttf-red: #D7263D;`       // Logo accent, very limited use in UI
+
+**Neutrals**
+- `--ttf-grey-900: #1A1A1A;`
+- `--ttf-grey-700: #4D4D4D;`
+- `--ttf-grey-500: #8C8C8C;`
+- `--ttf-grey-300: #D9D9D9;`
+- `--ttf-grey-100: #F5F5F5;`
+- `--ttf-white: #FFFFFF;`
+
+**Status / Feedback**
+- `--ttf-success: #27AE60;`
+- `--ttf-warning: #F2994A;`
+- `--ttf-error:   #EB5757;`
+- `--ttf-info:    #1FBED6;`  // matches Tokani Aqua
+
+### 2.2 Usage Rules
+
+- **Backgrounds:**  
+  - Default app background: `#F5F5F5` or `#EAF7FF`  
+  - Cards/panels: white with subtle shadow
+- **Primary actions (Approve / Submit / Save):** `#0057B8` (Tokani Blue)  
+- **Secondary actions:** outline or ghost versions of Tokani Blue or Aqua.  
+- **Text:**  
+  - Headings: `#002A52` or `#1A1A1A`  
+  - Body: `#4D4D4D`  
+  - Muted text / helper text: `#8C8C8C`
+- **Red (`#D7263D`) is *not* a generic error colour.**  
+  - Use **only** for logo-driven accents, metrics badges (“High impact”) or rare emphasis, not full buttons and not long text blocks.
+
+### 2.3 Tailwind Config Mapping
+
+When editing `tailwind.config.*`, register a brand colour section like:
+
+```ts
+// tailwind.config.ts (excerpt)
+extend: {
+  colors: {
+    ttf: {
+      blue: '#0057B8',
+      navy: '#002A52',
+      aqua: '#1FBED6',
+      lightSky: '#EAF7FF',
+      red: '#D7263D',
+      gray: {
+        100: '#F5F5F5',
+        300: '#D9D9D9',
+        500: '#8C8C8C',
+        700: '#4D4D4D',
+        900: '#1A1A1A',
+      },
+      success: '#27AE60',
+      warning: '#F2994A',
+      error: '#EB5757',
+      info: '#1FBED6',
+      white: '#FFFFFF',
+    },
+  },
+  // see typography & radius below
+}

@@ -165,11 +165,11 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section id="hero" className="relative overflow-hidden">
-        {/* Gradient Background: Coral → Lagoon → Dusk */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#E94A64] via-[#3C7DD9] to-[#0F1A34]" />
+        {/* Gradient Background: Tokani Blue → Aqua → Navy */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0057B8] via-[#1FBED6] to-[#002A52]" />
         
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
         
         {/* Hero Content */}
         <div className="relative container mx-auto px-4 py-20 md:py-32">
@@ -199,7 +199,7 @@ export default function LandingPage() {
               <a href="#demo">
                 <Button 
                   size="lg" 
-                  className="text-lg px-10 py-7 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0 shadow-xl w-full sm:w-auto" 
+                  className="text-lg px-10 py-7 bg-[#0057B8] hover:bg-[#003D82] text-white border-0 shadow-xl w-full sm:w-auto" 
                   data-testid="button-demo"
                 >
                   {CONTENT.hero.ctaPrimary}
@@ -458,11 +458,11 @@ export default function LandingPage() {
 
       {/* Final CTA Section */}
       <section id="cta" className="relative overflow-hidden py-20 md:py-28">
-        {/* Gradient Background: Coral → Lagoon → Dusk */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#E94A64] via-[#3C7DD9] to-[#0F1A34]" />
+        {/* Gradient Background: Tokani Blue → Aqua → Navy */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0057B8] via-[#1FBED6] to-[#002A52]" />
         
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
         
         <div className="container relative mx-auto max-w-4xl px-4 md:px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white" data-testid="heading-cta">
@@ -472,7 +472,7 @@ export default function LandingPage() {
             <a href="#demo">
               <Button
                 size="lg"
-                className="text-lg px-10 py-7 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0 shadow-xl w-full sm:w-auto"
+                className="text-lg px-10 py-7 bg-[#0057B8] hover:bg-[#003D82] text-white border-0 shadow-xl w-full sm:w-auto"
                 data-testid="button-cta-0"
               >
                 View the Live Demo
