@@ -8,6 +8,9 @@ import { VendorManagement } from "@/components/admin/VendorManagement";
 import { EmailTemplateManagement } from "@/components/admin/EmailTemplateManagement";
 import { PerDiemRatesManagement } from "@/components/admin/PerDiemRatesManagement";
 import { SystemNotificationsManagement } from "@/components/admin/SystemNotificationsManagement";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
+import { TravelPoliciesManagement } from "@/components/admin/TravelPoliciesManagement";
+import { WorkflowRulesManagement } from "@/components/admin/WorkflowRulesManagement";
 
 export default function AdminPortal() {
   const { currentUser, isLoading } = useRole();
@@ -134,7 +137,7 @@ export default function AdminPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Travel policy builder coming soon...</p>
+              <TravelPoliciesManagement />
             </CardContent>
           </Card>
         </TabsContent>
@@ -151,7 +154,7 @@ export default function AdminPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Workflow rule configuration coming soon...</p>
+              <WorkflowRulesManagement />
             </CardContent>
           </Card>
         </TabsContent>
@@ -185,7 +188,7 @@ export default function AdminPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Audit log viewer coming soon...</p>
+              <AuditLogViewer />
             </CardContent>
           </Card>
         </TabsContent>
