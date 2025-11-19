@@ -1,0 +1,58 @@
+You are working on the Tokani TripFlow / Island Travel Technologies project in this Replit.
+
+Problem:
+The logo is not showing on the landing page / main layout. From the browser it appears as a broken image (likely a 404 or incorrect src). I want you to thoroughly trace and fix the logo reference so that it renders correctly.
+
+Your tasks:
+
+1. **Locate all logo references**
+   - Search the entire project for:
+     - "logo"
+     - "Logo"
+     - "Tokani" in image tags or imports
+   - Pay special attention to:
+     - Navbar / header components
+     - Layout or Shell components
+     - Landing page file (e.g. LandingPage.tsx or similar)
+     - Any CSS files that might use `background-image` for a logo.
+
+2. **Verify where the actual logo file lives**
+   - Find the actual logo asset file(s):
+     - e.g. `logo.png`, `logo.svg`, `tokani-logo.png`, etc.
+   - Note the real path and exact file name and casing.
+   - Do NOT create a new logo file unless there is absolutely no logo image in the project at all.
+
+3. **Fix the imports or src attributes**
+   - If this is a React/Vite setup:
+     - If the logo is in `public/`, use either:
+       - `<img src="/logo.svg" ... />` or
+       - `<img src="/your-actual-logo-name.ext" ... />`
+     - If the logo is in `src/assets/`, use:
+       ```ts
+       import logo from "../assets/your-actual-logo-name.ext";
+       <img src={logo} alt="Tokani TripFlow" />
+       ```
+   - If this is plain HTML:
+     - Ensure `<img src="...">` points to the correct path relative to the served root (often `public/`).
+   - Fix every broken or inconsistent logo reference so they all point to the same, valid asset.
+
+4. **Respect case sensitivity**
+   - Make sure the file name in the code exactly matches the file name in the filesystem, including capitalization. For example, `TokaniLogo.png` is not the same as `tokanilogo.png`.
+
+5. **Clean up duplicates**
+   - If there are multiple old or unused logo imports or components, remove or refactor them so there is a single, clear pattern for the main logo.
+   - Prefer a single re-usable component like `<BrandLogo />` if that matches this codebase’s style, but don’t over-engineer it.
+
+6. **Keep existing design and layout**
+   - Do not change the layout, positioning, or styling of the header/navigation aside from what is necessary to make the logo actually display.
+   - If the existing CSS uses an explicit width/height, keep them or adjust slightly if needed to match the new image’s aspect ratio.
+
+7. **Show me exactly what you changed**
+   - After fixing, show:
+     - The updated import or `<img>` / `<Image>` code.
+     - The final file path of the logo asset.
+   - Briefly explain why the logo was broken (wrong path, wrong case, moved file, etc.) and how you corrected it.
+
+Make sure the end result is:
+- No broken logo reference.
+- The Tokani/TTF logo renders properly in the header / main landing page.
