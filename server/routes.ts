@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction, RequestHandler } from "e
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote } from "@shared/types";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, setupPassportSession, isAuthenticated } from "./replitAuth";
 import { setupDemoAuth } from "./demoAuth";
 import { 
   insertVendorSchema, 
@@ -95,7 +95,8 @@ async function logAudit(params: {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Replit Auth Integration - DISABLED (Demo-only mode)
-  // await setupAuth(app);
+  // Setup Passport session management for demo login (without Replit OIDC routes)
+  setupPassportSession(app);
   
   // Demo Login Integration - Setup demo login path (DEMO ONLY)
   setupDemoAuth(app);

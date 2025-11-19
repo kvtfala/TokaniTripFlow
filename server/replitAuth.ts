@@ -72,6 +72,18 @@ async function upsertUser(
   });
 }
 
+// Minimal session setup for demo-only mode (no Replit OIDC)
+export function setupPassportSession(app: Express) {
+  app.set("trust proxy", 1);
+  app.use(getSession());
+  app.use(passport.initialize());
+  app.use(passport.session());
+  
+  // Passport serialization for session storage
+  passport.serializeUser((user: Express.User, cb) => cb(null, user));
+  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+}
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
