@@ -1,0 +1,4236 @@
+
+
+Tags
+
+Create Jira ticket
+All issues
+320
+
+Code patterns
+Enforce No Confusing Void Expression
+162
+
+Disallow Explicit Any Type
+45
+
+Disallow Misused Promises
+32
+
+Disallow Mixed HTML and Unencoded Input to Prevent XSS
+30
+
+Detect Object Injection
+18
+
+Disallow Unnecessary Conditions
+7
+
+Disallow Non-Null Assertions
+7
+
+Enforce handling of floating Promises
+3
+
+Detect Insecure Dependencies (High Severity)
+3
+
+Disallow Lexical Declarations in Case Clauses
+3
+
+Detect Insecure Dependencies (Minor Severity)
+2
+
+Detect Non-Literal Filename in fs Calls
+2
+
+Others
+6
+
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+359
+                      <Dialog open={editingWorkflow?.id === workflow.id} onOpenChange={(open) => !open && setEditingWorkflow(null)}>
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'background' is used to store raw HTML
+
+tailwind.config.ts
+
+68
+        background: "hsl(var(--background) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+CostPolicyStep.tsx
+
+109
+            onChange={(e) => updateFormData({ projectCode: e.target.value })}
+109
+            onChange={(e) => { updateFormData({ projectCode: e.target.value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+FinanceExport.tsx
+
+93
+                  onChange={(e) => setStartDate(e.target.value)}
+93
+                  onChange={(e) => { setStartDate(e.target.value); }}
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+104
+          foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Unnecessary conditional, value is always falsy.
+
+client/src/pages/
+Analytics.tsx
+
+252
+  if (!requests || requests.length === 0) {
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/hooks/
+use-toast.ts
+
+146
+    dispatch({
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+AuditLogViewer.tsx
+
+266
+                          onClick={() => setViewingLog(log)}
+266
+                          onClick={() => { setViewingLog(log); }}
+HIGH
+Error prone
+
+Quick fix
+
+Unnecessary optional chain on a non-nullish value.
+
+client/src/components/ui/
+chart.tsx
+
+146
+          ? config[label as keyof typeof config]?.label || label
+146
+          ? config[label as keyof typeof config].label || label
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+711
+  app.post("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req: any, res) => {
+711
+  app.post("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req: unknown, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+1005
+                    onChange={(e) => setComment(e.target.value)}
+1005
+                    onChange={(e) => { setComment(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/hooks/
+use-toast.ts
+
+150
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+150
+  const dismiss = () => { dispatch({ type: "DISMISS_TOAST", toastId: id }); }
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+329
+                            onClick={() => setEditingTemplate(template)}
+329
+                            onClick={() => { setEditingTemplate(template); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+TravelMap.tsx
+
+181
+                onBlur={() => setHoveredMarker(null)}
+181
+                onBlur={() => { setHoveredMarker(null); }}
+HIGH
+Security
+
+File Access
+
+
+Found readFile from package "fs" with non literal argument at index 0
+
+server/
+vite.ts
+
+56
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/data/adapters/
+BudgetAdapter.ts
+
+23
+    return budgets[costCentreCode] || 1000;
+MINOR
+Security
+
+Insecure Modules Libraries
+
+
+Insecure dependency npm/brace-expansion@2.0.1 (CVE-2025-5889: brace-expansion: juliangruber brace-expansion index.js expand redos) (update to 2.0.2)
+
+package-lock.json
+
+3906
+    "node_modules/brace-expansion": {
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Insecure dependency npm/xlsx@0.18.5 (CVE-2023-30533: Prototype Pollution in sheetJS) (update to 0.19.3)
+
+package-lock.json
+
+8742
+    "node_modules/xlsx": {
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+127
+  app.post("/api/requests", async (req, res) => {
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+89
+          foreground: "hsl(var(--secondary-foreground) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+TravelMap.tsx
+
+180
+                onFocus={() => setHoveredMarker(marker)}
+180
+                onFocus={() => { setHoveredMarker(marker); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/hooks/
+use-toast.ts
+
+187
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+187
+    dismiss: (toastId?: string) => { dispatch({ type: "DISMISS_TOAST", toastId }); },
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+83
+          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from a function is forbidden. Please move it before the `return` statement.
+
+server/
+replitAuth.ts
+
+154
+    return next();
+154
+    next(); return;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+322
+                        onClick={() => setDeletingRate(rate)}
+322
+                        onClick={() => { setDeletingRate(rate); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+652
+                  <button onClick={() => setFilterCostCentre("all")} className="ml-1 hover:text-destructive">
+652
+                  <button onClick={() => { setFilterCostCentre("all"); }} className="ml-1 hover:text-destructive">
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+598
+  app.delete("/api/delegations/:id", async (req, res) => {
+HIGH
+Error prone
+
+
+Unnecessary conditional, value is always truthy.
+
+client/src/components/
+StatusBadge.tsx
+
+46
+  const config = statusConfig[status] || statusConfig.draft;
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+441
+  app.post("/api/requests/:id/send-rfq", async (req, res) => {
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Variable Assigned to Object Injection Sink
+
+client/src/components/ui/
+input-otp.tsx
+
+36
+  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+487
+                      onChange={(e) => setNewQuote({ ...newQuote, quoteExpiry: e.target.value })}
+487
+                      onChange={(e) => { setNewQuote({ ...newQuote, quoteExpiry: e.target.value }); }}
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Variable Assigned to Object Injection Sink
+
+client/src/utils/
+export.ts
+
+91
+      const val = (r as any)[k];
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+547
+                  onClick={() => submitWithQuotesMutation.mutate()}
+547
+                  onClick={() => { submitWithQuotesMutation.mutate(); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/pages/
+RequestDetail.tsx
+
+334
+    onError: (error: any) => {
+334
+    onError: (error: unknown) => {
+MINOR
+Security
+
+Insecure Modules Libraries
+
+
+Insecure dependency npm/on-headers@1.0.2 (CVE-2025-7339: on-headers: on-headers vulnerable to http response header manipulation) (update to 1.1.0)
+
+package-lock.json
+
+6331
+    "node_modules/on-headers": {
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/pages/
+Analytics.tsx
+
+105
+      byCityCountry[key] = (byCityCountry[key] || 0) + 1;
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/components/ui/
+chart.tsx
+
+354
+    ? config[configLabelKey]
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'ring' is used to store raw HTML
+
+tailwind.config.ts
+
+107
+        ring: "hsl(var(--ring) / <alpha-value>)",
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+AuditLogViewer.tsx
+
+41
+  fieldChanges: any | null;
+41
+  fieldChanges: unknown | null;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/hooks/
+useDeviceType.ts
+
+42
+    return () => window.removeEventListener('resize', updateDevice);
+42
+    return () => { window.removeEventListener('resize', updateDevice); };
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+93
+              onSelect={(location) => updateFormData({ destination: location })}
+93
+              onSelect={(location) => { updateFormData({ destination: location }); }}
+HIGH
+Error prone
+
+
+Unexpected lexical declaration in case block.
+
+client/src/pages/
+MyTrips.tsx
+
+142
+          const costB = b.costBreakdown?.totalCost || b.perDiem.totalFJD;
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Insecure dependency npm/glob@10.4.5 (CVE-2025-64756: glob CLI: Command injection via -c/--cmd executes matches with shell:true) (update to 10.5.0)
+
+package-lock.json
+
+5343
+    "node_modules/glob": {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+842
+                            onClick={() => handleSort('traveler')}
+842
+                            onClick={() => { handleSort('traveler'); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+339
+      <Tabs value={tabFilter} onValueChange={(v) => setTabFilter(v as any)}>
+339
+      <Tabs value={tabFilter} onValueChange={(v) => { setTabFilter(v as any); }}>
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+742
+  app.patch("/api/admin/vendors/:id", requireRole(["finance_admin", "super_admin"]), async (req: any, res) => {
+742
+  app.patch("/api/admin/vendors/:id", requireRole(["finance_admin", "super_admin"]), async (req: unknown, res) => {
+CRITICAL
+Security
+
+XSS
+
+
+The application was found calling `dangerouslySetInnerHTML` which may lead to Cross Site Scripting (XSS). By default, React components will encode the data properly before rendering.
+
+client/src/components/ui/
+chart.tsx
+
+79
+  return (
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+117
+          DEFAULT: "hsl(var(--sidebar) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Promise-returning function provided to variable where a void return was expected.
+
+server/
+replitAuth.ts
+
+145
+export const isAuthenticated: RequestHandler = async (req, res, next) => {
+HIGH
+Security
+
+XSS
+
+
+Dangerous location.href assignment can lead to XSS. Please use escape("/") as a wrapper for escaping
+
+client/src/components/
+DemoLogin.tsx
+
+40
+      window.location.href = "/";
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+411
+                        onClick={() => setDeletingWorkflow(workflow)}
+411
+                        onClick={() => { setDeletingWorkflow(workflow); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+552
+                      onClick={() => setSelectedRequest(request)}
+552
+                      onClick={() => { setSelectedRequest(request); }}
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+VendorManagement.tsx
+
+440
+              onClick={() => deletingVendor && deleteMutation.mutate(deletingVendor.id)}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+266
+              onSubmit={(values) => createMutation.mutate(values)}
+266
+              onSubmit={(values) => { createMutation.mutate(values); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+784
+  app.delete("/api/admin/vendors/:id", requireRole(["super_admin"]), async (req: any, res) => {
+784
+  app.delete("/api/admin/vendors/:id", requireRole(["super_admin"]), async (req: unknown, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+ApprovalRoutingStep.tsx
+
+136
+                    onClick={() => removeAdditionalApprover(approverId)}
+136
+                    onClick={() => { removeAdditionalApprover(approverId); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+159
+                    onClick={() => removeSector(sector.id)}
+159
+                    onClick={() => { removeSector(sector.id); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+426
+                              onClick={() => toggleRow(request.id)}
+426
+                              onClick={() => { toggleRow(request.id); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+460
+      const rfqRecipients = vendors.map((v: any) => ({
+460
+      const rfqRecipients = vendors.map((v: unknown) => ({
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+index.ts
+
+22
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+22
+  let capturedJsonResponse: Record<string, unknown> | undefined = undefined;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Analytics.tsx
+
+321
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("30d")} data-testid="button-preset-30d">
+321
+                <Button variant="outline" size="sm" onClick={() => { setDatePreset("30d"); }} data-testid="button-preset-30d">
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'border' is used to store raw HTML
+
+tailwind.config.ts
+
+80
+          border: "hsl(var(--popover-border) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+393
+                        onClick={() => toggleSort("cost")}
+393
+                        onClick={() => { toggleSort("cost"); }}
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+93
+          DEFAULT: "hsl(var(--muted) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+VendorManagement.tsx
+
+395
+                            onClick={() => handleApprove(vendor)}
+395
+                            onClick={() => { handleApprove(vendor); }}
+CRITICAL
+Security
+
+File Access
+
+
+The application dynamically constructs file or path information.
+
+server/
+vite.ts
+
+73
+  if (!fs.existsSync(distPath)) {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+63
+  conditions: any;
+63
+  conditions: unknown;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelDeskDashboard.tsx
+
+196
+              onChange={(e) => setSearchQuery(e.target.value)}
+196
+              onChange={(e) => { setSearchQuery(e.target.value); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+replitAuth.ts
+
+47
+  user: any,
+47
+  user: unknown,
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+TravelMap.tsx
+
+178
+                onClick={() => handleMarkerInteraction(marker)}
+178
+                onClick={() => { handleMarkerInteraction(marker); }}
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Insecure dependency npm/xlsx@0.18.5 (CVE-2024-22363: SheetJS Regular Expression Denial of Service (ReDoS)) (update to 0.20.2)
+
+package-lock.json
+
+8742
+    "node_modules/xlsx": {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/ui/
+sidebar.tsx
+
+109
+    return () => window.removeEventListener("keydown", handleKeyDown)
+109
+    return () => { window.removeEventListener("keydown", handleKeyDown); }
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+DelegateSettings.tsx
+
+110
+                onChange={(e) => setStartDate(e.target.value)}
+110
+                onChange={(e) => { setStartDate(e.target.value); }}
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+122
+          DEFAULT: "hsl(var(--sidebar-primary) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Forbidden non-null assertion.
+
+server/
+replitAuth.ts
+
+34
+    secret: process.env.SESSION_SECRET!,
+HIGH
+Error prone
+
+
+Unnecessary conditional, value is always falsy.
+
+client/src/components/ui/
+form.tsx
+
+51
+  if (!fieldContext) {
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+784
+  app.delete("/api/admin/vendors/:id", requireRole(["super_admin"]), async (req: any, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Analytics.tsx
+
+327
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("6m")} data-testid="button-preset-6m">
+327
+                <Button variant="outline" size="sm" onClick={() => { setDatePreset("6m"); }} data-testid="button-preset-6m">
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/utils/
+export.ts
+
+98
+  worksheet["!cols"] = Object.keys(maxWidth).map((k) => ({ wch: maxWidth[k] + 2 }));
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+298
+                        onClick={() => handleToggleActive(policy)}
+298
+                        onClick={() => { handleToggleActive(policy); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+172
+    onError: (error: any) => {
+172
+    onError: (error: unknown) => {
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+DelegateSettings.tsx
+
+179
+                            toggleMutation.mutate({
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Analytics.tsx
+
+324
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("90d")} data-testid="button-preset-90d">
+324
+                <Button variant="outline" size="sm" onClick={() => { setDatePreset("90d"); }} data-testid="button-preset-90d">
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+TravelMap.tsx
+
+177
+                onMouseLeave={() => setHoveredMarker(null)}
+177
+                onMouseLeave={() => { setHoveredMarker(null); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+294
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+294
+                    onChange={(e) => { setFilterEndDate(e.target.value); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+656
+  app.get("/api/admin/users", requireRole(["super_admin", "finance_admin", "travel_admin"]), async (req, res) => {
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+73
+          DEFAULT: "hsl(var(--card) / <alpha-value>)",
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'ring' is used to store raw HTML
+
+tailwind.config.ts
+
+116
+          ring: "hsl(var(--sidebar-ring) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelDeskDashboard.tsx
+
+215
+                onClick={() => setSearchQuery("")}
+215
+                onClick={() => { setSearchQuery(""); }}
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+324
+                      <Dialog open={editingTemplate?.id === template.id} onOpenChange={(open) => !open && setEditingTemplate(null)}>
+HIGH
+Security
+
+File Access
+
+
+Found existsSync from package "fs" with non literal argument at index 0
+
+server/
+vite.ts
+
+73
+  if (!fs.existsSync(distPath)) {
+HIGH
+Error prone
+
+
+Forbidden non-null assertion.
+
+client/src/pages/
+Analytics.tsx
+
+78
+        const reviewed = new Date(r.reviewedAt!);
+HIGH
+Error prone
+
+
+Unexpected lexical declaration in case block.
+
+client/src/pages/
+MyTrips.tsx
+
+149
+          const statusOrder = { 
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+VendorManagement.tsx
+
+429
+      <AlertDialog open={!!deletingVendor} onOpenChange={() => setDeletingVendor(null)}>
+429
+      <AlertDialog open={!!deletingVendor} onOpenChange={() => { setDeletingVendor(null); }}>
+HIGH
+Security
+
+Insecure Storage
+
+
+Hardcoded passwords are a security risk.
+
+server/
+demoAuth.ts
+
+12
+const DEMO_PASSWORD = "itt1235*";
+HIGH
+Security
+
+XSS
+
+
+Unencoded return value from function 'Object.entries(THEMES) .map' used in HTML context
+
+client/src/components/ui/
+chart.tsx
+
+82
+        __html: Object.entries(THEMES)
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+264
+                onClick={() => setShowFilters(!showFilters)}
+264
+                onClick={() => { setShowFilters(!showFilters); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+370
+                        onClick={() => toggleSort("destination")}
+370
+                        onClick={() => { toggleSort("destination"); }}
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+342
+                      <Dialog open={editingNotification?.id === notification.id} onOpenChange={(open) => !open && setEditingNotification(null)}>
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+428
+  app.delete("/api/requests/:requestId/quotes/:quoteId", async (req, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Analytics.tsx
+
+313
+                onChange={(e) => setEndDate(e.target.value)}
+313
+                onChange={(e) => { setEndDate(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+466
+                        onValueChange={(value) => setNewQuote({ ...newQuote, currency: value })}
+466
+                        onValueChange={(value) => { setNewQuote({ ...newQuote, currency: value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+387
+                        onClick={() => setDeletingNotification(notification)}
+387
+                        onClick={() => { setDeletingNotification(notification); }}
+HIGH
+Error prone
+
+
+Forbidden non-null assertion.
+
+server/
+replitAuth.ts
+
+137
+          client_id: process.env.REPL_ID!,
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+359
+                        onClick={() => setDeletingPolicy(policy)}
+359
+                        onClick={() => { setDeletingPolicy(policy); }}
+HIGH
+Error prone
+
+
+Forbidden non-null assertion.
+
+client/src/pages/
+RequestDetail.tsx
+
+972
+            <RfqSection requestId={id!} request={request} />
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+FinanceExport.tsx
+
+105
+                  onChange={(e) => setEndDate(e.target.value)}
+105
+                  onChange={(e) => { setEndDate(e.target.value); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+115
+  app.get("/api/requests/:id", async (req, res) => {
+HIGH
+Error prone
+
+
+Forbidden non-null assertion.
+
+client/src/pages/
+RequestDetail.tsx
+
+978
+              requestId={id!}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+727
+                      onClick={() => setActionMode("approve")}
+727
+                      onClick={() => { setActionMode("approve"); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+381
+                        onClick={() => toggleSort("date")}
+381
+                        onClick={() => { toggleSort("date"); }}
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+79
+          foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+84
+          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+860
+  app.patch("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: any, res) => {
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+106
+  app.get("/api/requests", async (req, res) => {
+HIGH
+Error prone
+
+Quick fix
+
+Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.
+
+client/src/components/
+TravelMap.tsx
+
+33
+    loadCoordinates();
+33
+    void loadCoordinates();
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+232
+              onSubmit={(values) => createMutation.mutate(values)}
+232
+              onSubmit={(values) => { createMutation.mutate(values); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+475
+        note: `RFQ sent to ${vendors.length} vendor(s): ${vendors.map((v: any) => v.vendorName).join(", ")}`,
+475
+        note: `RFQ sent to ${vendors.length} vendor(s): ${vendors.map((v: unknown) => v.vendorName).join(", ")}`,
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+409
+                      onClick={() => deleteQuoteMutation.mutate(quote.id)}
+409
+                      onClick={() => { deleteQuoteMutation.mutate(quote.id); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+CoordinatorDashboard.tsx
+
+161
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as RequestStatus | "all")}>
+161
+            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value as RequestStatus | "all"); }}>
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+404
+                        onClick={() => toggleSort("status")}
+404
+                        onClick={() => { toggleSort("status"); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+374
+      <AlertDialog open={!!deletingPolicy} onOpenChange={() => setDeletingPolicy(null)}>
+374
+      <AlertDialog open={!!deletingPolicy} onOpenChange={() => { setDeletingPolicy(null); }}>
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+ApprovalDialog.tsx
+
+132
+                onClick={() => setAction("approve")}
+132
+                onClick={() => { setAction("approve"); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+490
+  app.post("/api/requests/:id/submit-with-quotes", async (req, res) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/utils/
+export.ts
+
+91
+      const val = (r as any)[k];
+91
+      const val = (r as unknown)[k];
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+364
+                            onClick={() => setEditingWorkflow(workflow)}
+364
+                            onClick={() => { setEditingWorkflow(workflow); }}
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Variable Assigned to Object Injection Sink
+
+server/
+routes.ts
+
+54
+      const oldVal = params.previousValue[key];
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+18
+function validateRequest<T>(schema: any, data: any): { success: true; data: T } | { success: false; error: string } {
+18
+function validateRequest<T>(schema: unknown, data: any): { success: true; data: T } | { success: false; error: string } {
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+98
+          DEFAULT: "hsl(var(--accent) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+457
+                        onChange={(e) => setNewQuote({ ...newQuote, quoteValue: e.target.value })}
+457
+                        onChange={(e) => { setNewQuote({ ...newQuote, quoteValue: e.target.value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+258
+              onSubmit={(values) => createMutation.mutate(values)}
+258
+              onSubmit={(values) => { createMutation.mutate(values); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+644
+                  <button onClick={() => setFilterDepartment("all")} className="ml-1 hover:text-destructive">
+644
+                  <button onClick={() => { setFilterDepartment("all"); }} className="ml-1 hover:text-destructive">
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from a function is forbidden. Please remove the `return` statement.
+
+client/src/components/ui/
+sidebar.tsx
+
+93
+    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
+93
+    isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/pages/
+RequestDetail.tsx
+
+701
+    const variants: Record<RequestStatus, { variant: "default" | "secondary" | "destructive" | "outline", icon: any }> = {
+701
+    const variants: Record<RequestStatus, { variant: "default" | "secondary" | "destructive" | "outline", icon: unknown }> = {
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/components/
+StatusBadge.tsx
+
+46
+  const config = statusConfig[status] || statusConfig.draft;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+537
+                      onChange={(e) => setQuoteJustification(e.target.value)}
+537
+                      onChange={(e) => { setQuoteJustification(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+375
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+375
+                    onChange={(e) => { setFilterStartDate(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+309
+                            onClick={() => setEditingPolicy(policy)}
+309
+                            onClick={() => { setEditingPolicy(policy); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+ApprovalDialog.tsx
+
+111
+                onChange={(e) => setComment(e.target.value)}
+111
+                onChange={(e) => { setComment(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+336
+                        onClick={() => handleTogglePublish(notification)}
+336
+                        onClick={() => { handleTogglePublish(notification); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+64
+  actions: any;
+64
+  actions: unknown;
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+replitAuth.ts
+
+146
+  const user = req.user as any;
+146
+  const user = req.user as unknown;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TravellerSelectionStep.tsx
+
+245
+          onChange={(e) => updateFormData({ purpose: e.target.value })}
+245
+          onChange={(e) => { updateFormData({ purpose: e.target.value }); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+vite.ts
+
+44
+  app.use("*", async (req, res, next) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+40
+  metadata?: any;
+40
+  metadata?: unknown;
+HIGH
+Error prone
+
+
+Unexpected lexical declaration in case block.
+
+client/src/pages/
+MyTrips.tsx
+
+141
+          const costA = a.costBreakdown?.totalCost || a.perDiem.totalFJD;
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+829
+  app.post("/api/admin/templates", requireRole(["super_admin"]), async (req: any, res) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+137
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+137
+    mutationFn: async ({ id, data }: { id: string; data: unknown }) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+CoordinatorDashboard.tsx
+
+156
+                onChange={(e) => setSearchQuery(e.target.value)}
+156
+                onChange={(e) => { setSearchQuery(e.target.value); }}
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+384
+              onClick={() => deletingTemplate && deleteMutation.mutate(deletingTemplate.id)}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+829
+  app.post("/api/admin/templates", requireRole(["super_admin"]), async (req: any, res) => {
+829
+  app.post("/api/admin/templates", requireRole(["super_admin"]), async (req: unknown, res) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/
+DemoLogin.tsx
+
+42
+    onError: (error: any) => {
+42
+    onError: (error: unknown) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+304
+                    onChange={(e) => setFilterMinCost(e.target.value)}
+304
+                    onChange={(e) => { setFilterMinCost(e.target.value); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+39
+  newValue?: any;
+39
+  newValue?: unknown;
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/data/adapters/
+BudgetAdapter.ts
+
+57
+    return allocated[costCentreCode] || 2000;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+505
+                    onClick={() => createQuoteMutation.mutate()}
+505
+                    onClick={() => { createQuoteMutation.mutate(); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+172
+                    onChange={(e) => updateSector(sector.id, "origin", e.target.value)}
+172
+                    onChange={(e) => { updateSector(sector.id, "origin", e.target.value); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+807
+  app.get("/api/admin/templates", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+860
+  app.patch("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: any, res) => {
+860
+  app.patch("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: unknown, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+84
+              onChange={(e) => updateFormData({ origin: e.target.value })}
+84
+              onChange={(e) => { updateFormData({ origin: e.target.value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+ThemeToggle.tsx
+
+12
+      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+12
+      onClick={() => { setTheme(theme === "light" ? "dark" : "light"); }}
+HIGH
+Error prone
+
+
+Unnecessary conditional, value is always truthy.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+478
+    if (template) {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+63
+  triggerConditions: any;
+63
+  triggerConditions: unknown;
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+AuditLogViewer.tsx
+
+39
+  previousValue: any | null;
+39
+  previousValue: unknown | null;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TravelRequestWizard.tsx
+
+75
+    return () => clearTimeout(timer);
+75
+    return () => { clearTimeout(timer); };
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+877
+                            onClick={() => handleSort('perDiem')}
+877
+                            onClick={() => { handleSort('perDiem'); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+1018
+                        onClick={() => approveMutation.mutate({ approvalType: "pre_approval" })}
+1018
+                        onClick={() => { approveMutation.mutate({ approvalType: "pre_approval" }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TravellerSelectionStep.tsx
+
+113
+                        onSelect={() => addTraveller(traveller)}
+113
+                        onSelect={() => { addTraveller(traveller); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+76
+    action: params.action as any,
+76
+    action: params.action as unknown,
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+26
+    const message = result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+26
+    const message = result.error.errors.map((e: unknown) => `${e.path.join('.')}: ${e.message}`).join(', ');
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+94
+          foreground: "hsl(var(--muted-foreground) / <alpha-value>)",
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+902
+  app.delete("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: any, res) => {
+902
+  app.delete("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: unknown, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+372
+      <AlertDialog open={!!deletingTemplate} onOpenChange={() => setDeletingTemplate(null)}>
+372
+      <AlertDialog open={!!deletingTemplate} onOpenChange={() => { setDeletingTemplate(null); }}>
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+94
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/pages/
+Analytics.tsx
+
+92
+      byCC[key] = (byCC[key] || 0) + cost;
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+612
+    return async (req: any, res: any, next: any) => {
+612
+    return async (req: unknown, res: any, next: any) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+860
+                            onClick={() => handleSort('startDate')}
+860
+                            onClick={() => { handleSort('startDate'); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+VendorManagement.tsx
+
+337
+                  <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-vendor">
+337
+                  <Button type="button" variant="outline" onClick={() => { setIsCreateOpen(false); }} data-testid="button-cancel-vendor">
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+43
+  let changes: any = null;
+43
+  let changes: unknown = null;
+HIGH
+Error prone
+
+
+Unnecessary conditional, value is always truthy.
+
+client/src/data/adapters/
+GeoAdapter.ts
+
+40
+  return CITY_COORDINATES[key] || DEFAULT_COORDINATES;
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+438
+              onClick={() => deletingWorkflow && deleteMutation.mutate(deletingWorkflow.id)}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+719
+                      onClick={() => setActionMode("reject")}
+719
+                      onClick={() => { setActionMode("reject"); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+294
+              onSubmit={(values) => createMutation.mutate(values)}
+294
+              onSubmit={(values) => { createMutation.mutate(values); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+314
+                    onChange={(e) => setFilterMaxCost(e.target.value)}
+314
+                    onChange={(e) => { setFilterMaxCost(e.target.value); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+65
+  escalationPath: any | null;
+65
+  escalationPath: unknown | null;
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+817
+  app.get("/api/admin/templates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+AuditLogViewer.tsx
+
+342
+                {Object.entries(log.fieldChanges).map(([field, change]: [string, any]) => (
+342
+                {Object.entries(log.fieldChanges).map(([field, change]: [string, unknown]) => (
+HIGH
+Error prone
+
+
+Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.
+
+server/
+index.ts
+
+49
+(async () => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+TravelMap.tsx
+
+179
+                onKeyDown={(e) => handleMarkerKeyDown(e, marker)}
+179
+                onKeyDown={(e) => { handleMarkerKeyDown(e, marker); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+665
+  app.patch("/api/admin/users/:id", requireRole(["super_admin"]), async (req: any, res) => {
+665
+  app.patch("/api/admin/users/:id", requireRole(["super_admin"]), async (req: unknown, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+357
+                        onClick={() => setDeletingTemplate(template)}
+357
+                        onClick={() => { setDeletingTemplate(template); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+314
+                            onSubmit={(values) => updateMutation.mutate({ id: rate.id, data: values as any })}
+314
+                            onSubmit={(values) => updateMutation.mutate({ id: rate.id, data: values as unknown })}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TravellerSelectionStep.tsx
+
+198
+                  onClick={() => removeTraveller(traveller.id)}
+198
+                  onClick={() => { removeTraveller(traveller.id); }}
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'border' is used to store raw HTML
+
+tailwind.config.ts
+
+70
+        border: "hsl(var(--border) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+256
+                    onClick={() => setSearchQuery("")}
+256
+                    onClick={() => { setSearchQuery(""); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+570
+                  onChange={(e) => setSearchQuery(e.target.value)}
+570
+                  onChange={(e) => { setSearchQuery(e.target.value); }}
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/pages/
+Home.tsx
+
+98
+      subtitle: roleGreetings[role] || "Your trusted partner for travel approvals",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+869
+                            onClick={() => handleSort('department')}
+869
+                            onClick={() => { handleSort('department'); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+384
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+384
+                    onChange={(e) => { setFilterEndDate(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+496
+                      onChange={(e) => setNewQuote({ ...newQuote, notes: e.target.value })}
+496
+                      onChange={(e) => { setNewQuote({ ...newQuote, notes: e.target.value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+ApprovalDialog.tsx
+
+124
+                onClick={() => setAction("reject")}
+124
+                onClick={() => { setAction("reject"); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+AuditLogViewer.tsx
+
+40
+  newValue: any;
+40
+  newValue: unknown;
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+414
+              onClick={() => deletingNotification && deleteMutation.mutate(deletingNotification.id)}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+CostPolicyStep.tsx
+
+99
+            onChange={(e) => updateFormData({ fundingCode: e.target.value })}
+99
+            onChange={(e) => { updateFormData({ fundingCode: e.target.value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+VendorManagement.tsx
+
+415
+                        onClick={() => setDeletingVendor(vendor)}
+415
+                        onClick={() => { setDeletingVendor(vendor); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+363
+  app.get("/api/requests/:id/quotes", async (req, res) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/pages/
+Approvals.tsx
+
+55
+    onSuccess: (data: any) => {
+55
+    onSuccess: (data: unknown) => {
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+742
+  app.patch("/api/admin/vendors/:id", requireRole(["finance_admin", "super_admin"]), async (req: any, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+616
+              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+616
+              <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v as any); }}>
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+AuditLogViewer.tsx
+
+261
+                    <Dialog open={viewingLog?.id === log.id} onOpenChange={(open) => !open && setViewingLog(null)}>
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Variable Assigned to Object Injection Sink
+
+server/
+routes.ts
+
+55
+      const newVal = params.newValue[key];
+HIGH
+Error prone
+
+
+Forbidden non-null assertion.
+
+server/
+replitAuth.ts
+
+18
+      process.env.REPL_ID!
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+DelegateSettings.tsx
+
+193
+                      onClick={() => deleteMutation.mutate(delegation.id)}
+193
+                      onClick={() => { deleteMutation.mutate(delegation.id); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/
+TravelMap.tsx
+
+176
+                onMouseEnter={() => setHoveredMarker(marker)}
+176
+                onMouseEnter={() => { setHoveredMarker(marker); }}
+HIGH
+Error prone
+
+
+Forbidden non-null assertion.
+
+client/src/
+main.tsx
+
+5
+createRoot(document.getElementById("root")!).render(<App />);
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+64
+  stages: any;
+64
+  stages: unknown;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+1036
+                    onClick={() => approveMutation.mutate(undefined)}
+1036
+                    onClick={() => { approveMutation.mutate(undefined); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+CostPolicyStep.tsx
+
+50
+        <Select value={formData.cabinClass} onValueChange={(value: CabinClass) => checkPolicy(value)}>
+50
+        <Select value={formData.cabinClass} onValueChange={(value: CabinClass) => { checkPolicy(value); }}>
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+88
+          DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+699
+  app.get("/api/admin/vendors/:id", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+38
+  previousValue?: any;
+38
+  previousValue?: unknown;
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+136
+  app.post("/api/requests/:id/approve", async (req, res) => {
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+415
+  app.put("/api/requests/:requestId/quotes/:quoteId", async (req, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+333
+                  onChange={(e) => setSearchQuery(e.target.value)}
+333
+                  onChange={(e) => { setSearchQuery(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/layout/
+AuthSplash.tsx
+
+19
+    return () => clearTimeout(timer);
+19
+    return () => { clearTimeout(timer); };
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+347
+                            onClick={() => setEditingNotification(notification)}
+347
+                            onClick={() => { setEditingNotification(notification); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+382
+                        onChange={() => setSelectedQuoteId(quote.id)}
+382
+                        onChange={() => { setSelectedQuoteId(quote.id); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/pages/
+TravelWatch.tsx
+
+616
+              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+616
+              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as unknown)}>
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+214
+            updateFormData({ 
+HIGH
+Error prone
+
+Quick fix
+
+Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.
+
+client/src/components/
+TravelRequestForm.tsx
+
+166
+      checkBudget(costCentreCode, perDiem.totalFJD);
+166
+      void checkBudget(costCentreCode, perDiem.totalFJD);
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+AuditLogViewer.tsx
+
+166
+              onChange={(e) => setUserFilter(e.target.value)}
+166
+              onChange={(e) => { setUserFilter(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+421
+                    onClick={() => setSelectedIds(new Set())}
+421
+                    onClick={() => { setSelectedIds(new Set()); }}
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+349
+              onClick={() => deletingRate && deleteMutation.mutate(deletingRate.id)}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+DelegateSettings.tsx
+
+122
+                onChange={(e) => setEndDate(e.target.value)}
+122
+                onChange={(e) => { setEndDate(e.target.value); }}
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+123
+          foreground: "hsl(var(--sidebar-primary-foreground) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+558
+  app.get("/api/quote-policy", async (req, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+426
+      <AlertDialog open={!!deletingWorkflow} onOpenChange={() => setDeletingWorkflow(null)}>
+426
+      <AlertDialog open={!!deletingWorkflow} onOpenChange={() => { setDeletingWorkflow(null); }}>
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+902
+  app.delete("/api/admin/templates/:id", requireRole(["super_admin"]), async (req: any, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+748
+                        onChange={(e) => setComment(e.target.value)}
+748
+                        onChange={(e) => { setComment(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+145
+              onChange={(e) => setVendorName(e.target.value)}
+145
+              onChange={(e) => { setVendorName(e.target.value); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+index.ts
+
+52
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+52
+  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+VendorManagement.tsx
+
+404
+                            onClick={() => handleReject(vendor, "Vendor does not meet requirements")}
+404
+                            onClick={() => { handleReject(vendor, "Vendor does not meet requirements"); }}
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+69
+        foreground: "hsl(var(--foreground) / <alpha-value>)",
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+144
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+144
+    mutationFn: async ({ id, data }: { id: string; data: unknown }) => {
+HIGH
+Error prone
+
+
+Invalid type "never" of template literal expression.
+
+client/src/utils/
+pdf.ts
+
+147
+      doc.text(`• ${service}`, 25, yPos);
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+220
+              onSubmit={(values) => createMutation.mutate(values)}
+220
+              onSubmit={(values) => { createMutation.mutate(values); }}
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/data/adapters/
+GeoAdapter.ts
+
+40
+  return CITY_COORDINATES[key] || DEFAULT_COORDINATES;
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/data/adapters/
+BudgetAdapter.ts
+
+40
+    return spent[costCentreCode] || 0;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+285
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+285
+                    onChange={(e) => { setFilterStartDate(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+109
+              onChange={(e) => updateFormData({ departureDate: e.target.value })}
+109
+              onChange={(e) => { updateFormData({ departureDate: e.target.value }); }}
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/contexts/
+RoleContext.tsx
+
+83
+  return roleNames[role] || role;
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+CostPolicyStep.tsx
+
+71
+        <Select value={formData.costBand} onValueChange={(value: CostBand) => updateFormData({ costBand: value })}>
+71
+        <Select value={formData.costBand} onValueChange={(value: CostBand) => { updateFormData({ costBand: value }); }}>
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/pages/
+RequestDetail.tsx
+
+711
+    return variants[status];
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+373
+  app.post("/api/requests/:id/quotes", async (req, res) => {
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+689
+  app.get("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+247
+                  onChange={(e) => setSearchQuery(e.target.value)}
+247
+                  onChange={(e) => { setSearchQuery(e.target.value); }}
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+386
+              onClick={() => deletingPolicy && deleteMutation.mutate(deletingPolicy.id)}
+HIGH
+Error prone
+
+
+Unnecessary conditional, value is always truthy.
+
+client/src/components/ui/
+carousel.tsx
+
+128
+            orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+245
+          onChange={(e) => updateFormData({ specialNotes: e.target.value })}
+245
+          onChange={(e) => { updateFormData({ specialNotes: e.target.value }); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+302
+  app.post("/api/requests/:id/reject", async (req, res) => {
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+127
+          DEFAULT: "hsl(var(--sidebar-accent) / <alpha-value>)",
+CRITICAL
+Security
+
+Unexpected Behaviour
+
+
+detect res.redirect() with non literal argument
+
+server/
+replitAuth.ts
+
+136
+        client.buildEndSessionUrl(config, {
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+103
+          DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+99
+          foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'border' is used to store raw HTML
+
+tailwind.config.ts
+
+119
+          border: "hsl(var(--sidebar-border) / <alpha-value>)",
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+304
+                      <Dialog open={editingPolicy?.id === policy.id} onOpenChange={(open) => !open && setEditingPolicy(null)}>
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+444
+                      onChange={(e) => setNewQuote({ ...newQuote, vendorName: e.target.value })}
+444
+                      onChange={(e) => { setNewQuote({ ...newQuote, vendorName: e.target.value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+MyTrips.tsx
+
+478
+                              onClick={() => handleDownloadPDF(request)}
+478
+                              onClick={() => { handleDownloadPDF(request); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+demoAuth.ts
+
+19
+  app.post("/api/demo-login", async (req, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+773
+                            onChange={(e) => setAuditNote(e.target.value)}
+773
+                            onChange={(e) => { setAuditNote(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+349
+                            onSubmit={(values) => updateMutation.mutate({ id: template.id, data: values })}
+349
+                            onSubmit={(values) => { updateMutation.mutate({ id: template.id, data: values }); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/pages/
+MyTrips.tsx
+
+339
+      <Tabs value={tabFilter} onValueChange={(v) => setTabFilter(v as any)}>
+339
+      <Tabs value={tabFilter} onValueChange={(v) => setTabFilter(v as unknown)}>
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+577
+  app.post("/api/delegations", async (req, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+121
+                onChange={(e) => updateFormData({ returnDate: e.target.value })}
+121
+                onChange={(e) => { updateFormData({ returnDate: e.target.value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+DelegateSettings.tsx
+
+95
+                onChange={(e) => setActingFor(e.target.value)}
+95
+                onChange={(e) => { setActingFor(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+660
+                  <button onClick={() => setFilterStatus("all")} className="ml-1 hover:text-destructive">
+660
+                  <button onClick={() => { setFilterStatus("all"); }} className="ml-1 hover:text-destructive">
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+client/src/utils/
+export.ts
+
+93
+      w2[k] = Math.max(w2[k] || 10, len);
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+314
+                            onSubmit={(values) => updateMutation.mutate({ id: rate.id, data: values as any })}
+314
+                            onSubmit={(values) => { updateMutation.mutate({ id: rate.id, data: values as any }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+761
+                              setAuditFlag(checked as boolean)
+761
+                              { setAuditFlag(checked as boolean); }
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+851
+                            onClick={() => handleSort('destination')}
+851
+                            onClick={() => { handleSort('destination'); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+353
+                        onClick={() => handleToggleActive(workflow)}
+353
+                        onClick={() => { handleToggleActive(workflow); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+replitAuth.ts
+
+57
+  claims: any,
+57
+  claims: unknown,
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+SystemNotificationsManagement.tsx
+
+402
+      <AlertDialog open={!!deletingNotification} onOpenChange={() => setDeletingNotification(null)}>
+402
+      <AlertDialog open={!!deletingNotification} onOpenChange={() => { setDeletingNotification(null); }}>
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+CostPolicyStep.tsx
+
+197
+                  onClick={() => removeAttachment(index)}
+197
+                  onClick={() => { removeAttachment(index); }}
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+286
+                      <Dialog open={editingRate?.id === rate.id} onOpenChange={(open) => !open && setEditingRate(null)}>
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'border' is used to store raw HTML
+
+tailwind.config.ts
+
+75
+          border: "hsl(var(--card-border) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+232
+            onChange={(e) => updateFormData({ flexibilityDays: parseInt(e.target.value) || 2 })}
+232
+            onChange={(e) => { updateFormData({ flexibilityDays: parseInt(e.target.value) || 2 }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+191
+                    onChange={(e) => updateSector(sector.id, "date", e.target.value)}
+191
+                    onChange={(e) => { updateSector(sector.id, "date", e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+EmailTemplateManagement.tsx
+
+318
+                        onClick={() => handleToggleActive(template)}
+318
+                        onClick={() => { handleToggleActive(template); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+WorkflowRulesManagement.tsx
+
+183
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+183
+    mutationFn: async ({ id, data }: { id: string; data: unknown }) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+1048
+                    onClick={() => rejectMutation.mutate()}
+1048
+                    onClick={() => { rejectMutation.mutate(); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+ApprovalRoutingStep.tsx
+
+70
+          onValueChange={(value) => updateFormData({ primaryApproverId: value })}
+70
+          onValueChange={(value) => { updateFormData({ primaryApproverId: value }); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+458
+                  onChange={(e) => setBulkComment(e.target.value)}
+458
+                  onChange={(e) => { setBulkComment(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+NewRequest.tsx
+
+95
+      onSubmit={(data) => createMutation.mutate(data)}
+95
+      onSubmit={(data) => { createMutation.mutate(data); }}
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+server/
+routes.ts
+
+94
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+94
+  app.get('/api/auth/user', isAuthenticated, async (req: unknown, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Analytics.tsx
+
+318
+                <Button variant="outline" size="sm" onClick={() => setDatePreset("7d")} data-testid="button-preset-7d">
+318
+                <Button variant="outline" size="sm" onClick={() => { setDatePreset("7d"); }} data-testid="button-preset-7d">
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+665
+  app.patch("/api/admin/users/:id", requireRole(["super_admin"]), async (req: any, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+186
+                  onClick={() => removeVendor(vendor.email)}
+186
+                  onClick={() => { removeVendor(vendor.email); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+291
+                            onClick={() => setEditingRate(rate)}
+291
+                            onClick={() => { setEditingRate(rate); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+430
+                    onClick={() => setBulkActionMode("reject")}
+430
+                    onClick={() => { setBulkActionMode("reject"); }}
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+586
+  app.patch("/api/delegations/:id", async (req, res) => {
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'input' is used to store raw HTML
+
+tailwind.config.ts
+
+71
+        input: "hsl(var(--input) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+711
+  app.post("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), async (req: any, res) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/wizard/
+TripDetailsStep.tsx
+
+181
+                    onChange={(e) => updateSector(sector.id, "destination", e.target.value)}
+181
+                    onChange={(e) => { updateSector(sector.id, "destination", e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+439
+                    onClick={() => setBulkActionMode("approve")}
+439
+                    onClick={() => { setBulkActionMode("approve"); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/hooks/
+use-mobile.tsx
+
+15
+    return () => mql.removeEventListener("change", onChange)
+15
+    return () => { mql.removeEventListener("change", onChange); }
+HIGH
+Best practice
+
+Quick fix
+
+Unexpected any. Specify a different type.
+
+client/src/components/admin/
+TravelPoliciesManagement.tsx
+
+133
+    onError: (error: any) => {
+133
+    onError: (error: unknown) => {
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/components/admin/
+PerDiemRatesManagement.tsx
+
+337
+      <AlertDialog open={!!deletingRate} onOpenChange={() => setDeletingRate(null)}>
+337
+      <AlertDialog open={!!deletingRate} onOpenChange={() => { setDeletingRate(null); }}>
+MEDIUM
+Error prone
+
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+158
+                onKeyPress={(e) => e.key === "Enter" && addVendor()}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+TravelWatch.tsx
+
+636
+                  <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-destructive">
+636
+                  <button onClick={() => { setSearchQuery(""); }} className="ml-1 hover:text-destructive">
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+118
+          foreground: "hsl(var(--sidebar-foreground) / <alpha-value>)",
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'DEFAULT' is used to store raw HTML
+
+tailwind.config.ts
+
+78
+          DEFAULT: "hsl(var(--popover) / <alpha-value>)",
+HIGH
+Security
+
+Insecure Modules Libraries
+
+
+Generic Object Injection Sink
+
+server/
+routes.ts
+
+63
+        changes[key] = { old: oldVal, new: newVal };
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+74
+          foreground: "hsl(var(--card-foreground) / <alpha-value>)",
+HIGH
+Error prone
+
+
+Promise returned in function argument where a void return was expected.
+
+server/
+routes.ts
+
+568
+  app.get("/api/delegations", async (req, res) => {
+HIGH
+Security
+
+XSS
+
+
+Non-HTML variable 'foreground' is used to store raw HTML
+
+tailwind.config.ts
+
+128
+          foreground: "hsl(var(--sidebar-accent-foreground) / <alpha-value>)",
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Approvals.tsx
+
+340
+                onClick={() => setShowFilters(!showFilters)}
+340
+                onClick={() => { setShowFilters(!showFilters); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+Analytics.tsx
+
+305
+                onChange={(e) => setStartDate(e.target.value)}
+305
+                onChange={(e) => { setStartDate(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+157
+                onChange={(e) => setVendorEmail(e.target.value)}
+157
+                onChange={(e) => { setVendorEmail(e.target.value); }}
+MEDIUM
+Error prone
+
+Quick fix
+
+Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function.
+
+client/src/pages/
+RequestDetail.tsx
+
+198
+          onClick={() => sendRfqMutation.mutate()}
+198
+          onClick={() => { sendRfqMutation.mutate(); }}
