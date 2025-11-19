@@ -1,0 +1,36 @@
+{
+  "name": "Tokani TripFlow - Travel Management System",
+  "short_name": "TripFlow",
+  "description": "Professional travel request, approval, and expense management system for Fiji organizations",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111B3F",
+  "theme_color": "#111B3F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
