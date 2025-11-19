@@ -24,8 +24,13 @@ export default function AdminPortal() {
     );
   }
 
-  // Only finance_admin and manager can access Admin Portal
-  if (currentUser.role !== "finance_admin" && currentUser.role !== "manager") {
+  // Admin Portal access: finance_admin, manager, super_admin
+  // Note: Individual admin operations may have additional role requirements enforced by backend
+  const hasAccess = currentUser?.role === "finance_admin" || 
+                    currentUser?.role === "manager" || 
+                    currentUser?.role === "super_admin";
+  
+  if (!hasAccess) {
     return <Redirect to="/" />;
   }
 
