@@ -23,7 +23,7 @@ export function AuthSplash({ onComplete, minDuration = 3500 }: AuthSplashProps) 
     <div
       className={cn(
         "fixed inset-0 z-50 flex flex-col items-center justify-center",
-        "bg-gradient-to-br from-dusk-navy via-primary to-secondary",
+        "bg-gradient-to-br from-primary via-secondary to-[hsl(var(--ttf-navy))]",
         "transition-opacity duration-500",
         fadeOut ? "opacity-0" : "opacity-100"
       )}
@@ -33,14 +33,14 @@ export function AuthSplash({ onComplete, minDuration = 3500 }: AuthSplashProps) 
       <div className="relative">
         {/* Pulsing glow effect */}
         <div className="absolute inset-0 animate-pulse">
-          <div className="h-32 w-32 rounded-full bg-white/20 blur-2xl" />
+          <div className="h-48 w-48 rounded-full bg-white/20 blur-2xl" />
         </div>
         
         {/* Logo with scale animation */}
         <div className="relative z-10 animate-scale-in">
           <TokaniLogo 
             variant="icon" 
-            className="h-32 w-32 shadow-2xl"
+            className="h-48 w-48 shadow-2xl"
           />
         </div>
       </div>
