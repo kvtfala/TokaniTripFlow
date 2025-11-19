@@ -9,7 +9,15 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### UI/UX Decisions
-The system features a mobile-first responsive design with 44px touch targets, professional aesthetics, and progressive enhancement for offline UX. The UI includes a personalized dashboard, comprehensive "MyTrips" and "Approvals Workflow" pages with advanced search/filtering/sorting, and an "Analytics Dashboard" for trend analysis and data export. A multi-step wizard guides travel request creation, and a "Travel Watch" dashboard provides KPI summaries and alerts. The design adapts Material Design principles for enterprise productivity and bandwidth optimization, incorporating custom themes and light/dark modes.
+The system features a mobile-first responsive design with 44px touch targets, professional aesthetics, and progressive enhancement for offline UX. The UI includes a personalized dashboard, comprehensive "MyTrips" and "Approvals Workflow" pages with advanced search/filtering/sorting, and an "Analytics Dashboard" for trend analysis and data export. A multi-step wizard guides travel request creation, and a "Travel Watch" dashboard provides KPI summaries and alerts.
+
+**Design System (Tokani Official Brand - v3.0):**
+- **Typography:** Inter font family loaded from Google Fonts with defined type scale (H1: 32px, H2: 26px, H3: 20px, Body: 16px)
+- **Spacing:** 8px rhythm system (4px, 8px, 12px, 16px, 20px, 24px, 32px, 40px) with ttf-* spacing utilities
+- **Colors:** Centralized ttf-* brand color classes (ttf-blue #0057B8, ttf-navy #002A52, ttf-aqua #1FBED6, ttf-light-sky #EAF7FF)
+- **Components:** Buttons use rounded-full, Cards use rounded-2xl, Inputs use rounded-lg for consistent enterprise aesthetic
+- **Accessibility:** WCAG 2.1 AA compliant with verified contrast ratios (≥4.5:1 for body text, ≥5.2:1 for white text on gradients)
+- **Documentation:** Comprehensive design guidelines in design_guidelines.md covering typography, layout, spacing, components, and accessibility rules
 
 ### Technical Implementations
 The frontend uses React with TypeScript, Vite, TailwindCSS, Wouter for routing, Radix UI for primitives, and shadcn/ui for components. State management and data fetching are handled by TanStack Query, while forms use react-hook-form with Zod validation. The backend is built with Express.js and TypeScript, following a RESTful API design. It implements business logic for per-diem calculations, visa checks, multi-level configurable approval flows, delegation, budget validation, and immutable audit trails. The Admin Portal features comprehensive CRUD operations across seven sections (Vendor, Email Template, Per Diem, Travel Policy, Workflow Rules, System Notifications, Audit Log Viewer) with robust 3-layer JSON validation and audit logging. Authentication supports both Replit Auth (OpenID Connect with PostgreSQL session storage) and a demo login system. Role-based access control is foundational, with a `RoleContext` and `useRole` hook.
