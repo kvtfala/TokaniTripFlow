@@ -134,11 +134,46 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        // Tokani TripFlow Brand Colors (ttf-*)
+        'ttf-blue': "hsl(var(--ttf-blue) / <alpha-value>)",
+        'ttf-navy': "hsl(var(--ttf-navy) / <alpha-value>)",
+        'ttf-aqua': "hsl(var(--ttf-aqua) / <alpha-value>)",
+        'ttf-light-sky': "hsl(var(--ttf-light-sky) / <alpha-value>)",
+        'ttf-red': "hsl(var(--ttf-red) / <alpha-value>)",
+        // Semantic colors
+        'ttf-success': "hsl(var(--success) / <alpha-value>)",
+        'ttf-error': "hsl(var(--destructive) / <alpha-value>)",
+        'ttf-warning': "hsl(var(--warning) / <alpha-value>)",
+        // Grey scale
+        'ttf-grey-900': "hsl(var(--foreground) / <alpha-value>)",
+        'ttf-grey-700': "hsl(var(--muted-foreground) / <alpha-value>)",
+        'ttf-grey-500': "hsl(var(--muted-foreground) / 0.7)",
+        'ttf-gray-300': "hsl(var(--border) / <alpha-value>)",
+        'ttf-gray-100': "hsl(var(--card-border) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+      },
+      fontSize: {
+        'ttf-h1': 'var(--text-h1)',
+        'ttf-h2': 'var(--text-h2)',
+        'ttf-h3': 'var(--text-h3)',
+        'ttf-section': 'var(--text-section)',
+        'ttf-body': 'var(--text-body)',
+        'ttf-sm': 'var(--text-sm)',
+        'ttf-xs': 'var(--text-xs)',
+      },
+      spacing: {
+        'ttf-1': 'var(--space-1)',
+        'ttf-2': 'var(--space-2)',
+        'ttf-3': 'var(--space-3)',
+        'ttf-4': 'var(--space-4)',
+        'ttf-5': 'var(--space-5)',
+        'ttf-6': 'var(--space-6)',
+        'ttf-8': 'var(--space-8)',
+        'ttf-10': 'var(--space-10)',
       },
       keyframes: {
         "accordion-down": {
