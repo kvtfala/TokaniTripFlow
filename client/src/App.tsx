@@ -46,7 +46,7 @@ import CoordinatorDashboard from "@/pages/CoordinatorDashboard";
 import ManagerDashboard from "@/pages/ManagerDashboard";
 import RequestDetail from "@/pages/RequestDetail";
 import TravelDeskDashboard from "@/pages/TravelDeskDashboard";
-import Landing from "@/pages/Landing";
+import LandingPage from "@/pages/LandingPage";
 import AdminPortal from "@/pages/AdminPortal";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthSplash } from "@/components/layout/AuthSplash";
@@ -171,8 +171,8 @@ function Router() {
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
-        <Route path="/" component={Landing} />
-        <Route component={Landing} />
+        <Route path="/" component={LandingPage} />
+        <Route component={LandingPage} />
       </Switch>
     );
   }
