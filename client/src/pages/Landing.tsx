@@ -19,7 +19,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 variant="secondary"
-                className="bg-[#E94A64] hover:bg-[#C7344E] text-white border-0"
+                className="bg-[#1FBED6] hover:bg-[#189FB1] text-white border-0"
                 data-testid="button-login"
               >
                 Sign In
@@ -31,11 +31,11 @@ export default function Landing() {
 
       {/* Hero Section with Full-Width Gradient */}
       <section className="relative overflow-hidden">
-        {/* Gradient Background: Coral → Lagoon → Dusk */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#E94A64] via-[#3C7DD9] to-[#0F1A34]" />
+        {/* Gradient Background: Tokani Blue → Aqua → Navy */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0057B8] via-[#1FBED6] to-[#002A52]" />
         
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
         
         {/* Hero Content */}
         <div className="relative container mx-auto px-4 py-20 md:py-32">
@@ -60,7 +60,7 @@ export default function Landing() {
               <a href="#demo">
                 <Button 
                   size="lg" 
-                  className="text-lg px-10 py-7 bg-[#E94A64] hover:bg-[#C7344E] text-white border-0 shadow-xl w-full sm:w-auto"
+                  className="text-lg px-10 py-7 bg-[#0057B8] hover:bg-[#003D82] text-white border-0 shadow-xl w-full sm:w-auto"
                   data-testid="button-try-demo"
                 >
                   Try Demo
