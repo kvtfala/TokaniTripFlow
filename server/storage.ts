@@ -566,11 +566,13 @@ export class MemStorage implements IStorage {
 
   // Replit Auth Integration - User operations
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const user = this.users.get(id);
+    return user ? structuredClone(user) : undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const user = Array.from(this.users.values()).find(user => user.email === email);
+    return user ? structuredClone(user) : undefined;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
@@ -1139,7 +1141,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.users.set(id, updated);
-    return updated;
+    return structuredClone(updated);
   }
 
   // Admin Portal - Vendors

@@ -17,14 +17,34 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Server Framework**: Express.js with TypeScript, RESTful API design.
-- **API Structure**: Endpoints for travel request CRUD, approval/rejection workflows, and delegation management.
+- **API Structure**: Endpoints for travel request CRUD, approval/rejection workflows, delegation management, and comprehensive Admin Portal API (12 endpoints).
 - **Data Layer Pattern**: Abstracted storage adapter (`IStorage`) with in-memory implementation (`MemStorage`) for development, designed for migration to persistent storage (e.g., PostgreSQL with Drizzle ORM).
 - **Business Logic**: Per-diem calculation (first/last day 75% rule), visa checking, multi-level configurable approval flows, delegation, budget validation, and immutable audit trails.
+- **Admin Portal Backend (Nov 2025)**: Comprehensive validation and audit logging implementation
+  * **Validation Layer**: All 12 admin routes use strict Zod validation with `.strict()` to reject unknown fields, `safeParse()` for error handling
+  * **Audit Logging**: Enhanced logging with before/after snapshots, field-level change tracking, deep comparison for nested objects
+  * **Data Immutability**: Defense-in-depth approach with 5 layers:
+    1. Route handlers clone previousValue before updates
+    2. Storage update methods return structuredClone of updated entities
+    3. Admin storage getters (15 methods) return structuredClone to prevent mutation
+    4. Auth-critical getters (getUser, getUserByEmail, updateUser) return clones
+    5. Null-safe audit logging handles undefined values
+  * **Routes Implemented**: Vendors (POST/PATCH with finance approval workflow), Email Templates (POST/PATCH), Per Diem Rates (POST/PATCH), Travel Policies (POST/PATCH), Workflow Rules (POST/PATCH), System Notifications (POST/PATCH)
+  * **Vendor Approval Workflow**: Finance admins and super admins must approve vendors before they're available in RFQ dropdowns (status: pending_approval → approved)
+  * **Future Improvements**: Extend structuredClone pattern to remaining storage getters (getTravelRequests, getQuotes, getDelegations) for complete system-wide immutability
 
 ### Data Storage Solutions
 - **Current**: In-memory storage (`MemStorage`) with seeded sample data.
 - **Planned Production**: Drizzle ORM configured for PostgreSQL (via `@neondatabase/serverless`), schema defined in `shared/schema.ts`, migration support via `drizzle-kit`.
-- **Data Model Highlights**: `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, with an adapter pattern for storage flexibility.
+- **Data Model Highlights**: `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, `Vendor`, `EmailTemplate`, `PerDiemRate`, `TravelPolicy`, `WorkflowRule`, `SystemNotification`, `AuditLog` with an adapter pattern for storage flexibility.
+- **Admin Portal Entities (Nov 2025)**: 
+  * **Vendors**: Contact info, services, approval status (pending/approved/rejected/suspended), performance rating, notes
+  * **Email Templates**: Subject/body with placeholders, category, active status, created by tracking
+  * **Per Diem Rates**: Location-based daily allowances with effective date ranges, currency, tier levels
+  * **Travel Policies**: Rule engine with conditions, actions, priority, effective dates, compliance flags
+  * **Workflow Rules**: Multi-stage approval flows with role-based approvers, conditions, escalation paths
+  * **System Notifications**: User-targeted messages with severity, publish status, expiry dates, dismissible flags
+  * **Audit Logs**: Immutable compliance records with action tracking, entity snapshots, field-level changes, user attribution
 
 ### Authentication and Authorization
 - **Dual Authentication System**: Supports both production Replit Auth and demo login for testing
