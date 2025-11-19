@@ -1,0 +1,78 @@
+You are working on the Tokani TripFlow (TTF) project.
+
+Goal:
+Update the global branding (colors, buttons, header, accents) to match the Tokani Trip Flow logo I’m using, instead of the default/old theme.
+
+Branding palette to use (derived from the logo):
+
+- Primary Navy (main background / header / emphasis):
+  - HEX: #111B3F
+
+- Primary Red (CTA / primary buttons):
+  - HEX: #E53950
+
+- Magenta Accent (hover, highlights, secondary accents):
+  - HEX: #FF4F81
+
+- Blue Accent (links, subtle accents, charts):
+  - HEX: #2274D1
+
+- Background:
+  - Main background: #0E1325 or very close to #111B3F (slightly lighter)
+  - Card background: #1B2138 (slightly lighter than main background)
+
+- Text:
+  - Primary text: #F9FAFB (very light / near-white)
+  - Muted text: #A0AEC0 (soft grey)
+  - On light backgrounds (if any): use #111827 or similar dark grey
+
+Tasks:
+
+1. Detect the stack and theming system already in use:
+   - If Tailwind is used: update `tailwind.config.js` theme colors (extend) with the above palette and adjust components to use these colors.
+   - If CSS variables are used: update the main `:root` variables or theme file to define these colors.
+   - If plain CSS/SCSS: create or update a central variables file or main stylesheet with these colors and apply them to key UI elements.
+   - If there is a custom theme object (e.g. in a design system), integrate these colors there.
+
+2. Apply the new branding consistently:
+   - Header / Navbar:
+     - Use Primary Navy (#111B3F) as the background.
+     - Use light text (#F9FAFB).
+   - Primary buttons (e.g. “New Travel Request”, “View Live Demo”):
+     - Background: Primary Red (#E53950)
+     - Text: #FFFFFF
+     - Hover: darken slightly or blend toward Magenta Accent (#FF4F81).
+   - Secondary buttons:
+     - Use Navy border with transparent or card-colored background.
+     - Hover: subtle fill with navy/blue accent.
+   - Links and interactive text:
+     - Default: Blue Accent (#2274D1)
+     - Hover: Magenta Accent (#FF4F81) or underline with a smooth transition.
+   - Cards / panels:
+     - Background: card background (#1B2138)
+     - Borders (if any): subtle, slightly lighter navy.
+   - Page background:
+     - Main app background: a deep navy close to #0E1325 or #111B3F.
+
+3. Ensure consistency on key screens:
+   - Dashboard / Home
+   - Travel Request Detail page
+   - Approvals / My Trips
+   - Any landing page or marketing-style screen
+   - Make sure old default blues/greys are replaced with the new palette where appropriate, but don’t break states (success/error/warning can stay green/red/yellow, just adjust if they clash badly).
+
+4. Accessibility:
+   - Check that text on the Primary Navy and on Primary Red has sufficient contrast (use light text like #F9FAFB).
+   - Avoid very low-contrast combinations, especially for small text.
+
+5. Do NOT:
+   - Do not redesign layouts or component structure.
+   - Do not remove any existing functionality.
+   - Only adjust colors, backgrounds, and hover states to align with the new palette.
+
+6. Show me what you changed:
+   - Indicate which files you modified (e.g. `tailwind.config.js`, main CSS, theme files, key components).
+   - Show the updated color configuration (variables, Tailwind theme, or CSS classes).
+   - Provide one or two example components (e.g. header, primary button) to demonstrate the new branding in use.
+
+The goal is for the app to visually match the Tokani Trip Flow logo’s navy/red/magenta/blue aesthetic, with a modern, dark-leaning, professional look.

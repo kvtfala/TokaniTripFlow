@@ -22,55 +22,55 @@ html, body {
   --elevate-2: rgba(0,0,0, .08);
 
   /* Tokani TripFlow Official Brand Theme - Light Mode */
-  --background: 0 0% 96%;  /* Light grey background (#F5F5F5) */
+  --background: 0 0% 98%;  /* Very light background (#FAFAFA) */
 
-  --foreground: 0 0% 10%;  /* Dark grey for high contrast (#1A1A1A) */
+  --foreground: 228 56% 16%;  /* Primary Navy for text (#111B3F) */
 
-  --border: 0 0% 85%;  /* Light grey borders (#D9D9D9) */
+  --border: 0 0% 88%;  /* Light grey borders */
 
   --card: 0 0% 100%;  /* Pure white cards */
 
-  --card-foreground: 0 0% 10%;  /* Dark grey text (#1A1A1A) */
+  --card-foreground: 228 56% 16%;  /* Primary Navy text */
 
-  --card-border: 0 0% 90%;  /* Subtle grey borders */
+  --card-border: 0 0% 92%;  /* Subtle grey borders */
 
-  --sidebar: 200 100% 97%;  /* Light Sky sidebar (#EAF7FF) */
+  --sidebar: 228 56% 16%;  /* Primary Navy sidebar (#111B3F) */
 
-  --sidebar-foreground: 212 100% 16%;  /* Navy text (#002A52) */
+  --sidebar-foreground: 0 0% 98%;  /* Near-white text */
 
-  --sidebar-border: 0 0% 88%;  /* Light grey borders */
+  --sidebar-border: 228 32% 20%;  /* Dark borders */
 
-  --sidebar-primary: 212 100% 36%;  /* Tokani Blue (#0057B8) */
+  --sidebar-primary: 351 75% 56%;  /* Primary Red (#E53950) */
 
   --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
-  --sidebar-accent: 200 100% 95%;  /* Very light blue accent */
+  --sidebar-accent: 228 56% 22%;  /* Slightly lighter navy */
 
-  --sidebar-accent-foreground: 212 100% 16%;  /* Navy text */
+  --sidebar-accent-foreground: 0 0% 98%;  /* Near-white text */
 
-  --sidebar-ring: 212 100% 36%;  /* Tokani Blue ring */
+  --sidebar-ring: 351 75% 56%;  /* Primary Red ring */
 
   --popover: 0 0% 100%;  /* White popovers */
 
-  --popover-foreground: 0 0% 10%;  /* Dark grey text */
+  --popover-foreground: 228 56% 16%;  /* Primary Navy text */
 
   --popover-border: 0 0% 90%;  /* Light grey border */
 
-  --primary: 212 100% 36%;  /* Tokani Blue (#0057B8) */
+  --primary: 351 75% 56%;  /* Primary Red for CTAs (#E53950) */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 189 75% 48%;  /* Aqua (#1FBED6) */
+  --secondary: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
 
   --secondary-foreground: 0 0% 100%;  /* White text */
 
-  --muted: 0 0% 96%;  /* Light grey muted (#F5F5F5) */
+  --muted: 0 0% 96%;  /* Light grey muted */
 
-  --muted-foreground: 0 0% 55%;  /* Medium grey for labels (#8C8C8C) */
+  --muted-foreground: 0 0% 50%;  /* Medium grey for labels */
 
-  --accent: 200 100% 97%;  /* Light Sky accent (#EAF7FF) */
+  --accent: 211 72% 48%;  /* Blue Accent (#2274D1) */
 
-  --accent-foreground: 212 100% 16%;  /* Navy text (#002A52) */
+  --accent-foreground: 0 0% 100%;  /* White text */
 
   --destructive: 0 79% 63%;  /* Error Red (#EB5757) */
 
@@ -89,21 +89,21 @@ html, body {
   --neutral-foreground: 0 0% 10%;  /* Dark grey text */
 
   --input: 0 0% 85%;  /* Light grey for inputs */
-  --ring: 212 100% 36%;  /* Tokani Blue ring for focus */
+  --ring: 351 75% 56%;  /* Primary Red ring for focus */
   
   /* Chart colors - TTF Official theme */
-  --chart-1: 212 100% 36%;  /* Tokani Blue */
-  --chart-2: 189 75% 48%;  /* Aqua */
-  --chart-3: 212 100% 16%;  /* Navy */
+  --chart-1: 351 75% 56%;  /* Primary Red */
+  --chart-2: 211 72% 48%;  /* Blue Accent */
+  --chart-3: 342 100% 65%;  /* Magenta Accent */
   --chart-4: 145 63% 42%;  /* Success Green */
-  --chart-5: 0 0% 30%;  /* Dark Grey */
+  --chart-5: 228 56% 16%;  /* Primary Navy */
 
-  /* TTF Official Brand Colors - WCAG 2.1 AA Compliant */
-  --ttf-blue: 212 100% 36%;  /* Tokani Blue (#0057B8) */
-  --ttf-navy: 212 100% 16%;  /* Navy (#002A52) */
-  --ttf-aqua: 189 75% 48%;  /* Aqua (#1FBED6) */
-  --ttf-light-sky: 200 100% 97%;  /* Light Sky (#EAF7FF) */
-  --ttf-red: 351 75% 51%;  /* Logo Red (#D7263D) - limited use */
+  /* TTF Official Brand Colors - Logo Palette */
+  --ttf-blue: 211 72% 48%;  /* Blue Accent (#2274D1) */
+  --ttf-navy: 228 56% 16%;  /* Primary Navy (#111B3F) */
+  --ttf-aqua: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
+  --ttf-light-sky: 0 0% 98%;  /* Light background for accents */
+  --ttf-red: 351 75% 56%;  /* Primary Red (#E53950) */
 
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, serif;
@@ -182,55 +182,55 @@ html, body {
   --elevate-2: rgba(255,255,255, .09);
 
   /* Tokani TripFlow Official Brand Theme - Dark Mode */
-  --background: 212 100% 8%;  /* Very dark Navy background (#001429) */
+  --background: 228 48% 10%;  /* Very dark Navy background (#0E1325) */
 
-  --foreground: 0 0% 95%;  /* Light grey text (#F2F2F2) */
+  --foreground: 0 0% 98%;  /* Near-white text (#F9FAFB) */
 
-  --border: 212 50% 20%;  /* Dark blue-grey borders */
+  --border: 228 32% 25%;  /* Dark blue-grey borders */
 
-  --card: 212 100% 12%;  /* Slightly lighter Navy cards (#001F3D) */
+  --card: 228 32% 17%;  /* Card background (#1B2138) */
 
-  --card-foreground: 0 0% 95%;  /* Light grey text */
+  --card-foreground: 0 0% 98%;  /* Near-white text (#F9FAFB) */
 
-  --card-border: 212 50% 18%;  /* Dark blue-grey borders */
+  --card-border: 228 32% 22%;  /* Subtle card borders */
 
-  --sidebar: 212 100% 10%;  /* Deep Navy sidebar (#001933) */
+  --sidebar: 228 56% 16%;  /* Primary Navy sidebar (#111B3F) */
 
-  --sidebar-foreground: 0 0% 95%;  /* Light grey text */
+  --sidebar-foreground: 0 0% 98%;  /* Near-white text */
 
-  --sidebar-border: 212 50% 16%;  /* Dark blue-grey borders */
+  --sidebar-border: 228 32% 20%;  /* Dark borders */
 
-  --sidebar-primary: 212 100% 50%;  /* Brighter Blue for dark bg (#0080FF) */
+  --sidebar-primary: 351 75% 56%;  /* Primary Red (#E53950) */
 
   --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
-  --sidebar-accent: 212 80% 18%;  /* Dark blue accent */
+  --sidebar-accent: 228 32% 20%;  /* Dark accent */
 
-  --sidebar-accent-foreground: 0 0% 95%;  /* Light grey text */
+  --sidebar-accent-foreground: 0 0% 98%;  /* Near-white text */
 
-  --sidebar-ring: 212 100% 50%;  /* Brighter Blue ring */
+  --sidebar-ring: 351 75% 56%;  /* Primary Red ring */
 
-  --popover: 212 100% 14%;  /* Dark Navy popover */
+  --popover: 228 32% 17%;  /* Dark Navy popover */
 
-  --popover-foreground: 0 0% 95%;  /* Light grey text */
+  --popover-foreground: 0 0% 98%;  /* Near-white text */
 
-  --popover-border: 212 50% 20%;  /* Dark blue-grey border */
+  --popover-border: 228 32% 25%;  /* Dark border */
 
-  --primary: 212 100% 50%;  /* Brighter Tokani Blue for visibility (#0080FF) */
+  --primary: 351 75% 56%;  /* Primary Red for CTAs (#E53950) */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 189 75% 55%;  /* Brighter Aqua for dark mode (#26D3E8) */
+  --secondary: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
 
   --secondary-foreground: 0 0% 100%;  /* White text */
 
-  --muted: 212 50% 18%;  /* Dark blue-grey muted */
+  --muted: 228 32% 20%;  /* Dark muted */
 
-  --muted-foreground: 0 0% 70%;  /* Light grey for labels (#B3B3B3) */
+  --muted-foreground: 214 16% 75%;  /* Soft grey (#A0AEC0) */
 
-  --accent: 212 80% 18%;  /* Dark blue accent */
+  --accent: 211 72% 48%;  /* Blue Accent (#2274D1) */
 
-  --accent-foreground: 0 0% 95%;  /* Light grey text */
+  --accent-foreground: 0 0% 100%;  /* White text */
 
   --destructive: 0 79% 68%;  /* Brighter Error Red for dark mode (#F57373) */
 
@@ -248,22 +248,22 @@ html, body {
 
   --neutral-foreground: 0 0% 100%;  /* White text */
 
-  --input: 212 50% 25%;  /* Medium blue-grey inputs */
-  --ring: 212 100% 50%;  /* Brighter Blue ring */
+  --input: 228 32% 25%;  /* Medium navy-grey inputs */
+  --ring: 351 75% 56%;  /* Primary Red ring for focus */
   
   /* Chart colors - TTF Official theme (dark mode) */
-  --chart-1: 212 100% 50%;  /* Brighter Tokani Blue */
-  --chart-2: 189 75% 55%;  /* Brighter Aqua */
-  --chart-3: 212 100% 30%;  /* Medium Navy */
-  --chart-4: 145 63% 50%;  /* Brighter Success Green */
-  --chart-5: 0 0% 60%;  /* Medium Grey */
+  --chart-1: 351 75% 56%;  /* Primary Red */
+  --chart-2: 211 72% 48%;  /* Blue Accent */
+  --chart-3: 342 100% 65%;  /* Magenta Accent */
+  --chart-4: 145 63% 50%;  /* Success Green */
+  --chart-5: 228 56% 35%;  /* Lighter Navy */
 
-  /* TTF Official Brand Colors - Dark Mode - WCAG 2.1 AA Compliant */
-  --ttf-blue: 212 100% 50%;  /* Brighter Tokani Blue */
-  --ttf-navy: 212 100% 25%;  /* Lighter Navy for dark mode */
-  --ttf-aqua: 189 75% 55%;  /* Brighter Aqua */
-  --ttf-light-sky: 200 100% 20%;  /* Darker Light Sky for backgrounds */
-  --ttf-red: 351 75% 60%;  /* Brighter Logo Red */
+  /* TTF Official Brand Colors - Dark Mode - Logo Palette */
+  --ttf-blue: 211 72% 48%;  /* Blue Accent (#2274D1) */
+  --ttf-navy: 228 56% 16%;  /* Primary Navy (#111B3F) */
+  --ttf-aqua: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
+  --ttf-light-sky: 228 32% 17%;  /* Card background for accents */
+  --ttf-red: 351 75% 56%;  /* Primary Red (#E53950) */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.20);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);
