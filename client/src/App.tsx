@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { RoleProvider } from "@/contexts/RoleContext";
 import {
   Sidebar,
@@ -189,6 +190,9 @@ function Router() {
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" className="text-primary-foreground" />
               <TokaniLogo variant="icon" className="h-14 w-14 flex-shrink-0" />
+              <Badge variant="outline" className="border-white/50 text-white bg-white/10 text-xs font-semibold px-2 py-0.5" data-testid="badge-demo">
+                DEMO
+              </Badge>
               <div className="flex flex-col min-w-0">
                 <h1 className="text-lg font-semibold whitespace-nowrap">Bula! Tokani TripFlow</h1>
                 <span className="text-xs opacity-90 whitespace-nowrap hidden sm:block">Your Trusted Partner for Travel Approvals</span>
