@@ -400,6 +400,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updated);
   }));
 
+  // Cancel a request (self-service by requester — draft or submitted only)
+  app.post("/api/requests/:id/cancel", asyncHandler(async (req: any, res) => {
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+
+    if (request.status !== "draft" && request.status !== "submitted") {
+      return res.status(400).json({
+        error: `Cannot cancel a request with status: ${request.status}. Only draft or submitted requests can be cancelled.`,
+      });
+    }
+
+    const historyEntry: HistoryEntry = {
+      ts: new Date().toISOString(),
+      actor: req.currentUser?.id ?? "requester",
+      action: "REJECT",
+      note: "Request cancelled by requester",
+    };
+
+    const updated = await storage.updateTravelRequest(req.params.id, {
+      status: "rejected",
+      history: [...request.history, historyEntry],
+      reviewedAt: new Date().toISOString(),
+      reviewComment: "Cancelled by requester",
+    });
+
+    res.json(updated);
+  }));
+
   // RFQ and Quotes Endpoints
   
   // Get all quotes for a request

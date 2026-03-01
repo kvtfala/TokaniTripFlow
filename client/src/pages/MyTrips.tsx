@@ -1,359 +1,279 @@
-import { useState, Fragment, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Download, ChevronDown, ChevronUp, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Search, Plus, Eye, XCircle, Clock, CheckCircle,
+  ArrowUpDown, ArrowUp, ArrowDown, FileText, Plane,
+  AlertTriangle, DollarSign,
+} from "lucide-react";
 import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
-import { generateTripSummaryPDF } from "@/utils/pdf";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
-type SortField = "date" | "cost" | "destination" | "status";
+type SortField = "date" | "destination" | "status" | "submitted";
 type SortOrder = "asc" | "desc";
 
-export default function MyTrips() {
-  const [tabFilter, setTabFilter] = useState<"upcoming" | "past" | "drafts">("upcoming");
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [filterStartDate, setFilterStartDate] = useState("");
-  const [filterEndDate, setFilterEndDate] = useState("");
-  const [filterMinCost, setFilterMinCost] = useState("");
-  const [filterMaxCost, setFilterMaxCost] = useState("");
-  const [sortField, setSortField] = useState<SortField>("date");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  submitted: "Submitted",
+  in_review: "In Review",
+  awaiting_quotes: "Awaiting Quotes",
+  quotes_submitted: "Quotes Submitted",
+  approved: "Approved",
+  rejected: "Rejected",
+  ticketed: "Ticketed",
+};
 
-  const toggleRow = (requestId: string) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(requestId)) {
-      newExpanded.delete(requestId);
-    } else {
-      newExpanded.add(requestId);
-    }
-    setExpandedRows(newExpanded);
+const ACTIVE_STATUSES = ["draft", "submitted", "in_review", "awaiting_quotes", "quotes_submitted"];
+const APPROVED_STATUSES = ["approved", "ticketed"];
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case "approved": case "ticketed": return <CheckCircle className="w-3.5 h-3.5" />;
+    case "rejected": return <XCircle className="w-3.5 h-3.5" />;
+    case "awaiting_quotes": return <DollarSign className="w-3.5 h-3.5" />;
+    case "quotes_submitted": return <FileText className="w-3.5 h-3.5" />;
+    default: return <Clock className="w-3.5 h-3.5" />;
+  }
+}
+
+function StatusPill({ status }: { status: string }) {
+  const base = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border";
+  const styles: Record<string, string> = {
+    draft: "bg-muted text-muted-foreground border-border",
+    submitted: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
+    in_review: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800",
+    awaiting_quotes: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
+    quotes_submitted: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800",
+    approved: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800",
+    rejected: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
+    ticketed: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800",
   };
+  return (
+    <span className={`${base} ${styles[status] ?? styles.draft}`}>
+      {getStatusIcon(status)}
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
 
-  // Mock current user - in production this would come from auth
-  const currentUserId = "employee";
+export default function MyTrips() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [tab, setTab] = useState<"active" | "approved" | "rejected">("active");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<SortField>("submitted");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [cancelTarget, setCancelTarget] = useState<TravelRequest | null>(null);
 
   const { data: allRequests = [], isLoading } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],
   });
 
-  // Filter requests for current user
-  const myRequests = allRequests.filter((req) => req.employeeId === currentUserId);
+  const cancelMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return apiRequest("POST", `/api/requests/${requestId}/cancel`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setCancelTarget(null);
+      toast({ title: "Request cancelled", description: "Your travel request has been cancelled." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Could not cancel the request. Please try again.", variant: "destructive" });
+    },
+  });
 
-  const now = new Date();
+  const activeRequests = allRequests.filter(r => ACTIVE_STATUSES.includes(r.status));
+  const approvedRequests = allRequests.filter(r => APPROVED_STATUSES.includes(r.status));
+  const rejectedRequests = allRequests.filter(r => r.status === "rejected");
 
-  // Categorize trips by time and status
-  const upcomingTrips = myRequests.filter(
-    (r) => r.status === "approved" && new Date(r.endDate) >= now
-  );
-  const pastTrips = myRequests.filter(
-    (r) => r.status === "approved" && new Date(r.endDate) < now
-  );
-  const draftTrips = myRequests.filter(
-    (r) => r.status === "draft" || r.status === "submitted" || r.status === "in_review" || r.status === "rejected"
-  );
+  const tabRequests =
+    tab === "active" ? activeRequests :
+    tab === "approved" ? approvedRequests :
+    rejectedRequests;
 
-  const filteredRequests =
-    tabFilter === "upcoming"
-      ? upcomingTrips
-      : tabFilter === "past"
-      ? pastTrips
-      : draftTrips;
-
-  const stats = {
-    upcoming: upcomingTrips.length,
-    past: pastTrips.length,
-    drafts: draftTrips.length,
-  };
-
-  const handleDownloadPDF = (request: TravelRequest) => {
-    generateTripSummaryPDF(request);
-  };
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setFilterStartDate("");
-    setFilterEndDate("");
-    setFilterMinCost("");
-    setFilterMaxCost("");
-  };
-
-  const hasActiveFilters = searchQuery || filterStartDate || filterEndDate || filterMinCost || filterMaxCost;
-
-  // Apply search, filters, and sorting
   const processedRequests = useMemo(() => {
-    let result = [...filteredRequests];
-
-    // Apply search
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      result = result.filter(req =>
-        req.destination.city.toLowerCase().includes(searchLower) ||
-        req.destination.country.toLowerCase().includes(searchLower) ||
-        req.purpose.toLowerCase().includes(searchLower)
+    let result = [...tabRequests];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(r =>
+        r.destination?.city?.toLowerCase().includes(q) ||
+        r.destination?.country?.toLowerCase().includes(q) ||
+        r.purpose?.toLowerCase().includes(q) ||
+        r.employeeName?.toLowerCase().includes(q)
       );
     }
-
-    // Apply date range filter
-    if (filterStartDate) {
-      result = result.filter(req => new Date(req.startDate) >= new Date(filterStartDate));
-    }
-    if (filterEndDate) {
-      result = result.filter(req => new Date(req.startDate) <= new Date(filterEndDate));
-    }
-
-    // Apply cost range filter
-    if (filterMinCost) {
-      result = result.filter(req => {
-        const cost = req.costBreakdown?.totalCost || req.perDiem.totalFJD;
-        return cost >= parseFloat(filterMinCost);
-      });
-    }
-    if (filterMaxCost) {
-      result = result.filter(req => {
-        const cost = req.costBreakdown?.totalCost || req.perDiem.totalFJD;
-        return cost <= parseFloat(filterMaxCost);
-      });
-    }
-
-    // Apply sorting
     result.sort((a, b) => {
-      let comparison = 0;
-      switch (sortField) {
-        case "date":
-          comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-          break;
-        case "cost":
-          const costA = a.costBreakdown?.totalCost || a.perDiem.totalFJD;
-          const costB = b.costBreakdown?.totalCost || b.perDiem.totalFJD;
-          comparison = costA - costB;
-          break;
-        case "destination":
-          comparison = a.destination.city.localeCompare(b.destination.city);
-          break;
-        case "status":
-          const statusOrder = { 
-            draft: 1, 
-            submitted: 2, 
-            in_review: 3, 
-            awaiting_quotes: 4,
-            quotes_submitted: 5,
-            approved: 6, 
-            rejected: 7,
-            ticketed: 8
-          };
-          comparison = statusOrder[a.status] - statusOrder[b.status];
-          break;
+      let cmp = 0;
+      if (sortField === "date") cmp = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      else if (sortField === "destination") cmp = (a.destination?.city ?? "").localeCompare(b.destination?.city ?? "");
+      else if (sortField === "submitted") cmp = new Date(a.submittedAt ?? 0).getTime() - new Date(b.submittedAt ?? 0).getTime();
+      else if (sortField === "status") {
+        const order: Record<string, number> = { draft: 1, submitted: 2, in_review: 3, awaiting_quotes: 4, quotes_submitted: 5, approved: 6, rejected: 7, ticketed: 8 };
+        cmp = (order[a.status] ?? 0) - (order[b.status] ?? 0);
       }
-      return sortOrder === "asc" ? comparison : -comparison;
+      return sortOrder === "asc" ? cmp : -cmp;
     });
-
     return result;
-  }, [filteredRequests, searchQuery, filterStartDate, filterEndDate, filterMinCost, filterMaxCost, sortField, sortOrder]);
+  }, [tabRequests, searchQuery, sortField, sortOrder]);
 
   const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("desc");
-    }
+    if (sortField === field) setSortOrder(o => o === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortOrder("desc"); }
   };
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
-    return sortOrder === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />;
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />;
   };
+
+  const canCancel = (r: TravelRequest) => r.status === "draft" || r.status === "submitted";
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">My Travel Requests</h1>
-          <p className="text-muted-foreground">View and manage your travel history</p>
+      <div className="container mx-auto p-6 space-y-4">
+        <div className="h-8 bg-muted rounded w-64 animate-pulse" />
+        <div className="h-4 bg-muted rounded w-48 animate-pulse" />
+        <div className="grid grid-cols-3 gap-4 mt-6">
+          {[1, 2, 3].map(i => <Card key={i} className="animate-pulse"><CardContent className="p-6 h-20" /></Card>)}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-8 bg-muted rounded w-16 mb-2"></div>
-                <div className="h-4 bg-muted rounded w-24"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card className="animate-pulse">
-          <CardContent className="p-6">
-            <div className="h-64 bg-muted rounded"></div>
-          </CardContent>
-        </Card>
+        <Card className="animate-pulse"><CardContent className="p-6 h-48" /></Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">My Travel Requests</h1>
-        <p className="text-muted-foreground">View and manage your travel history</p>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">My Travel Requests</h1>
+          <p className="text-muted-foreground mt-1">Track, view, and manage all your travel requests</p>
+        </div>
+        <Link href="/request/new">
+          <Button data-testid="button-new-request">
+            <Plus className="w-4 h-4 mr-2" />
+            New Request
+          </Button>
+        </Link>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold text-primary" data-testid="stat-upcoming">{stats.upcoming}</div>
-            <div className="text-sm font-semibold text-muted-foreground mt-1">Upcoming Trips</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold text-success" data-testid="stat-past">{stats.past}</div>
-            <div className="text-sm font-semibold text-muted-foreground mt-1">Past Trips</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold text-warning" data-testid="stat-drafts">{stats.drafts}</div>
-            <div className="text-sm font-semibold text-muted-foreground mt-1">In Progress</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search destination or purpose..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search-trips"
-                />
-                {searchQuery && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                    onClick={() => setSearchQuery("")}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-              <Button
-                variant={showFilters ? "default" : "outline"}
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
-                data-testid="button-toggle-filters"
-              >
-                <Filter className="w-4 h-4" />
-                Filters
-                {hasActiveFilters && !searchQuery && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
-                    {[filterStartDate, filterEndDate, filterMinCost, filterMaxCost].filter(Boolean).length}
-                  </span>
-                )}
-              </Button>
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card
+          className={`cursor-pointer transition-colors ${tab === "active" ? "border-primary" : ""}`}
+          onClick={() => setTab("active")}
+          data-testid="card-stat-active"
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950">
+              <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
+            <div>
+              <div className="text-2xl font-bold">{activeRequests.length}</div>
+              <div className="text-sm text-muted-foreground">Active Requests</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card
+          className={`cursor-pointer transition-colors ${tab === "approved" ? "border-primary" : ""}`}
+          onClick={() => setTab("approved")}
+          data-testid="card-stat-approved"
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-2 rounded-md bg-green-50 dark:bg-green-950">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{approvedRequests.length}</div>
+              <div className="text-sm text-muted-foreground">Approved / Ticketed</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card
+          className={`cursor-pointer transition-colors ${tab === "rejected" ? "border-primary" : ""}`}
+          onClick={() => setTab("rejected")}
+          data-testid="card-stat-rejected"
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-2 rounded-md bg-red-50 dark:bg-red-950">
+              <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{rejectedRequests.length}</div>
+              <div className="text-sm text-muted-foreground">Rejected / Cancelled</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-            {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">From Date</label>
-                  <Input
-                    type="date"
-                    value={filterStartDate}
-                    onChange={(e) => setFilterStartDate(e.target.value)}
-                    data-testid="input-filter-start-date"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">To Date</label>
-                  <Input
-                    type="date"
-                    value={filterEndDate}
-                    onChange={(e) => setFilterEndDate(e.target.value)}
-                    data-testid="input-filter-end-date"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Min Cost (FJD)</label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={filterMinCost}
-                    onChange={(e) => setFilterMinCost(e.target.value)}
-                    data-testid="input-filter-min-cost"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Max Cost (FJD)</label>
-                  <Input
-                    type="number"
-                    placeholder="10000"
-                    value={filterMaxCost}
-                    onChange={(e) => setFilterMaxCost(e.target.value)}
-                    data-testid="input-filter-max-cost"
-                  />
-                </div>
-                {hasActiveFilters && (
-                  <div className="lg:col-span-4 flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={clearFilters}
-                      className="gap-2"
-                      data-testid="button-clear-all-filters"
-                    >
-                      <X className="w-4 h-4" />
-                      Clear All Filters
-                    </Button>
-                  </div>
-                )}
-              </div>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by destination, purpose, or traveller name..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="pl-10"
+          data-testid="input-search-requests"
+        />
+      </div>
+
+      {/* Tabs + Table */}
+      <Tabs value={tab} onValueChange={v => setTab(v as typeof tab)}>
+        <TabsList data-testid="tabs-request-status">
+          <TabsTrigger value="active" data-testid="tab-active">
+            Active
+            {activeRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">{activeRequests.length}</Badge>
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Filter Tabs */}
-      <Tabs value={tabFilter} onValueChange={(v) => setTabFilter(v as any)}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="upcoming" data-testid="tab-upcoming">
-            Upcoming ({stats.upcoming})
           </TabsTrigger>
-          <TabsTrigger value="past" data-testid="tab-past">
-            Past ({stats.past})
+          <TabsTrigger value="approved" data-testid="tab-approved">
+            Approved
+            {approvedRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">{approvedRequests.length}</Badge>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="drafts" data-testid="tab-drafts">
-            In Progress ({stats.drafts})
+          <TabsTrigger value="rejected" data-testid="tab-rejected">
+            Rejected
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={tabFilter} className="mt-0">
+        <TabsContent value={tab} className="mt-4">
           {processedRequests.length === 0 ? (
             <Card>
-              <CardContent className="p-12 text-center text-muted-foreground">
-                No {tabFilter} trips found
+              <CardContent className="p-12 text-center space-y-3">
+                <Plane className="w-10 h-10 mx-auto text-muted-foreground opacity-40" />
+                <p className="text-muted-foreground font-medium">
+                  {tab === "active" ? "No active requests" :
+                   tab === "approved" ? "No approved requests yet" :
+                   "No rejected requests"}
+                </p>
+                {tab === "active" && (
+                  <Link href="/request/new">
+                    <Button variant="outline" className="mt-2" data-testid="button-new-request-empty">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Submit a New Request
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -361,180 +281,152 @@ export default function MyTrips() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12"></TableHead>
                     <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 -ml-3 hover:bg-transparent"
+                      <button
                         onClick={() => toggleSort("destination")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-destination"
                       >
-                        Destination
-                        {getSortIcon("destination")}
-                      </Button>
+                        Destination <SortIcon field="destination" />
+                      </button>
                     </TableHead>
                     <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 -ml-3 hover:bg-transparent"
+                      <button
                         onClick={() => toggleSort("date")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-date"
                       >
-                        Travel Dates
-                        {getSortIcon("date")}
-                      </Button>
+                        Travel Dates <SortIcon field="date" />
+                      </button>
                     </TableHead>
-                    <TableHead>Duration</TableHead>
+                    <TableHead className="hidden md:table-cell">Purpose</TableHead>
                     <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 -ml-3 hover:bg-transparent"
-                        onClick={() => toggleSort("cost")}
-                      >
-                        Total Cost
-                        {getSortIcon("cost")}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 -ml-3 hover:bg-transparent"
+                      <button
                         onClick={() => toggleSort("status")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-status"
                       >
-                        Status
-                        {getSortIcon("status")}
-                      </Button>
+                        Status <SortIcon field="status" />
+                      </button>
                     </TableHead>
-                    <TableHead>Purpose</TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort("submitted")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-submitted"
+                      >
+                        Submitted <SortIcon field="submitted" />
+                      </button>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {processedRequests.map((request) => {
-                    const isExpanded = expandedRows.has(request.id);
-                    const breakdown = request.costBreakdown;
-                    
-                    return (
-                      <Fragment key={request.id}>
-                        <TableRow data-testid={`row-trip-${request.id}`}>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleRow(request.id)}
-                              data-testid={`button-expand-${request.id}`}
-                              aria-label={isExpanded ? "Hide cost breakdown" : "Show cost breakdown"}
-                            >
-                              {isExpanded ? (
-                                <ChevronUp className="w-5 h-5 text-primary" />
-                              ) : (
-                                <ChevronDown className="w-5 h-5 text-primary" />
-                              )}
-                            </Button>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium" data-testid={`text-destination-${request.id}`}>
-                              {request.destination.city}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {request.destination.country}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm" data-testid={`text-dates-${request.id}`}>
-                              {format(new Date(request.startDate), "MMM dd, yyyy")}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              to {format(new Date(request.endDate), "MMM dd, yyyy")}
-                            </div>
-                          </TableCell>
-                          <TableCell data-testid={`text-duration-${request.id}`}>
-                            {request.perDiem.days} days
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium" data-testid={`text-totalcost-${request.id}`}>
-                              FJD {breakdown ? breakdown.totalCost.toFixed(2) : request.perDiem.totalFJD.toFixed(2)}
-                            </div>
-                            {breakdown && (
-                              <div className="text-xs text-[hsl(var(--lagoon))] font-medium">
-                                {isExpanded ? '▲ Hide details' : '▼ View breakdown'}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={request.status} type="request" />
-                          </TableCell>
-                          <TableCell>
-                            <div className="max-w-xs truncate text-sm text-muted-foreground" title={request.purpose}>
-                              {request.purpose}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
+                  {processedRequests.map(request => (
+                    <TableRow
+                      key={request.id}
+                      className="cursor-pointer"
+                      onClick={() => setLocation(`/requests/${request.id}`)}
+                      data-testid={`row-request-${request.id}`}
+                    >
+                      <TableCell>
+                        <div className="font-medium" data-testid={`text-destination-${request.id}`}>
+                          {request.destination?.city ?? "—"}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {request.destination?.country ?? ""}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm" data-testid={`text-dates-${request.id}`}>
+                          {format(new Date(request.startDate), "MMM dd, yyyy")}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          → {format(new Date(request.endDate), "MMM dd, yyyy")}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div
+                          className="max-w-[200px] truncate text-sm text-muted-foreground"
+                          title={request.purpose}
+                        >
+                          {request.purpose}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusPill status={request.status} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
+                          {request.submittedAt
+                            ? format(new Date(request.submittedAt), "MMM dd, yyyy")
+                            : "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div
+                          className="flex items-center justify-end gap-2"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <Link href={`/requests/${request.id}`}>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDownloadPDF(request)}
-                              data-testid={`button-download-pdf-${request.id}`}
+                              data-testid={`button-view-${request.id}`}
                             >
-                              <Download className="w-4 h-4 mr-2" />
-                              PDF
+                              <Eye className="w-4 h-4 mr-1.5" />
+                              View
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                        {breakdown && isExpanded && (
-                          <TableRow className="bg-muted/50">
-                            <TableCell colSpan={8}>
-                              <div className="py-4 px-6">
-                                <h4 className="font-semibold mb-3 text-sm">Cost Breakdown</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                  {breakdown.flights && (
-                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-flights-${request.id}`}>
-                                      <span className="text-sm text-muted-foreground">Flights</span>
-                                      <span className="font-medium">FJD {breakdown.flights.toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                  {breakdown.accommodation && (
-                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-accommodation-${request.id}`}>
-                                      <span className="text-sm text-muted-foreground">Accommodation</span>
-                                      <span className="font-medium">FJD {breakdown.accommodation.toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                  {breakdown.groundTransfers && (
-                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-transfers-${request.id}`}>
-                                      <span className="text-sm text-muted-foreground">Ground Transfers</span>
-                                      <span className="font-medium">FJD {breakdown.groundTransfers.toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                  {breakdown.visaFees && (
-                                    <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-visa-${request.id}`}>
-                                      <span className="text-sm text-muted-foreground">Visa Fees</span>
-                                      <span className="font-medium">FJD {breakdown.visaFees.toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                  <div className="flex justify-between items-center p-3 bg-background rounded-md border" data-testid={`cost-perdiem-${request.id}`}>
-                                    <span className="text-sm text-muted-foreground">Per Diem ({request.perDiem.days} days)</span>
-                                    <span className="font-medium">FJD {breakdown.perDiem.toFixed(2)}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center p-3 bg-primary/10 rounded-md border border-primary/20" data-testid={`cost-total-${request.id}`}>
-                                    <span className="text-sm font-semibold">Total Cost</span>
-                                    <span className="font-bold text-primary">FJD {breakdown.totalCost.toFixed(2)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                          </Link>
+                          {canCancel(request) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive"
+                              onClick={() => setCancelTarget(request)}
+                              data-testid={`button-cancel-${request.id}`}
+                            >
+                              <XCircle className="w-4 h-4 mr-1.5" />
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Cancel confirmation dialog */}
+      <AlertDialog open={!!cancelTarget} onOpenChange={open => !open && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Cancel Travel Request
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel the trip to{" "}
+              <strong>{cancelTarget?.destination?.city}</strong>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-confirm-no">Keep Request</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.id)}
+              className="bg-destructive text-destructive-foreground"
+              data-testid="button-cancel-confirm-yes"
+            >
+              Yes, Cancel Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

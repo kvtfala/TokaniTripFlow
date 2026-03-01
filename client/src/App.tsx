@@ -67,7 +67,7 @@ const menuItems = [
     icon: PlaneTakeoff,
   },
   {
-    title: "My Trips",
+    title: "My Requests",
     subtitle: "Personal",
     url: "/my-trips",
     icon: History,
