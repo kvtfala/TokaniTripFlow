@@ -1170,63 +1170,40 @@ export default function RequestDetail() {
             <ApprovalLinkSection requestId={id!} request={request} />
           )}
 
-          {/* Decision Section (for managers) */}
-          {canTakeAction && (
+          {/* Decision Section — Pre-approval stage (submitted / in_review) */}
+          {canPreApprove && (
             <Card className="border-primary">
               <CardHeader>
-                <CardTitle>Make Decision</CardTitle>
+                <CardTitle>Step 1 of 2 — Pre-Approval for Quote Collection</CardTitle>
                 <CardDescription>
-                  {request.status === "submitted" || request.status === "in_review"
-                    ? "Approve, pre-approve for quotes, or reject this request"
-                    : "Approve or reject this travel request"}
+                  Pre-approve this request so the travel coordinator can collect vendor quotes.
+                  Final approval happens after quotes are reviewed.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Comments {!comment.trim() && "(optional for approval, required for rejection)"}
+                    Comments <span className="text-muted-foreground font-normal">(optional for pre-approval, required for decline)</span>
                   </label>
                   <Textarea
-                    placeholder="Add any comments or justification..."
+                    placeholder="Add any comments or conditions for the quote collection..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    rows={4}
+                    rows={3}
                     data-testid="textarea-decision-comment"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  {/* Pre-approval button (only for submitted/in_review and authorized approvers) */}
-                  {canPreApprove && (
-                    <>
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        onClick={() => approveMutation.mutate({ approvalType: "pre_approval" })}
-                        disabled={approveMutation.isPending || rejectMutation.isPending}
-                        className="w-full"
-                        data-testid="button-pre-approve"
-                      >
-                        <DollarSign className="w-5 h-5 mr-2" />
-                        Pre-Approve to Collect Quotes
-                      </Button>
-                      <p className="text-xs text-muted-foreground px-1">
-                        Pre-approval allows coordinator to gather vendor quotes before final approval
-                      </p>
-                      <Separator />
-                    </>
-                  )}
-
-                  {/* Regular/Final approval button */}
                   <Button
                     size="lg"
-                    onClick={() => approveMutation.mutate(undefined)}
+                    onClick={() => approveMutation.mutate({ approvalType: "pre_approval" })}
                     disabled={approveMutation.isPending || rejectMutation.isPending}
                     className="w-full"
-                    data-testid="button-approve"
+                    data-testid="button-pre-approve"
                   >
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    {request.status === "quotes_submitted" ? "Final Approve" : "Approve Request"}
+                    <DollarSign className="w-5 h-5 mr-2" />
+                    Pre-Approve to Collect Quotes
                   </Button>
 
                   <Button
@@ -1238,8 +1215,28 @@ export default function RequestDetail() {
                     data-testid="button-reject"
                   >
                     <XCircle className="w-5 h-5 mr-2" />
-                    Reject Request
+                    Decline Request
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Awaiting quotes — info state for approver */}
+          {request.status === "awaiting_quotes" && (
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-md bg-orange-50 dark:bg-orange-950 shrink-0">
+                    <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Waiting for Vendor Quotes</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      This request has been pre-approved. The travel coordinator is collecting quotes
+                      from vendors. You will be notified once quotes are ready for your final review.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1249,9 +1246,9 @@ export default function RequestDetail() {
           {request.status === "quotes_submitted" && canFinalApprove && (
             <Card className="border-primary">
               <CardHeader>
-                <CardTitle>Final Approval</CardTitle>
+                <CardTitle>Step 2 of 2 — Final Approval</CardTitle>
                 <CardDescription>
-                  Review selected quote and approve or reject
+                  Review the submitted quote(s) and make your final decision on this travel request.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

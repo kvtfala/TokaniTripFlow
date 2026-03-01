@@ -83,17 +83,16 @@ export default function Approvals() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      const res = await apiRequest("POST", `/api/requests/${requestId}/approve`, { comment: "" });
+    mutationFn: async ({ requestId, approvalType }: { requestId: string; approvalType?: string }) => {
+      const res = await apiRequest("POST", `/api/requests/${requestId}/approve`, { comment: "", approvalType });
       return res.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (_data: any, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
-      const needsMore = data && requiresMoreApprovals(data);
       toast({
-        title: "Vinaka! Request Approved",
-        description: needsMore
-          ? "Request advanced to next approval level"
+        title: variables.approvalType === "pre_approval" ? "Pre-Approved" : "Vinaka! Request Approved",
+        description: variables.approvalType === "pre_approval"
+          ? "Request sent to coordinator to collect vendor quotes"
           : "Request fully approved and ready for processing",
       });
     },
@@ -130,9 +129,13 @@ export default function Approvals() {
 
   const bulkApproveMutation = useMutation({
     mutationFn: async () => {
-      const promises = Array.from(selectedIds).map(id =>
-        apiRequest("POST", `/api/requests/${id}/approve`, { comment: bulkComment })
-      );
+      const promises = Array.from(selectedIds).map(id => {
+        const req = requests.find(r => r.id === id);
+        const approvalType = (req?.status === "submitted" || req?.status === "in_review")
+          ? "pre_approval"
+          : undefined;
+        return apiRequest("POST", `/api/requests/${id}/approve`, { comment: bulkComment, approvalType });
+      });
       return Promise.all(promises);
     },
     onSuccess: () => {
@@ -711,6 +714,7 @@ export default function Approvals() {
                             className="flex items-center justify-end gap-2"
                             onClick={e => e.stopPropagation()}
                           >
+                            {/* Pre-approval stage: submitted / in_review */}
                             {(request.status === "submitted" || request.status === "in_review") && (
                               <>
                                 <Button
@@ -721,18 +725,31 @@ export default function Approvals() {
                                   data-testid={`button-reject-${request.id}`}
                                 >
                                   <XCircle className="w-4 h-4 mr-1.5" />
-                                  Reject
+                                  Decline
                                 </Button>
                                 <Button
                                   size="sm"
-                                  onClick={() => approveMutation.mutate(request.id)}
+                                  onClick={() => approveMutation.mutate({ requestId: request.id, approvalType: "pre_approval" })}
                                   disabled={approveMutation.isPending}
                                   data-testid={`button-approve-${request.id}`}
                                 >
-                                  <CheckCircle className="w-4 h-4 mr-1.5" />
-                                  Approve
+                                  <DollarSign className="w-4 h-4 mr-1.5" />
+                                  Pre-Approve
                                 </Button>
                               </>
+                            )}
+
+                            {/* Final approval stage: quotes submitted by coordinator */}
+                            {request.status === "quotes_submitted" && (
+                              <Button
+                                size="sm"
+                                onClick={() => approveMutation.mutate({ requestId: request.id })}
+                                disabled={approveMutation.isPending}
+                                data-testid={`button-final-approve-${request.id}`}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1.5" />
+                                Final Approve
+                              </Button>
                             )}
                             <Link href={`/requests/${request.id}`}>
                               <Button
