@@ -758,6 +758,11 @@ export default function RequestDetail() {
   const { toast } = useToast();
   const [comment, setComment] = useState("");
 
+  // Fetch the currently logged-in user so we can apply proper permission checks
+  const { data: currentUser } = useQuery<{ id: string; role: string; firstName?: string; lastName?: string }>({
+    queryKey: ["/api/auth/user"],
+  });
+
   // Fetch request details
   const { data: request, isLoading } = useQuery<TravelRequest>({
     queryKey: ["/api/requests", id],
@@ -890,14 +895,15 @@ export default function RequestDetail() {
 
   // Determine if current user can approve/reject
   const isPendingApproval = request.status === "submitted" || request.status === "in_review";
-  // TODO: Replace with actual user from session
-  const currentUserId = "manager"; // Hardcoded for testing - matches backend
+  const isSuperAdmin = currentUser?.role === "super_admin";
+  const currentUserId = currentUser?.id ?? "manager";
   const expectedApprover = request.approverFlow[request.approverIndex];
-  const canTakeAction = isPendingApproval && currentUserId === expectedApprover;
+  // Super admin can always act on any request; others must be the expected approver
+  const canTakeAction = isPendingApproval && (isSuperAdmin || currentUserId === expectedApprover);
   
   // Permission checks for RFQ workflow actions
-  const canPreApprove = (request.status === "submitted" || request.status === "in_review") && currentUserId === expectedApprover;
-  const canFinalApprove = request.status === "quotes_submitted" && currentUserId === expectedApprover;
+  const canPreApprove = (request.status === "submitted" || request.status === "in_review") && (isSuperAdmin || currentUserId === expectedApprover);
+  const canFinalApprove = request.status === "quotes_submitted" && (isSuperAdmin || currentUserId === expectedApprover);
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">

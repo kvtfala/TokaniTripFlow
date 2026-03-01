@@ -185,7 +185,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(request);
   }));
 
-  app.post("/api/requests/:id/approve", asyncHandler(async (req, res) => {
+  // Helper: resolve the currently logged-in user from session (OIDC or demo).
+  // Returns { id, role, displayName } or falls back to the legacy "manager" mock
+  // so unauthenticated API calls (e.g. test scripts) continue to work.
+  const resolveActingUser = async (req: any): Promise<{ id: string; role: string; displayName: string }> => {
+    try {
+      let userId: string | null = null;
+      if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      } else if (req.session?.user?.id) {
+        userId = req.session.user.id;
+      }
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          return {
+            id: user.id,
+            role: user.role || "employee",
+            displayName: `${user.firstName} ${user.lastName}`.trim() || user.id,
+          };
+        }
+      }
+    } catch (_) { /* fall through */ }
+    return { id: "manager", role: "manager", displayName: "Manager" };
+  };
+
+  app.post("/api/requests/:id/approve", asyncHandler(async (req: any, res) => {
     const { comment, auditFlag, auditNote, approvalType } = req.body;
     const request = await storage.getTravelRequest(req.params.id);
     
@@ -193,11 +218,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Request not found" });
     }
 
-    // IMPORTANT: In production, replace with actual authenticated user validation
-    // For now, using mock "manager" user for demonstration
-    // TODO: Replace with: const currentApproverId = req.user?.id;
-    // TODO: Add proper authentication middleware
-    const currentApproverId = "manager";
+    const actor = await resolveActingUser(req);
+    const isSuperAdmin = actor.role === "super_admin";
+    // For audit trail use the real actor id; display name appended for super_admin clarity
+    const currentApproverId = isSuperAdmin ? `${actor.id} (Super Admin)` : actor.id;
 
     // Handle different approval types based on current status
     
@@ -205,8 +229,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (approvalType === "pre_approval" && (request.status === "submitted" || request.status === "in_review")) {
       const expectedApproverId = request.approverFlow[request.approverIndex];
       
-      // Validate current user is authorized to approve
-      if (currentApproverId !== expectedApproverId) {
+      // Super admin bypasses identity check; others must match expected approver
+      if (!isSuperAdmin && actor.id !== expectedApproverId) {
         return res.status(403).json({ 
           error: "Not authorized to pre-approve this request" 
         });
@@ -266,10 +290,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // FINAL APPROVAL: quotes_submitted → approved
     if (request.status === "quotes_submitted") {
-      // CRITICAL: Validate current user is authorized to approve at this stage
       const expectedApproverId = request.approverFlow[request.approverIndex];
       
-      if (currentApproverId !== expectedApproverId) {
+      // Super admin bypasses identity check
+      if (!isSuperAdmin && actor.id !== expectedApproverId) {
         return res.status(403).json({ 
           error: "Not authorized to approve this request at this stage" 
         });
@@ -298,7 +322,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         note: comment || "Final approval with selected quote",
       };
 
-      // Advance to next approver or mark as approved
       const newIndex = request.approverIndex + 1;
       const isFinalApproval = newIndex >= request.approverFlow.length;
 
@@ -325,14 +348,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (request.status === "submitted" || request.status === "in_review") {
       const expectedApproverId = request.approverFlow[request.approverIndex];
       
-      // Validate current user is authorized to approve at this stage
-      if (currentApproverId !== expectedApproverId) {
+      // Super admin bypasses identity check
+      if (!isSuperAdmin && actor.id !== expectedApproverId) {
         return res.status(403).json({ 
           error: "Not authorized to approve this request at this stage" 
         });
       }
 
-      // Add approval to history
       const historyEntry: HistoryEntry = {
         ts: new Date().toISOString(),
         actor: currentApproverId,
@@ -340,7 +362,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         note: comment || "Approved",
       };
 
-      // Advance to next approver or mark as approved
       const newIndex = request.approverIndex + 1;
       const isFinalApproval = newIndex >= request.approverFlow.length;
 
@@ -350,7 +371,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         history: [...request.history, historyEntry],
       };
 
-      // Only set audit flags if provided (don't overwrite existing)
       if (auditFlag !== undefined) {
         updates.auditFlag = auditFlag;
       }
@@ -373,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }));
 
-  app.post("/api/requests/:id/reject", asyncHandler(async (req, res) => {
+  app.post("/api/requests/:id/reject", asyncHandler(async (req: any, res) => {
     const { comment } = req.body;
     const request = await storage.getTravelRequest(req.params.id);
     
@@ -393,21 +413,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Rejection comment is required" });
     }
 
-    // IMPORTANT: In production, replace with actual authenticated user validation
-    // For now, using mock "manager" user for demonstration  
-    // TODO: Replace with: const currentApproverId = req.user?.id;
-    // TODO: Add proper authentication middleware
-    const currentApproverId = "manager";
+    const actor = await resolveActingUser(req);
+    const isSuperAdmin = actor.role === "super_admin";
+    const currentApproverId = isSuperAdmin ? `${actor.id} (Super Admin)` : actor.id;
     const expectedApproverId = request.approverFlow[request.approverIndex];
     
-    // Validate current user is authorized to reject at this stage
-    if (currentApproverId !== expectedApproverId) {
+    // Super admin bypasses identity check; others must match expected approver
+    if (!isSuperAdmin && actor.id !== expectedApproverId) {
       return res.status(403).json({ 
         error: "Not authorized to reject this request at this stage" 
       });
     }
 
-    // Add rejection to history
     const historyEntry: HistoryEntry = {
       ts: new Date().toISOString(),
       actor: currentApproverId,

@@ -41,8 +41,12 @@ export default function Approvals() {
   
   const { toast } = useToast();
 
-  // Mock current user - in production this would come from auth
-  const currentUserId = "manager";
+  // Fetch current logged-in user for permission checks
+  const { data: currentUser } = useQuery<{ id: string; role: string }>({
+    queryKey: ["/api/auth/user"],
+  });
+  const currentUserId = currentUser?.id ?? "manager";
+  const isSuperAdmin = currentUser?.role === "super_admin";
 
   const { data: requests = [], isLoading } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],
@@ -50,7 +54,8 @@ export default function Approvals() {
 
   const approveMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      return apiRequest("POST", `/api/requests/${requestId}/approve`, { comment, auditFlag, auditNote });
+      const res = await apiRequest("POST", `/api/requests/${requestId}/approve`, { comment, auditFlag, auditNote });
+      return res.json();
     },
     onSuccess: (data: any) => {
       const needsMoreApprovals = data && requiresMoreApprovals(data);
@@ -112,10 +117,11 @@ export default function Approvals() {
   };
 
   // Filter requests pending for current user
+  // Super admin sees ALL pending requests across all approvers
   const basePendingRequests = requests.filter(
     (req) =>
       (req.status === "submitted" || req.status === "in_review") &&
-      nextApprover(req) === currentUserId
+      (isSuperAdmin || nextApprover(req) === currentUserId)
   );
 
   // Apply search and filters
