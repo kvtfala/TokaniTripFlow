@@ -516,16 +516,16 @@ export default function Approvals() {
               Pending Approvals ({pendingRequests.length})
             </h2>
             {pendingRequests.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSelectAll}
-                className="gap-2"
+              <label
+                className="flex items-center gap-2 cursor-pointer text-sm font-medium select-none px-2 py-1 rounded-md hover-elevate"
                 data-testid="button-select-all"
               >
-                <Checkbox checked={selectedIds.size === pendingRequests.length} />
+                <Checkbox
+                  checked={selectedIds.size === pendingRequests.length}
+                  onCheckedChange={toggleSelectAll}
+                />
                 Select All
-              </Button>
+              </label>
             )}
           </div>
           <ScrollArea className="h-[600px]">

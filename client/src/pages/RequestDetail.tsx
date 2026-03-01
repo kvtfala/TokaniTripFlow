@@ -1014,7 +1014,7 @@ export default function RequestDetail() {
                     {format(new Date(request.startDate), "MMMM dd, yyyy")} - {format(new Date(request.endDate), "MMMM dd, yyyy")}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Duration: {request.perDiem.days} days
+                    Duration: {request.perDiem?.days ?? "—"} days
                   </p>
                 </div>
               </div>
@@ -1032,8 +1032,8 @@ export default function RequestDetail() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Visa Required</p>
-                  <Badge variant={request.visaCheck.status === "OK" ? "default" : "destructive"}>
-                    {request.visaCheck.message}
+                  <Badge variant={request.visaCheck?.status === "OK" ? "default" : "destructive"}>
+                    {request.visaCheck?.message ?? "Not checked"}
                   </Badge>
                 </div>
                 <div>
@@ -1069,6 +1069,7 @@ export default function RequestDetail() {
 
               <div>
                 <p className="text-sm font-semibold mb-2">Per Diem Calculation</p>
+                {request.perDiem ? (
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Daily MIE Rate:</span>
@@ -1092,6 +1093,9 @@ export default function RequestDetail() {
                     <span className="text-primary">FJD {request.perDiem.totalFJD.toFixed(2)}</span>
                   </div>
                 </div>
+                ) : (
+                <p className="text-sm text-muted-foreground">Per diem calculation pending.</p>
+                )}
               </div>
             </CardContent>
           </Card>
