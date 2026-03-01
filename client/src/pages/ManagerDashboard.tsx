@@ -26,7 +26,7 @@ export default function ManagerDashboard() {
   
   // TODO: Production - Add proper authentication and authorization
   // For demo: Simple role check against mock RoleContext
-  if (currentUser.role !== "manager") {
+  if (currentUser.role !== "manager" && currentUser.role !== "super_admin") {
     return (
       <div className="container mx-auto p-4 md:p-6">
         <Alert variant="destructive">

@@ -121,6 +121,10 @@ export default function Home() {
       actions.push({ label: "Approvals Queue", href: "/dashboard/manager", icon: CheckCircle, variant: "outline" as const, show: true });
     }
 
+    if (currentUser.role === "super_admin") {
+      actions.push({ label: "Approvals Queue", href: "/approvals", icon: CheckCircle, variant: "outline" as const, show: true });
+    }
+
     if (currentUser.role === "travel_desk") {
       actions.push({ label: "Travel Desk", href: "/dashboard/travel-desk", icon: Plane, variant: "outline" as const, show: true });
     }
@@ -341,7 +345,7 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {currentUser.role === "manager" && (
+              {(currentUser.role === "manager" || currentUser.role === "super_admin") && (
                 <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
@@ -349,7 +353,7 @@ export default function Home() {
                       <p className="font-semibold text-sm">
                         {'needsApproval' in stats ? stats.needsApproval : 0} request{('needsApproval' in stats ? stats.needsApproval : 0) !== 1 ? 's' : ''} awaiting your approval
                       </p>
-                      <Link href="/dashboard/manager">
+                      <Link href={currentUser.role === "super_admin" ? "/approvals" : "/dashboard/manager"}>
                         <Button variant="ghost" size="sm" className="px-0 h-auto text-warning hover:text-warning/80">
                           Review now →
                         </Button>

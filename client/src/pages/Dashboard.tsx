@@ -13,15 +13,15 @@ export default function Dashboard() {
     // Don't redirect until we've loaded the actual authenticated user
     if (isLoading) return;
     
-    if (currentUser.role === "coordinator") {
+    if (currentUser.role === "super_admin") {
+      setLocation("/approvals");
+    } else if (currentUser.role === "coordinator") {
       setLocation("/dashboard/coordinator");
     } else if (currentUser.role === "manager") {
       setLocation("/dashboard/manager");
     } else if (currentUser.role === "travel_desk") {
       setLocation("/dashboard/traveldesk");
     } else {
-      // Default to coordinator dashboard for demo
-      // In production: show appropriate dashboard based on actual role
       setLocation("/dashboard/coordinator");
     }
   }, [currentUser.role, isLoading, setLocation]);

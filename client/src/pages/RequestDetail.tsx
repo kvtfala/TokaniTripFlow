@@ -802,8 +802,8 @@ export default function RequestDetail() {
         description: "The travel request has been approved and moved to the next step.",
       });
       
-      // Navigate back - dashboard will auto-refetch due to invalidation
-      setLocation("/dashboard/manager");
+      // Navigate back to the approvals queue
+      setLocation("/approvals");
     },
     onError: () => {
       toast({
@@ -825,8 +825,6 @@ export default function RequestDetail() {
       });
     },
     onSuccess: async () => {
-      // Invalidate ALL queries matching this key (active + inactive)
-      // This ensures ManagerDashboard will refetch when it mounts
       queryClient.invalidateQueries({ 
         queryKey: ["/api/requests"]
       });
@@ -836,8 +834,7 @@ export default function RequestDetail() {
         description: "The travel request has been rejected.",
       });
       
-      // Navigate back - dashboard will auto-refetch due to invalidation
-      setLocation("/dashboard/manager");
+      setLocation("/approvals");
     },
     onError: (error: Error) => {
       toast({
@@ -867,10 +864,10 @@ export default function RequestDetail() {
             Request not found. The request ID may be invalid or you may not have permission to view it.
           </AlertDescription>
         </Alert>
-        <Link href="/dashboard/manager">
+        <Link href="/approvals">
           <Button variant="outline" className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            Back to Approvals
           </Button>
         </Link>
       </div>
@@ -909,7 +906,7 @@ export default function RequestDetail() {
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/manager">
+        <Link href="/approvals">
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="w-5 h-5" />
           </Button>
