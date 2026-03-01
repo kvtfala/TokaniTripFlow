@@ -107,9 +107,9 @@ export function CostPolicyStep({ formData, updateFormData }: CostPolicyStepProps
           />
         </div>
         {formData.totalEstimatedBudget !== undefined && formData.totalEstimatedBudget > 1000 && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1">
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
-            Budget exceeds FJD 1,000 — 3 vendor quotes required per policy before approval
+            Budget exceeds FJD 1,000 — finance policy will require 3 vendor quotes to be collected after approval
           </p>
         )}
       </div>
