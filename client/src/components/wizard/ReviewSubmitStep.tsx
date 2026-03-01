@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   Users,
   FileText,
-  Building2
+  Building2,
+  Mail
 } from "lucide-react";
 import { format } from "date-fns";
 import { TRAVELLER_DIRECTORY } from "@/data/travellerDirectory";
@@ -224,6 +225,17 @@ export function ReviewSubmitStep({ formData }: ReviewSubmitStepProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Auto-RFQ Notice */}
+      <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-4 py-3" data-testid="notice-auto-rfq">
+        <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+        <div className="text-sm">
+          <p className="font-medium text-blue-800 dark:text-blue-300">Vendor RFQs sent automatically</p>
+          <p className="text-blue-700 dark:text-blue-400 mt-0.5">
+            Once your manager pre-approves this request, Request for Quotation emails will be automatically sent to all approved vendors in the system. No further action is required from you.
+          </p>
+        </div>
+      </div>
 
       {/* Approval Path Section */}
       <Card>

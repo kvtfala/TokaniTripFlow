@@ -212,18 +212,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Pre-approve to collect quotes
+      // Pre-approve to collect quotes — auto-send RFQ to all approved vendors
+      const now = new Date().toISOString();
+      const approvedVendors = await storage.getVendors("approved");
+
+      const rfqRecipients = approvedVendors.map((v: any) => ({
+        vendorName: v.name,
+        email: v.contactEmail,
+        sentAt: now,
+      }));
+
+      const rfqNote = approvedVendors.length > 0
+        ? `Pre-approved. RFQ automatically sent to ${approvedVendors.length} approved vendor(s): ${approvedVendors.map((v: any) => v.name).join(", ")}`
+        : "Pre-approved to collect vendor quotes (no approved vendors on file yet)";
+
+      console.log(`[Auto-RFQ] Pre-approval for ${req.params.id}: RFQ auto-sent to ${approvedVendors.length} vendor(s)`);
+
       const historyEntry: HistoryEntry = {
-        ts: new Date().toISOString(),
+        ts: now,
         actor: currentApproverId,
         action: "APPROVE",
-        note: comment || "Pre-approved to collect vendor quotes",
+        note: comment ? `${comment} — ${rfqNote}` : rfqNote,
       };
+
+      const rfqHistoryEntry: HistoryEntry = approvedVendors.length > 0 ? {
+        ts: now,
+        actor: "system",
+        action: "COMMENT",
+        note: `Auto-RFQ: Sent to ${approvedVendors.map((v: any) => v.name).join(", ")}`,
+      } : null as any;
 
       const updates: Partial<TravelRequest> = {
         status: "awaiting_quotes",
         approverIndex: request.approverIndex + 1,
-        history: [...request.history, historyEntry],
+        history: [
+          ...request.history,
+          historyEntry,
+          ...(rfqHistoryEntry ? [rfqHistoryEntry] : []),
+        ],
+        rfqRecipients: [...(request.rfqRecipients || []), ...rfqRecipients],
       };
 
       if (auditFlag !== undefined) {

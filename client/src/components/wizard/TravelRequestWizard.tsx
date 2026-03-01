@@ -208,6 +208,13 @@ export function TravelRequestWizard({ onSubmit, onSaveDraft, isPending = false }
         </CardContent>
       </Card>
 
+      {/* Auto-RFQ submit note — only shown on final step */}
+      {currentStep === STEPS.length && (
+        <p className="text-xs text-muted-foreground text-center" data-testid="text-submit-rfq-note">
+          Upon manager pre-approval, RFQ emails will be automatically sent to all approved vendors.
+        </p>
+      )}
+
       {/* Navigation buttons */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex gap-2">
