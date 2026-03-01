@@ -764,6 +764,7 @@ export class MemStorage implements IStorage {
       {
         id: "vendor-001",
         name: "Pacific Airways",
+        category: "Airlines",
         contactEmail: "bookings@pacificair.fj",
         contactPhone: "+679-672-0888",
         services: ["flights"],
@@ -782,6 +783,7 @@ export class MemStorage implements IStorage {
       {
         id: "vendor-002",
         name: "Fiji Airways",
+        category: "Airlines",
         contactEmail: "corporate@fijiairways.com",
         contactPhone: "+679-672-0777",
         services: ["flights"],
@@ -800,6 +802,7 @@ export class MemStorage implements IStorage {
       {
         id: "vendor-003",
         name: "Island Stays Hotels",
+        category: "Hotels",
         contactEmail: "reservations@islandstays.fj",
         contactPhone: "+679-330-1234",
         services: ["hotels"],
@@ -816,8 +819,28 @@ export class MemStorage implements IStorage {
         updatedAt: now,
       },
       {
+        id: "vendor-006",
+        name: "Grand Pacific Events",
+        category: "Events",
+        contactEmail: "events@grandpacific.fj",
+        contactPhone: "+679-331-9900",
+        services: ["events"],
+        status: "approved",
+        proposedBy: userId,
+        proposedAt: now,
+        approvedBy: userId,
+        approvedAt: now,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: 4,
+        notes: "Corporate events and conference management",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
         id: "vendor-004",
         name: "QuickRide Car Rentals",
+        category: "Car Rental",
         contactEmail: "info@quickride.fj",
         contactPhone: "+679-330-5678",
         services: ["car_rental"],
@@ -836,6 +859,7 @@ export class MemStorage implements IStorage {
       {
         id: "vendor-005",
         name: "Travel Visa Express",
+        category: "Visa Services",
         contactEmail: "support@visaexpress.com.au",
         contactPhone: "+61-2-9555-1234",
         services: ["visa_services"],
@@ -1164,6 +1188,7 @@ export class MemStorage implements IStorage {
     const newVendor: Vendor = {
       id,
       name: vendor.name,
+      category: vendor.category || "Other",
       contactEmail: vendor.contactEmail,
       contactPhone: vendor.contactPhone || null,
       services: vendor.services,

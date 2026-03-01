@@ -49,6 +49,7 @@ import RequestDetail from "@/pages/RequestDetail";
 import TravelDeskDashboard from "@/pages/TravelDeskDashboard";
 import LandingPage from "@/pages/LandingPage";
 import AdminPortal from "@/pages/AdminPortal";
+import TokenApproval from "@/pages/TokenApproval";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthSplash } from "@/components/layout/AuthSplash";
 import { useState, useEffect } from "react";
@@ -166,9 +167,11 @@ function Router() {
   };
 
   // Show landing page if not authenticated or still loading auth
+  // (Token approval page is always public — no login required)
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
+        <Route path="/approve/:token" component={TokenApproval} />
         <Route path="/" component={LandingPage} />
         <Route component={LandingPage} />
       </Switch>
@@ -222,6 +225,7 @@ function Router() {
               <Route path="/travel-watch" component={TravelWatch} />
               <Route path="/delegations" component={DelegateSettings} />
               <Route path="/admin" component={AdminPortal} />
+              <Route path="/approve/:token" component={TokenApproval} />
               <Route component={NotFound} />
             </Switch>
           </main>

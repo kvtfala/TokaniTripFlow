@@ -42,10 +42,15 @@ export type UserRole = z.infer<typeof userRoleSchema>;
 export const vendorStatusSchema = z.enum(["pending_approval", "approved", "rejected", "suspended"]);
 export type VendorStatus = z.infer<typeof vendorStatusSchema>;
 
+// Vendor category enum
+export const vendorCategorySchema = z.enum(["Airlines", "Hotels", "Car Rental", "Visa Services", "Events", "Other"]);
+export type VendorCategory = z.infer<typeof vendorCategorySchema>;
+
 // Vendors table - Supplier directory with approval workflow
 export const vendors = pgTable("vendors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull().default("Other"), // Airlines, Hotels, Events, etc.
   contactEmail: varchar("contact_email", { length: 255 }).notNull(),
   contactPhone: varchar("contact_phone", { length: 50 }),
   services: text("services").array().notNull(), // ["flights", "hotels", "car_rental", "visa_services"]
@@ -66,6 +71,7 @@ export type Vendor = typeof vendors.$inferSelect;
 export type InsertVendor = typeof vendors.$inferInsert;
 export const insertVendorSchema = createInsertSchema(vendors).omit({ id: true, createdAt: true, updatedAt: true }).extend({
   status: vendorStatusSchema,
+  category: vendorCategorySchema.optional().default("Other"),
   performanceRating: z.number().int().min(1).max(5).optional().nullable(),
 });
 

@@ -89,6 +89,31 @@ export function CostPolicyStep({ formData, updateFormData }: CostPolicyStepProps
         </Select>
       </div>
 
+      {/* Total Estimated Budget */}
+      <div className="space-y-2">
+        <Label htmlFor="total-budget">Total Estimated Budget (FJD)</Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">FJD</span>
+          <Input
+            id="total-budget"
+            type="number"
+            min="0"
+            step="50"
+            value={formData.totalEstimatedBudget ?? ""}
+            onChange={(e) => updateFormData({ totalEstimatedBudget: e.target.value ? parseFloat(e.target.value) : undefined })}
+            placeholder="0.00"
+            className="pl-12"
+            data-testid="input-total-budget"
+          />
+        </div>
+        {formData.totalEstimatedBudget !== undefined && formData.totalEstimatedBudget > 1000 && (
+          <p className="text-xs text-destructive font-medium flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" />
+            Budget exceeds FJD 1,000 — 3 vendor quotes required per policy before approval
+          </p>
+        )}
+      </div>
+
       {/* Funding / Project Code */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">

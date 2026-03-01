@@ -1,0 +1,42 @@
+To get the best results, you need to tell the Replit Agent to act as a Senior Full-Stack Engineer that specializes in B2B workflow migrations.
+
+Because you are building on top of an existing codebase (fiji-travel-approver), the Agent must first "read" your files to understand how your current database and users are structured before it starts adding new buttons and logic.
+
+The Master Prompt for Replit Agent
+Copy and paste the block below into your Replit Agent chat:
+
+Role: You are a Senior Full-Stack Developer. Your goal is to evolve the current "Tokani TripFlow" prototype into a professional Travel Sourcing and Compliance platform.
+
+Phase 1: Analysis
+First, analyze the existing codebase. Identify:
+
+The current database schema (how users and travel requests are stored).
+
+The existing approval logic.
+
+The current UI framework (Streamlit/Flask/Next.js).
+
+Phase 2: Database Expansion
+Once analyzed, update the database to support:
+
+Vendors Table: Fields for Vendor Name, Category (Airlines, Hotels, Events), and Contact Email.
+
+Quotes Table: Link multiple quotes to a single Travel Request, including fields for "Quote Amount" and "File URL."
+
+RFQ Logs: To track when a request was sent to vendors.
+
+Phase 3: Core Feature Implementation
+Please implement the following workflow:
+
+Enhanced Request Form: Keep the existing fields but add "Preferred Route" and "Total Estimated Budget."
+
+"Send RFQ" Button: On a registered request, add a button that automatically emails the request details to all 'Approved Vendors' in the selected category.
+
+Quote Upload & Policy Gate: Create an interface for the Arranger to upload quotes. Implement logic: If Estimated Budget > $1,000 FJD, the "Submit for Approval" button must be disabled until 3 quotes are uploaded. Show a red warning message for non-compliance.
+
+Tokenized Email Approval: Generate a secure, unique URL for managers. This link must allow them to view a side-by-side comparison of quotes and click "Approve" or "Reject" without requiring a login. Use HMAC tokens for security.
+
+Phase 4: UI/UX
+Refine the UI to be clean and professional, suitable for Fiji's corporate and government sectors. Ensure all error messages are clear (e.g., "3 Quotes Required per Policy").
+
+Please begin by summarizing your understanding of the current code before you start making changes.

@@ -41,70 +41,79 @@ import {
   Plus,
   Mail,
   Trash2,
-  Star
+  Star,
+  Link as LinkIcon,
+  Upload,
+  Copy,
+  ExternalLink
 } from "lucide-react";
+import type { Vendor } from "@shared/schema";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { TravelRequest, RequestStatus, TravelQuote, QuotePolicy } from "@shared/types";
 
-// RFQ Section Component
+// RFQ Section Component — pulls approved vendors from the directory
 function RfqSection({ requestId, request }: { requestId: string; request: TravelRequest }) {
   const { toast } = useToast();
-  const [vendorName, setVendorName] = useState("");
-  const [vendorEmail, setVendorEmail] = useState("");
-  const [vendors, setVendors] = useState<Array<{ vendorName: string; email: string }>>([]);
+  const [selectedVendorIds, setSelectedVendorIds] = useState<Set<string>>(new Set());
+  const [manualName, setManualName] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
+  const [manualVendors, setManualVendors] = useState<Array<{ vendorName: string; email: string }>>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  const { data: approvedVendors = [] } = useQuery<Vendor[]>({
+    queryKey: ["/api/vendors/approved"],
+  });
+
+  const categories = ["Airlines", "Hotels", "Car Rental", "Visa Services", "Events", "Other"];
+  const filteredVendors = categoryFilter === "all"
+    ? approvedVendors
+    : approvedVendors.filter(v => v.category === categoryFilter);
+
+  const toggleVendor = (vendor: Vendor) => {
+    setSelectedVendorIds(prev => {
+      const next = new Set(prev);
+      if (next.has(vendor.id)) next.delete(vendor.id);
+      else next.add(vendor.id);
+      return next;
+    });
+  };
+
+  const addManualVendor = () => {
+    if (!manualName.trim() || !manualEmail.trim()) {
+      toast({ title: "Missing Information", description: "Enter both vendor name and email", variant: "destructive" });
+      return;
+    }
+    if (manualVendors.some(v => v.email.toLowerCase() === manualEmail.toLowerCase())) {
+      toast({ title: "Duplicate Email", description: "This vendor is already in the list", variant: "destructive" });
+      return;
+    }
+    setManualVendors([...manualVendors, { vendorName: manualName.trim(), email: manualEmail.trim() }]);
+    setManualName(""); setManualEmail("");
+  };
 
   const sendRfqMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/requests/${requestId}/send-rfq`, { vendors });
+      const fromDirectory = approvedVendors
+        .filter(v => selectedVendorIds.has(v.id))
+        .map(v => ({ vendorName: v.name, email: v.contactEmail }));
+      const allVendors = [...fromDirectory, ...manualVendors];
+      return apiRequest("POST", `/api/requests/${requestId}/send-rfq`, { vendors: allVendors });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests", requestId] });
-      setVendors([]);
-      toast({
-        title: "RFQ Sent Successfully",
-        description: `Request for Quote sent to ${vendors.length} vendor(s)`,
-      });
+      setSelectedVendorIds(new Set());
+      setManualVendors([]);
+      toast({ title: "RFQ Sent Successfully", description: "Vendors have been notified to submit quotes" });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to send RFQ. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to send RFQ. Please try again.", variant: "destructive" });
     },
   });
 
-  const addVendor = () => {
-    if (!vendorName.trim() || !vendorEmail.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both vendor name and email",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check for duplicate
-    if (vendors.some(v => v.email.toLowerCase() === vendorEmail.toLowerCase())) {
-      toast({
-        title: "Duplicate Email",
-        description: "This vendor email is already in the list",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setVendors([...vendors, { vendorName: vendorName.trim(), email: vendorEmail.trim() }]);
-    setVendorName("");
-    setVendorEmail("");
-  };
-
-  const removeVendor = (email: string) => {
-    setVendors(vendors.filter(v => v.email !== email));
-  };
+  const totalSelected = selectedVendorIds.size + manualVendors.length;
 
   return (
     <Card className="border-primary">
@@ -114,93 +123,135 @@ function RfqSection({ requestId, request }: { requestId: string; request: Travel
           Send RFQ to Vendors
         </CardTitle>
         <CardDescription>
-          Request quotes from travel vendors for this trip
+          Select from approved vendors or add vendors manually to request quotes
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Show already sent RFQs */}
         {request.rfqRecipients && request.rfqRecipients.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm font-medium mb-2">RFQ Already Sent To:</p>
+          <div>
+            <p className="text-sm font-medium mb-2">Previously Sent To:</p>
             <div className="space-y-1">
-              {request.rfqRecipients.map((recipient, idx) => (
+              {request.rfqRecipients.map((r, idx) => (
                 <div key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
                   <Mail className="w-3 h-3" />
-                  {recipient.vendorName} ({recipient.email}) - {format(new Date(recipient.sentAt), "MMM dd, yyyy")}
+                  {r.vendorName} ({r.email}) — {format(new Date(r.sentAt), "MMM dd, yyyy")}
                 </div>
               ))}
             </div>
-            <Separator className="mt-3" />
+            <Separator className="my-3" />
           </div>
         )}
 
-        {/* Add vendor form */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="vendor-name">Vendor Name</Label>
-            <Input
-              id="vendor-name"
-              placeholder="e.g., Pacific Travel Services"
-              value={vendorName}
-              onChange={(e) => setVendorName(e.target.value)}
-              data-testid="input-vendor-name"
-            />
+        {/* Approved Vendor Directory */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <Label className="text-sm font-semibold">Approved Vendor Directory</Label>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-40" data-testid="select-vendor-category">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
-            <Label htmlFor="vendor-email">Vendor Email</Label>
-            <div className="flex gap-2">
-              <Input
-                id="vendor-email"
-                type="email"
-                placeholder="vendor@example.com"
-                value={vendorEmail}
-                onChange={(e) => setVendorEmail(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && addVendor()}
-                data-testid="input-vendor-email"
-              />
-              <Button
-                type="button"
-                onClick={addVendor}
-                variant="outline"
-                data-testid="button-add-vendor"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+          {filteredVendors.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">No approved vendors in this category.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-2">
+              {filteredVendors.map(vendor => (
+                <div
+                  key={vendor.id}
+                  onClick={() => toggleVendor(vendor)}
+                  className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                    selectedVendorIds.has(vendor.id) ? "border-primary bg-primary/5" : "border-border"
+                  }`}
+                  data-testid={`vendor-select-${vendor.id}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedVendorIds.has(vendor.id)}
+                    readOnly
+                    className="pointer-events-none"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium">{vendor.name}</p>
+                      <Badge variant="outline" className="text-xs">{vendor.category}</Badge>
+                      {vendor.performanceRating && (
+                        <Badge variant="outline" className="text-xs">
+                          <Star className="w-2.5 h-2.5 mr-1" />{vendor.performanceRating}/5
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{vendor.contactEmail}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Vendor list */}
-        {vendors.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Vendors to Contact ({vendors.length}):</p>
-            {vendors.map((vendor) => (
-              <div key={vendor.email} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{vendor.vendorName}</p>
-                  <p className="text-xs text-muted-foreground">{vendor.email}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeVendor(vendor.email)}
-                  data-testid={`button-remove-vendor-${vendor.email}`}
-                >
-                  <Trash2 className="w-4 h-4" />
+        <Separator />
+
+        {/* Manual Vendor Entry */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">Add Vendor Manually</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="vendor-name" className="text-xs text-muted-foreground">Vendor Name</Label>
+              <Input
+                id="vendor-name"
+                placeholder="e.g., Pacific Travel Services"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                data-testid="input-vendor-name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="vendor-email" className="text-xs text-muted-foreground">Vendor Email</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="vendor-email"
+                  type="email"
+                  placeholder="vendor@example.com"
+                  value={manualEmail}
+                  onChange={(e) => setManualEmail(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && addManualVendor()}
+                  data-testid="input-vendor-email"
+                />
+                <Button type="button" onClick={addManualVendor} variant="outline" size="icon" data-testid="button-add-vendor">
+                  <Plus className="w-4 h-4" />
                 </Button>
               </div>
-            ))}
+            </div>
           </div>
-        )}
+          {manualVendors.length > 0 && (
+            <div className="space-y-1">
+              {manualVendors.map((v) => (
+                <div key={v.email} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                  <div>
+                    <p className="text-sm font-medium">{v.vendorName}</p>
+                    <p className="text-xs text-muted-foreground">{v.email}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setManualVendors(manualVendors.filter(m => m.email !== v.email))}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <Button
           className="w-full"
           onClick={() => sendRfqMutation.mutate()}
-          disabled={vendors.length === 0 || sendRfqMutation.isPending}
+          disabled={totalSelected === 0 || sendRfqMutation.isPending}
           data-testid="button-send-rfq"
         >
           <Send className="w-4 h-4 mr-2" />
-          Send RFQ to {vendors.length} Vendor{vendors.length !== 1 && "s"}
+          {sendRfqMutation.isPending ? "Sending..." : `Send RFQ to ${totalSelected} Vendor${totalSelected !== 1 ? "s" : ""}`}
         </Button>
       </CardContent>
     </Card>
@@ -226,23 +277,18 @@ function QuotesSection({
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | undefined>(request.selectedQuoteId);
   const [quoteJustification, setQuoteJustification] = useState(request.quoteJustification || "");
   
-  // Sync selectedQuoteId state with request data when it changes
   useEffect(() => {
-    if (request.selectedQuoteId !== selectedQuoteId) {
-      setSelectedQuoteId(request.selectedQuoteId);
-    }
-    if (request.quoteJustification !== quoteJustification) {
-      setQuoteJustification(request.quoteJustification || "");
-    }
+    if (request.selectedQuoteId !== selectedQuoteId) setSelectedQuoteId(request.selectedQuoteId);
+    if (request.quoteJustification !== quoteJustification) setQuoteJustification(request.quoteJustification || "");
   }, [request.selectedQuoteId, request.quoteJustification, selectedQuoteId, quoteJustification]);
   
-  // New quote form state
   const [newQuote, setNewQuote] = useState({
     vendorName: "",
     quoteValue: "",
     currency: "FJD",
     quoteExpiry: "",
     notes: "",
+    attachmentName: "",
   });
 
   const createQuoteMutation = useMutation({
@@ -253,24 +299,18 @@ function QuotesSection({
         currency: newQuote.currency,
         quoteExpiry: newQuote.quoteExpiry,
         notes: newQuote.notes.trim() || undefined,
+        attachmentUrl: newQuote.attachmentName ? `[attached: ${newQuote.attachmentName}]` : undefined,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests", requestId, "quotes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/requests", requestId] });
       setDialogOpen(false);
-      setNewQuote({ vendorName: "", quoteValue: "", currency: "FJD", quoteExpiry: "", notes: "" });
-      toast({
-        title: "Quote Added",
-        description: "Vendor quote has been added successfully",
-      });
+      setNewQuote({ vendorName: "", quoteValue: "", currency: "FJD", quoteExpiry: "", notes: "", attachmentName: "" });
+      toast({ title: "Quote Added", description: "Vendor quote has been added successfully" });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add quote. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to add quote. Please try again.", variant: "destructive" });
     },
   });
 
@@ -341,9 +381,15 @@ function QuotesSection({
   });
 
   const isInternational = request.destination.country !== "Fiji";
-  const minQuotes = isInternational ? (quotePolicy?.minQuotesInternational || 3) : (quotePolicy?.minQuotesDomestic || 2);
+  const budgetExceeds1000 = (request.totalEstimatedBudget ?? 0) > 1000;
+  // Policy: 3 quotes required if budget > FJD 1,000 OR international trip
+  const minQuotes = (budgetExceeds1000 || isInternational)
+    ? Math.max(3, quotePolicy?.minQuotesInternational || 3)
+    : (quotePolicy?.minQuotesDomestic || 2);
   const cheapestQuote = quotes.length > 0 ? quotes.reduce((min, q) => q.quoteValue < min.quoteValue ? q : min) : null;
   const requiresJustification = selectedQuoteId && cheapestQuote && selectedQuoteId !== cheapestQuote.id;
+  const quotesDeficit = Math.max(0, minQuotes - quotes.length);
+  const canSubmit = quotes.length >= minQuotes && !!selectedQuoteId && (!requiresJustification || quoteJustification.trim().length > 0);
 
   return (
     <Card>
@@ -353,7 +399,9 @@ function QuotesSection({
           Vendor Quotes
         </CardTitle>
         <CardDescription>
-          {isInternational ? "International" : "Domestic"} trip - Minimum {minQuotes} quotes required
+          {isInternational ? "International" : "Domestic"} trip
+          {budgetExceeds1000 && " · Budget exceeds FJD 1,000"}
+          {" "}— Minimum {minQuotes} quotes required per policy
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -385,7 +433,7 @@ function QuotesSection({
                       />
                     )}
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium">{quote.vendorName}</p>
                         {quote.id === cheapestQuote?.id && (
                           <Badge variant="outline" className="text-xs">
@@ -395,8 +443,14 @@ function QuotesSection({
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {quote.currency} {quote.quoteValue.toFixed(2)} • Valid until {quote.quoteExpiry ? format(new Date(quote.quoteExpiry), "MMM dd, yyyy") : "N/A"}
+                        {quote.currency} {quote.quoteValue.toFixed(2)} · Valid until {quote.quoteExpiry ? format(new Date(quote.quoteExpiry), "MMM dd, yyyy") : "N/A"}
                       </p>
+                      {quote.attachmentUrl && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          {quote.attachmentUrl}
+                        </p>
+                      )}
                       {quote.notes && (
                         <p className="text-xs text-muted-foreground mt-1">{quote.notes}</p>
                       )}
@@ -421,6 +475,18 @@ function QuotesSection({
 
         {request.status === "awaiting_quotes" && (
           <>
+            {/* Policy compliance gate */}
+            {budgetExceeds1000 && quotesDeficit > 0 && (
+              <Alert variant="destructive" data-testid="alert-quote-policy">
+                <AlertTriangle className="w-4 h-4" />
+                <AlertDescription>
+                  <strong>3 Quotes Required per Policy</strong> — This request has a budget exceeding FJD 1,000.
+                  You have {quotes.length} of {minQuotes} required quotes.
+                  Add {quotesDeficit} more quote{quotesDeficit !== 1 ? "s" : ""} before submitting for approval.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="w-full" variant="outline" data-testid="button-open-add-quote">
@@ -442,7 +508,7 @@ function QuotesSection({
                       id="quote-vendor"
                       value={newQuote.vendorName}
                       onChange={(e) => setNewQuote({ ...newQuote, vendorName: e.target.value })}
-                      placeholder="e.g., Pacific Travel Services"
+                      placeholder="e.g., Fiji Airways"
                       data-testid="input-quote-vendor"
                     />
                   </div>
@@ -489,13 +555,45 @@ function QuotesSection({
                     />
                   </div>
                   <div>
+                    <Label>Quote Document</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="file"
+                        id="quote-file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setNewQuote({ ...newQuote, attachmentName: file.name });
+                        }}
+                        data-testid="input-quote-file"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => document.getElementById("quote-file")?.click()}
+                        data-testid="button-upload-quote"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Quote
+                      </Button>
+                      {newQuote.attachmentName && (
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          {newQuote.attachmentName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
                     <Label htmlFor="quote-notes">Notes (Optional)</Label>
                     <Textarea
                       id="quote-notes"
                       value={newQuote.notes}
                       onChange={(e) => setNewQuote({ ...newQuote, notes: e.target.value })}
                       placeholder="Additional details about this quote..."
-                      rows={3}
+                      rows={2}
                       data-testid="textarea-quote-notes"
                     />
                   </div>
@@ -511,7 +609,7 @@ function QuotesSection({
                     }
                     data-testid="button-save-quote"
                   >
-                    Save Quote
+                    {createQuoteMutation.isPending ? "Saving..." : "Save Quote"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -520,17 +618,18 @@ function QuotesSection({
             {quotes.length > 0 && (
               <>
                 {quotes.length < minQuotes && (
-                  <Alert>
+                  <Alert variant="destructive">
                     <AlertTriangle className="w-4 h-4" />
                     <AlertDescription>
-                      Policy requires {minQuotes} quotes. You have {quotes.length}. Add {minQuotes - quotes.length} more quote(s) to proceed.
+                      <strong>Policy requires {minQuotes} quotes.</strong> You have {quotes.length}.
+                      Add {quotesDeficit} more quote{quotesDeficit !== 1 ? "s" : ""} to proceed.
                     </AlertDescription>
                   </Alert>
                 )}
 
                 {selectedQuoteId && requiresJustification && (
                   <div>
-                    <Label htmlFor="justification">Justification (Required - Not selecting cheapest quote)</Label>
+                    <Label htmlFor="justification">Justification Required — Not selecting cheapest quote</Label>
                     <Textarea
                       id="justification"
                       value={quoteJustification}
@@ -545,16 +644,11 @@ function QuotesSection({
                 <Button
                   className="w-full"
                   onClick={() => submitWithQuotesMutation.mutate()}
-                  disabled={
-                    !selectedQuoteId ||
-                    quotes.length < minQuotes ||
-                    (requiresJustification && !quoteJustification.trim()) ||
-                    submitWithQuotesMutation.isPending
-                  }
+                  disabled={!canSubmit || submitWithQuotesMutation.isPending}
                   data-testid="button-submit-with-quotes"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Submit for Final Approval
+                  {submitWithQuotesMutation.isPending ? "Submitting..." : "Submit for Final Approval"}
                 </Button>
               </>
             )}
@@ -572,6 +666,87 @@ function QuotesSection({
             </AlertDescription>
           </Alert>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Approval Link Section — generates a secure HMAC token URL for manager to approve via email
+function ApprovalLinkSection({ requestId, request }: { requestId: string; request: TravelRequest }) {
+  const { toast } = useToast();
+  const [approvalUrl, setApprovalUrl] = useState<string | undefined>(undefined);
+
+  const generateTokenMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/requests/${requestId}/generate-approval-token`, {});
+    },
+    onSuccess: (data: any) => {
+      setApprovalUrl(data.approvalUrl);
+      queryClient.invalidateQueries({ queryKey: ["/api/requests", requestId] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to generate approval link", variant: "destructive" });
+    },
+  });
+
+  const copyToClipboard = () => {
+    if (approvalUrl) {
+      navigator.clipboard.writeText(approvalUrl);
+      toast({ title: "Copied!", description: "Approval link copied to clipboard" });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LinkIcon className="w-5 h-5" />
+          Manager Approval Link
+        </CardTitle>
+        <CardDescription>
+          Generate a secure link to send to the manager — they can approve or reject without logging in
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {request.approvalToken && !approvalUrl ? (
+          <Alert>
+            <CheckCircle className="w-4 h-4" />
+            <AlertDescription>
+              An approval link has already been generated for this request.
+              Generate a new one to replace the existing link.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {approvalUrl && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Approval URL (valid 7 days)</Label>
+            <div className="flex gap-2">
+              <Input value={approvalUrl} readOnly className="text-xs font-mono" data-testid="input-approval-url" />
+              <Button variant="outline" size="icon" onClick={copyToClipboard} data-testid="button-copy-approval-url">
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" asChild data-testid="button-open-approval-url">
+                <a href={approvalUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Send this link to the manager. They can view all quotes side-by-side and approve or reject without a system login.
+            </p>
+          </div>
+        )}
+
+        <Button
+          variant="outline"
+          onClick={() => generateTokenMutation.mutate()}
+          disabled={generateTokenMutation.isPending}
+          data-testid="button-generate-approval-link"
+        >
+          <LinkIcon className="w-4 h-4 mr-2" />
+          {generateTokenMutation.isPending ? "Generating..." : approvalUrl ? "Regenerate Link" : "Generate Approval Link"}
+        </Button>
       </CardContent>
     </Card>
   );
@@ -981,6 +1156,11 @@ export default function RequestDetail() {
               quotesLoading={quotesLoading}
               quotePolicy={quotePolicy}
             />
+          )}
+
+          {/* Generate Tokenized Approval Link */}
+          {(request.status === "quotes_submitted" || request.status === "awaiting_quotes") && (
+            <ApprovalLinkSection requestId={id!} request={request} />
           )}
 
           {/* Decision Section (for managers) */}

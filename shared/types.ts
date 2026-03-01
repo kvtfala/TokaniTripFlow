@@ -95,12 +95,20 @@ export interface TravelRequest {
   // Cost breakdown
   costBreakdown?: TravelCostBreakdown;
   
+  // Enhanced fields (Phase 3)
+  preferredRoute?: string;          // e.g. "NAN → SYD via AKL"
+  totalEstimatedBudget?: number;    // Total budget in FJD
+
   // RFQ and Quotes (Phase 3)
   rfqRecipients?: Array<{vendorName: string; email: string; sentAt: string}>;
   selectedQuoteId?: string;
   quoteJustification?: string;
   quoteRequirementOverridden?: boolean;
   quoteOverrideReason?: string;
+
+  // Tokenized approval (Phase 3)
+  approvalToken?: string;           // HMAC-signed token for manager email link
+  approvalTokenExpiry?: string;     // ISO date string
 }
 
 export interface TravelQuote {
@@ -183,9 +191,11 @@ export interface WizardFormData {
   datesFlexible: boolean;
   flexibilityDays?: number;
   sectors?: TripSector[];
+  preferredRoute?: string;
   specialNotes?: string;
   cabinClass: CabinClass;
   costBand: CostBand;
+  totalEstimatedBudget?: number;
   fundingCode: string;
   projectCode?: string;
   attachments: File[];

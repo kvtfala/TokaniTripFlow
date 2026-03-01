@@ -54,11 +54,16 @@ import {
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, Clock, Ban } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertVendorSchema } from "@shared/schema";
+import { insertVendorSchema, vendorCategorySchema } from "@shared/schema";
 import { z } from "zod";
 
+const VENDOR_CATEGORIES = ["Airlines", "Hotels", "Car Rental", "Visa Services", "Events", "Other"] as const;
+
 const vendorFormSchema = insertVendorSchema.extend({
+  name: z.string().min(1, "Vendor name is required"),
+  contactEmail: z.string().email("Must be a valid email").min(1, "Contact email is required"),
   services: z.string().min(1, "Services are required"),
+  category: vendorCategorySchema.default("Other"),
 });
 
 type VendorFormValues = z.infer<typeof vendorFormSchema>;
@@ -152,6 +157,7 @@ export function VendorManagement() {
     resolver: zodResolver(vendorFormSchema),
     defaultValues: {
       name: "",
+      category: "Other" as const,
       contactEmail: "",
       contactPhone: "",
       services: "",
@@ -263,19 +269,43 @@ export function VendorManagement() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vendor Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Acme Travel Services" {...field} data-testid="input-vendor-name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vendor Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Acme Travel Services" {...field} data-testid="input-vendor-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-vendor-category-form">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {VENDOR_CATEGORIES.map(cat => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -352,6 +382,7 @@ export function VendorManagement() {
           <TableHeader>
             <TableRow>
               <TableHead>Vendor Name</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Services</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Status</TableHead>
@@ -362,7 +393,7 @@ export function VendorManagement() {
           <TableBody>
             {vendors.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   No vendors found. Add your first vendor to get started.
                 </TableCell>
               </TableRow>
@@ -370,6 +401,9 @@ export function VendorManagement() {
               vendors.map((vendor) => (
                 <TableRow key={vendor.id} data-testid={`row-vendor-${vendor.id}`}>
                   <TableCell className="font-medium">{vendor.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">{vendor.category || "Other"}</Badge>
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{vendor.services.join(', ')}</TableCell>
                   <TableCell className="text-sm">
                     <div>{vendor.contactEmail}</div>

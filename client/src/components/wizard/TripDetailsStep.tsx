@@ -235,6 +235,21 @@ export function TripDetailsStep({ formData, updateFormData }: TripDetailsStepPro
         </div>
       )}
 
+      {/* Preferred Route */}
+      <div className="space-y-2">
+        <Label htmlFor="preferred-route">Preferred Route (Optional)</Label>
+        <Input
+          id="preferred-route"
+          value={formData.preferredRoute || ""}
+          onChange={(e) => updateFormData({ preferredRoute: e.target.value })}
+          placeholder="e.g., NAN → SYD via AKL, or direct via BNE"
+          data-testid="input-preferred-route"
+        />
+        <p className="text-xs text-muted-foreground">
+          Specify preferred airlines, stopovers, or routing if any
+        </p>
+      </div>
+
       {/* Special notes */}
       <div className="space-y-2">
         <Label htmlFor="special-notes">Special Travel Notes (Optional)</Label>

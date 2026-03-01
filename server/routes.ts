@@ -1,9 +1,40 @@
 import type { Express, Request, Response, NextFunction, RequestHandler } from "express";
 import { createServer, type Server } from "http";
+import { createHmac, timingSafeEqual } from "crypto";
 import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote } from "@shared/types";
 import { setupAuth, setupPassportSession, isAuthenticated } from "./replitAuth";
 import { setupDemoAuth } from "./demoAuth";
+
+// HMAC token secret — in production, load from env
+const APPROVAL_TOKEN_SECRET = process.env.APPROVAL_TOKEN_SECRET || "tokani-tripflow-secret-2025";
+
+function generateApprovalToken(requestId: string, approverId: string): string {
+  const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+  const payload = `${requestId}:${approverId}:${expiry}`;
+  const sig = createHmac("sha256", APPROVAL_TOKEN_SECRET).update(payload).digest("hex");
+  return Buffer.from(`${payload}:${sig}`).toString("base64url");
+}
+
+function verifyApprovalToken(token: string): { requestId: string; approverId: string; expiry: number } | null {
+  try {
+    const decoded = Buffer.from(token, "base64url").toString();
+    const parts = decoded.split(":");
+    if (parts.length !== 4) return null;
+    const [requestId, approverId, expiryStr, sig] = parts;
+    const expiry = parseInt(expiryStr, 10);
+    if (Date.now() > expiry) return null;
+    const payload = `${requestId}:${approverId}:${expiryStr}`;
+    const expectedSig = createHmac("sha256", APPROVAL_TOKEN_SECRET).update(payload).digest("hex");
+    const sigBuf = Buffer.from(sig, "hex");
+    const expectedBuf = Buffer.from(expectedSig, "hex");
+    if (sigBuf.length !== expectedBuf.length) return null;
+    if (!timingSafeEqual(sigBuf, expectedBuf)) return null;
+    return { requestId, approverId, expiry };
+  } catch {
+    return null;
+  }
+}
 import { 
   insertVendorSchema, 
   insertEmailTemplateSchema, 
@@ -1204,6 +1235,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const entityId = req.query.entityId as string | undefined;
     const logs = await storage.getAuditLogs(entityType, entityId);
     res.json(logs);
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PUBLIC VENDOR LISTING (for RFQ selection – no admin role required)
+  // ──────────────────────────────────────────────────────────────────────
+  app.get("/api/vendors/approved", isAuthenticated, asyncHandler(async (req, res) => {
+    const category = req.query.category as string | undefined;
+    const vendors = await storage.getVendors("approved");
+    const filtered = category ? vendors.filter(v => v.category === category) : vendors;
+    res.json(filtered);
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // GENERATE APPROVAL TOKEN (called when moving to awaiting_quotes)
+  // Returns a tokenized URL to send to manager via email
+  // ──────────────────────────────────────────────────────────────────────
+  app.post("/api/requests/:id/generate-approval-token", isAuthenticated, asyncHandler(async (req: any, res) => {
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+
+    const approverId = request.approverFlow[request.approverIndex] || "manager";
+    const token = generateApprovalToken(req.params.id, approverId);
+    const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    await storage.updateTravelRequest(req.params.id, {
+      approvalToken: token,
+      approvalTokenExpiry: expiry,
+    });
+
+    const approvalUrl = `${req.protocol}://${req.get("host")}/approve/${token}`;
+    res.json({ token, approvalUrl, expiry });
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // TOKENIZED APPROVAL – GET (public, no login required)
+  // Returns request details + quotes for the manager to review
+  // ──────────────────────────────────────────────────────────────────────
+  app.get("/api/token-approve/:token", asyncHandler(async (req, res) => {
+    const parsed = verifyApprovalToken(req.params.token);
+    if (!parsed) return res.status(401).json({ error: "Invalid or expired approval link" });
+
+    const request = await storage.getTravelRequest(parsed.requestId);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+
+    if (request.approvalToken !== req.params.token) {
+      return res.status(401).json({ error: "This approval link has been superseded" });
+    }
+
+    const quotes = await storage.getQuotes(parsed.requestId);
+    const allUsers = await storage.getAllUsers();
+    const approver = allUsers.find(u => u.id === parsed.approverId);
+
+    res.json({
+      request,
+      quotes,
+      approver: approver ? { id: approver.id, name: `${approver.firstName} ${approver.lastName}` } : null,
+    });
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // TOKENIZED APPROVAL – POST (public, no login required)
+  // Manager submits approve or reject decision via the token link
+  // ──────────────────────────────────────────────────────────────────────
+  app.post("/api/token-approve/:token", asyncHandler(async (req, res) => {
+    const parsed = verifyApprovalToken(req.params.token);
+    if (!parsed) return res.status(401).json({ error: "Invalid or expired approval link" });
+
+    const { action, comment } = req.body as { action: "approve" | "reject"; comment?: string };
+    if (!action || !["approve", "reject"].includes(action)) {
+      return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
+    }
+    if (action === "reject" && !comment?.trim()) {
+      return res.status(400).json({ error: "A rejection comment is required" });
+    }
+
+    const request = await storage.getTravelRequest(parsed.requestId);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+
+    if (request.approvalToken !== req.params.token) {
+      return res.status(401).json({ error: "This approval link has been superseded" });
+    }
+
+    if (!["submitted", "in_review", "quotes_submitted"].includes(request.status)) {
+      return res.status(400).json({ error: `Request is already ${request.status} and cannot be actioned` });
+    }
+
+    const allUsers = await storage.getAllUsers();
+    const approver = allUsers.find(u => u.id === parsed.approverId);
+    const actorName = approver ? `${approver.firstName} ${approver.lastName}` : parsed.approverId;
+
+    const historyEntry: HistoryEntry = {
+      ts: new Date().toISOString(),
+      actor: parsed.approverId,
+      action: action === "approve" ? "APPROVE" : "REJECT",
+      note: comment || (action === "approve" ? "Approved via secure email link" : undefined),
+    };
+
+    let newStatus: TravelRequest["status"];
+    if (action === "reject") {
+      newStatus = "rejected";
+    } else {
+      const nextIndex = request.approverIndex + 1;
+      newStatus = nextIndex >= request.approverFlow.length ? "approved" : "in_review";
+    }
+
+    await storage.updateTravelRequest(parsed.requestId, {
+      status: newStatus,
+      approverIndex: action === "approve" ? request.approverIndex + 1 : request.approverIndex,
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: actorName,
+      reviewComment: comment,
+      approvalToken: undefined,
+      history: [...request.history, historyEntry],
+    });
+
+    res.json({ success: true, status: newStatus });
   }));
 
   const httpServer = createServer(app);
