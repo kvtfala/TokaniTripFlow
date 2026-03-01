@@ -1,47 +1,77 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Link } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { CheckCircle, XCircle, Clock, AlertTriangle, Flag, Search, Filter, X, CheckCircle2, XCircle as XCircleIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Clock, CheckCircle, XCircle, AlertTriangle, Search,
+  Filter, X, Eye, ArrowUpDown, ArrowUp, ArrowDown,
+  DollarSign, FileText, CheckCircle2,
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { TravelRequest, HistoryEntry } from "@shared/types";
+import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
 import { nextApprover, requiresMoreApprovals } from "@/utils/approver";
 import { checkRequestForEscalation } from "@/utils/escalation";
 import { useToast } from "@/hooks/use-toast";
 
+type SortField = "employee" | "destination" | "date" | "submitted" | "cost";
+type SortOrder = "asc" | "desc";
+type TabKey = "pending" | "awaiting_quotes" | "all";
+
+const STATUS_LABELS: Record<string, string> = {
+  submitted: "Submitted",
+  in_review: "In Review",
+  awaiting_quotes: "Awaiting Quotes",
+  quotes_submitted: "Quotes Submitted",
+};
+
+function daysUntilDeparture(startDate: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const depart = new Date(startDate);
+  depart.setHours(0, 0, 0, 0);
+  return Math.round((depart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export default function Approvals() {
-  const [selectedRequest, setSelectedRequest] = useState<TravelRequest | null>(null);
-  const [actionMode, setActionMode] = useState<"approve" | "reject" | null>(null);
-  const [comment, setComment] = useState("");
-  const [auditFlag, setAuditFlag] = useState(false);
-  const [auditNote, setAuditNote] = useState("");
-  
-  // Search and filter state
+  const { toast } = useToast();
+
+  const [tab, setTab] = useState<TabKey>("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [filterDepartment, setFilterDepartment] = useState("all");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
-  
-  // Bulk actions state
+  const [sortField, setSortField] = useState<SortField>("submitted");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkActionMode, setBulkActionMode] = useState<"approve" | "reject" | null>(null);
   const [bulkComment, setBulkComment] = useState("");
-  
-  const { toast } = useToast();
 
-  // Fetch current logged-in user for permission checks
+  const [rejectTarget, setRejectTarget] = useState<TravelRequest | null>(null);
+  const [rejectComment, setRejectComment] = useState("");
+
   const { data: currentUser } = useQuery<{ id: string; role: string }>({
     queryKey: ["/api/auth/user"],
   });
@@ -54,19 +84,18 @@ export default function Approvals() {
 
   const approveMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      const res = await apiRequest("POST", `/api/requests/${requestId}/approve`, { comment, auditFlag, auditNote });
+      const res = await apiRequest("POST", `/api/requests/${requestId}/approve`, { comment: "" });
       return res.json();
     },
     onSuccess: (data: any) => {
-      const needsMoreApprovals = data && requiresMoreApprovals(data);
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      const needsMore = data && requiresMoreApprovals(data);
       toast({
         title: "Vinaka! Request Approved",
-        description: needsMoreApprovals 
-          ? "Request advanced to next approval level" 
+        description: needsMore
+          ? "Request advanced to next approval level"
           : "Request fully approved and ready for processing",
       });
-      resetForm();
     },
     onError: () => {
       toast({
@@ -78,16 +107,17 @@ export default function Approvals() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async (requestId: string) => {
+    mutationFn: async ({ requestId, comment }: { requestId: string; comment: string }) => {
       return apiRequest("POST", `/api/requests/${requestId}/reject`, { comment });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       toast({
         title: "Request Rejected",
-        description: "Request has been rejected and employee will be notified",
+        description: "The employee will be notified of the decision.",
       });
-      resetForm();
+      setRejectTarget(null);
+      setRejectComment("");
     },
     onError: () => {
       toast({
@@ -97,101 +127,6 @@ export default function Approvals() {
       });
     },
   });
-
-  const resetForm = () => {
-    setSelectedRequest(null);
-    setActionMode(null);
-    setComment("");
-    setAuditFlag(false);
-    setAuditNote("");
-  };
-
-  const handleApprove = () => {
-    if (!selectedRequest) return;
-    approveMutation.mutate(selectedRequest.id);
-  };
-
-  const handleReject = () => {
-    if (!selectedRequest || !comment.trim()) return;
-    rejectMutation.mutate(selectedRequest.id);
-  };
-
-  // Filter requests pending for current user
-  // Super admin sees ALL pending requests across all approvers
-  const basePendingRequests = requests.filter(
-    (req) =>
-      (req.status === "submitted" || req.status === "in_review") &&
-      (isSuperAdmin || nextApprover(req) === currentUserId)
-  );
-
-  // Apply search and filters
-  const pendingRequests = useMemo(() => {
-    let result = [...basePendingRequests];
-
-    // Apply search
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      result = result.filter(req =>
-        req.employeeName.toLowerCase().includes(searchLower) ||
-        req.destination.city.toLowerCase().includes(searchLower) ||
-        req.destination.country.toLowerCase().includes(searchLower) ||
-        req.department.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply department filter
-    if (filterDepartment && filterDepartment !== "all") {
-      result = result.filter(req => req.department === filterDepartment);
-    }
-
-    // Apply date range filters
-    if (filterStartDate) {
-      result = result.filter(req => new Date(req.startDate) >= new Date(filterStartDate));
-    }
-    if (filterEndDate) {
-      result = result.filter(req => new Date(req.startDate) <= new Date(filterEndDate));
-    }
-
-    return result;
-  }, [basePendingRequests, searchQuery, filterDepartment, filterStartDate, filterEndDate]);
-
-  // Get unique departments for filter dropdown
-  const uniqueDepartments = useMemo(() => {
-    const deps = new Set(basePendingRequests.map(r => r.department));
-    return Array.from(deps).sort();
-  }, [basePendingRequests]);
-
-  const escalationWarnings = pendingRequests
-    .map((req) => checkRequestForEscalation(req))
-    .filter((check) => check.shouldEscalate);
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setFilterDepartment("all");
-    setFilterStartDate("");
-    setFilterEndDate("");
-  };
-
-  const hasActiveFilters = searchQuery || (filterDepartment && filterDepartment !== "all") || filterStartDate || filterEndDate;
-
-  // Bulk selection handlers
-  const toggleSelectAll = () => {
-    if (selectedIds.size === pendingRequests.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(pendingRequests.map(r => r.id)));
-    }
-  };
-
-  const toggleSelectRequest = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
 
   const bulkApproveMutation = useMutation({
     mutationFn: async () => {
@@ -245,186 +180,285 @@ export default function Approvals() {
     },
   });
 
+  const allActionable = requests.filter(
+    (req) =>
+      ["submitted", "in_review", "awaiting_quotes", "quotes_submitted"].includes(req.status) &&
+      (isSuperAdmin || nextApprover(req) === currentUserId)
+  );
+
+  const pendingRequests = allActionable.filter(r =>
+    r.status === "submitted" || r.status === "in_review"
+  );
+  const awaitingQuotesRequests = allActionable.filter(r =>
+    r.status === "awaiting_quotes" || r.status === "quotes_submitted"
+  );
+
+  const escalationWarnings = pendingRequests.filter(r => checkRequestForEscalation(r).shouldEscalate);
+
+  const uniqueDepartments = useMemo(() => {
+    const deps = new Set(allActionable.map(r => r.department));
+    return Array.from(deps).sort();
+  }, [allActionable]);
+
+  const hasActiveFilters =
+    searchQuery ||
+    (filterDepartment && filterDepartment !== "all") ||
+    filterStartDate ||
+    filterEndDate;
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterDepartment("all");
+    setFilterStartDate("");
+    setFilterEndDate("");
+  };
+
+  const tabRequests =
+    tab === "pending" ? pendingRequests :
+    tab === "awaiting_quotes" ? awaitingQuotesRequests :
+    allActionable;
+
+  const processedRequests = useMemo(() => {
+    let result = [...tabRequests];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(r =>
+        r.employeeName?.toLowerCase().includes(q) ||
+        r.destination?.city?.toLowerCase().includes(q) ||
+        r.destination?.country?.toLowerCase().includes(q) ||
+        r.department?.toLowerCase().includes(q) ||
+        r.purpose?.toLowerCase().includes(q)
+      );
+    }
+
+    if (filterDepartment && filterDepartment !== "all") {
+      result = result.filter(r => r.department === filterDepartment);
+    }
+    if (filterStartDate) {
+      result = result.filter(r => new Date(r.startDate) >= new Date(filterStartDate));
+    }
+    if (filterEndDate) {
+      result = result.filter(r => new Date(r.startDate) <= new Date(filterEndDate));
+    }
+
+    result.sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "employee") cmp = a.employeeName.localeCompare(b.employeeName);
+      else if (sortField === "destination") cmp = (a.destination?.city ?? "").localeCompare(b.destination?.city ?? "");
+      else if (sortField === "date") cmp = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      else if (sortField === "submitted") cmp = new Date(a.submittedAt ?? 0).getTime() - new Date(b.submittedAt ?? 0).getTime();
+      else if (sortField === "cost") cmp = (a.perDiem?.totalFJD ?? 0) - (b.perDiem?.totalFJD ?? 0);
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [tabRequests, searchQuery, filterDepartment, filterStartDate, filterEndDate, sortField, sortOrder]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) setSortOrder(o => o === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortOrder("desc"); }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />;
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === processedRequests.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(processedRequests.map(r => r.id)));
+    }
+  };
+
+  const toggleSelectRequest = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Travel Request Approvals</h1>
-          <p className="text-muted-foreground">Review and approve pending travel requests</p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <Card className="animate-pulse">
-              <CardContent className="p-6 space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 bg-muted rounded"></div>
-                ))}
-              </CardContent>
+      <div className="container mx-auto p-6 space-y-4">
+        <div className="h-8 bg-muted rounded w-64 animate-pulse" />
+        <div className="h-4 bg-muted rounded w-48 animate-pulse" />
+        <div className="grid grid-cols-3 gap-4 mt-6">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6 h-20" />
             </Card>
-          </div>
-          <div className="lg:col-span-2">
-            <Card className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-96 bg-muted rounded"></div>
-              </CardContent>
-            </Card>
-          </div>
+          ))}
         </div>
+        <Card className="animate-pulse">
+          <CardContent className="p-6 h-48" />
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Travel Request Approvals</h1>
-        <p className="text-muted-foreground">
-          Review and approve pending travel requests
-        </p>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Approvals</h1>
+          <p className="text-muted-foreground mt-1">
+            Review and action pending travel requests
+            {isSuperAdmin && (
+              <span className="ml-2 text-xs font-medium text-primary">(Super Admin — full access)</span>
+            )}
+          </p>
+        </div>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-gradient-to-br from-[hsl(var(--lagoon-light))] to-[hsl(var(--lagoon-light))] border-[hsl(var(--lagoon))] border-opacity-20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-[hsl(var(--lagoon))]" data-testid="stat-pending">
-                  {basePendingRequests.length}
-                </div>
-                <div className="text-sm text-muted-foreground">Pending Approvals</div>
-              </div>
-              <Clock className="w-8 h-8 text-[hsl(var(--lagoon))]" />
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card
+          className={`cursor-pointer transition-colors ${tab === "pending" ? "border-primary" : ""}`}
+          onClick={() => setTab("pending")}
+          data-testid="card-stat-pending"
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950">
+              <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold" data-testid="stat-pending">{pendingRequests.length}</div>
+              <div className="text-sm text-muted-foreground">Pending Approval</div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[hsl(var(--coral-light))] to-[hsl(var(--coral-light))] border-[hsl(var(--coral))] border-opacity-20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-[hsl(var(--coral))]" data-testid="stat-escalations">
-                  {escalationWarnings.length}
-                </div>
-                <div className="text-sm text-muted-foreground">Need Attention</div>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-[hsl(var(--coral))]" />
+
+        <Card
+          className="cursor-default"
+          data-testid="card-stat-escalations"
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-2 rounded-md bg-red-50 dark:bg-red-950">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold" data-testid="stat-escalations">{escalationWarnings.length}</div>
+              <div className="text-sm text-muted-foreground">Need Attention</div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[hsl(var(--ocean-light))] to-[hsl(var(--ocean-light))] border-[hsl(var(--ocean))] border-opacity-20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-[hsl(var(--ocean))]" data-testid="stat-selected">
-                  {selectedIds.size}
-                </div>
-                <div className="text-sm text-muted-foreground">Selected</div>
-              </div>
-              <CheckCircle2 className="w-8 h-8 text-[hsl(var(--ocean))]" />
+
+        <Card
+          className={`cursor-pointer transition-colors ${tab === "awaiting_quotes" ? "border-primary" : ""}`}
+          onClick={() => setTab("awaiting_quotes")}
+          data-testid="card-stat-awaiting-quotes"
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-2 rounded-md bg-orange-50 dark:bg-orange-950">
+              <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{awaitingQuotesRequests.length}</div>
+              <div className="text-sm text-muted-foreground">Awaiting Quotes</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by employee, destination, or department..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search-approvals"
-                />
-              </div>
-              <Button
-                variant={showFilters ? "default" : "outline"}
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
-                data-testid="button-toggle-filters"
-              >
-                <Filter className="w-4 h-4" />
-                Filters
-                {hasActiveFilters && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
-                    {[filterDepartment !== "all", filterStartDate, filterEndDate].filter(Boolean).length}
-                  </span>
-                )}
-              </Button>
-            </div>
+      {/* Search + Filters */}
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by employee, destination, department, or purpose..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-approvals"
+            />
+          </div>
+          <Button
+            variant={showFilters ? "default" : "outline"}
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2"
+            data-testid="button-toggle-filters"
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {hasActiveFilters && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-foreground text-primary rounded-full">
+                {[filterDepartment !== "all", filterStartDate, filterEndDate].filter(Boolean).length}
+              </span>
+            )}
+          </Button>
+        </div>
 
-            {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/30">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Department</label>
-                  <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-                    <SelectTrigger data-testid="select-filter-department">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Departments</SelectItem>
-                      {uniqueDepartments.map(dept => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Travel Start From</label>
-                  <Input
-                    type="date"
-                    value={filterStartDate}
-                    onChange={(e) => setFilterStartDate(e.target.value)}
-                    data-testid="input-filter-start-date"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Travel Start To</label>
-                  <Input
-                    type="date"
-                    value={filterEndDate}
-                    onChange={(e) => setFilterEndDate(e.target.value)}
-                    data-testid="input-filter-end-date"
-                  />
-                </div>
-                {hasActiveFilters && (
-                  <div className="md:col-span-3 flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={clearFilters}
-                      className="gap-2"
-                      data-testid="button-clear-filters"
-                    >
-                      <X className="w-4 h-4" />
-                      Clear Filters
-                    </Button>
-                  </div>
-                )}
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-md bg-muted/30">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Department</label>
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                <SelectTrigger data-testid="select-filter-department">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {uniqueDepartments.map(dept => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Travel Start From</label>
+              <Input
+                type="date"
+                value={filterStartDate}
+                onChange={e => setFilterStartDate(e.target.value)}
+                data-testid="input-filter-start-date"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Travel Start To</label>
+              <Input
+                type="date"
+                value={filterEndDate}
+                onChange={e => setFilterEndDate(e.target.value)}
+                data-testid="input-filter-end-date"
+              />
+            </div>
+            {hasActiveFilters && (
+              <div className="md:col-span-3 flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="gap-2"
+                  data-testid="button-clear-filters"
+                >
+                  <X className="w-4 h-4" />
+                  Clear Filters
+                </Button>
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      {/* Bulk Actions Bar */}
+      {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <Card className="mb-6 bg-accent/50">
+        <Card className="bg-accent/40">
           <CardContent className="p-4">
             {!bulkActionMode ? (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-base px-3 py-1">
+                  <Badge variant="outline" className="text-sm px-3 py-1">
                     {selectedIds.size} selected
                   </Badge>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setSelectedIds(new Set())}
+                    data-testid="button-clear-selection"
                   >
                     Clear
                   </Button>
@@ -434,16 +468,16 @@ export default function Approvals() {
                     variant="outline"
                     size="sm"
                     onClick={() => setBulkActionMode("reject")}
-                    className="gap-2 border-[hsl(var(--coral))] text-[hsl(var(--coral))]"
+                    className="gap-2 text-destructive border-destructive"
                     data-testid="button-bulk-reject"
                   >
-                    <XCircleIcon className="w-4 h-4" />
+                    <XCircle className="w-4 h-4" />
                     Reject Selected
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => setBulkActionMode("approve")}
-                    className="gap-2 bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90"
+                    className="gap-2"
                     data-testid="button-bulk-approve"
                   >
                     <CheckCircle2 className="w-4 h-4" />
@@ -453,15 +487,17 @@ export default function Approvals() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">
-                    {bulkActionMode === "approve" ? "Bulk Approve" : "Bulk Reject"} ({selectedIds.size} requests)
-                  </span>
+                <div className="font-medium text-sm">
+                  {bulkActionMode === "approve" ? "Approve" : "Reject"} {selectedIds.size} request(s)
                 </div>
                 <Textarea
-                  placeholder={bulkActionMode === "approve" ? "Optional comment..." : "Rejection reason (required)..."}
+                  placeholder={
+                    bulkActionMode === "approve"
+                      ? "Optional approval comment..."
+                      : "Rejection reason (required)..."
+                  }
                   value={bulkComment}
-                  onChange={(e) => setBulkComment(e.target.value)}
+                  onChange={e => setBulkComment(e.target.value)}
                   rows={2}
                   data-testid="input-bulk-comment"
                 />
@@ -469,24 +505,16 @@ export default function Approvals() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setBulkActionMode(null);
-                      setBulkComment("");
-                    }}
+                    onClick={() => { setBulkActionMode(null); setBulkComment(""); }}
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
-                    className={bulkActionMode === "approve" ? "bg-[hsl(var(--lagoon))]" : "bg-[hsl(var(--coral))]"}
+                    variant={bulkActionMode === "reject" ? "destructive" : "default"}
                     onClick={() => {
-                      if (bulkActionMode === "approve") {
-                        bulkApproveMutation.mutate();
-                      } else {
-                        if (bulkComment.trim()) {
-                          bulkRejectMutation.mutate();
-                        }
-                      }
+                      if (bulkActionMode === "approve") bulkApproveMutation.mutate();
+                      else if (bulkComment.trim()) bulkRejectMutation.mutate();
                     }}
                     disabled={
                       (bulkActionMode === "reject" && !bulkComment.trim()) ||
@@ -506,317 +534,272 @@ export default function Approvals() {
         </Card>
       )}
 
-      {escalationWarnings.length > 0 && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {escalationWarnings.length} request(s) have been pending for more than 3 days
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">
-              Pending Approvals ({pendingRequests.length})
-            </h2>
+      {/* Tabs + Table */}
+      <Tabs value={tab} onValueChange={v => setTab(v as TabKey)}>
+        <TabsList data-testid="tabs-approvals">
+          <TabsTrigger value="pending" data-testid="tab-pending">
+            Pending
             {pendingRequests.length > 0 && (
-              <label
-                className="flex items-center gap-2 cursor-pointer text-sm font-medium select-none px-2 py-1 rounded-md hover-elevate"
-                data-testid="button-select-all"
-              >
-                <Checkbox
-                  checked={selectedIds.size === pendingRequests.length}
-                  onCheckedChange={toggleSelectAll}
-                />
-                Select All
-              </label>
+              <Badge variant="secondary" className="ml-2 text-xs">{pendingRequests.length}</Badge>
             )}
-          </div>
-          <ScrollArea className="h-[600px]">
-            <div className="space-y-4">
-              {pendingRequests.length === 0 ? (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <CheckCircle className="w-16 h-16 text-[hsl(var(--lagoon))] mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">All Caught Up!</h2>
-                    <p className="text-muted-foreground">
-                      No pending travel requests to review at the moment.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                pendingRequests.map((request) => {
-                  const escalation = checkRequestForEscalation(request);
-                  return (
-                    <Card
-                      key={request.id}
-                      className={`cursor-pointer transition-colors ${
-                        selectedRequest?.id === request.id ? "border-primary" : ""
-                      } ${selectedIds.has(request.id) ? "bg-accent/30" : ""}`}
-                      onClick={() => setSelectedRequest(request)}
-                      data-testid={`card-request-${request.id}`}
-                    >
-                      <CardHeader>
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={selectedIds.has(request.id)}
-                            onCheckedChange={(checked) => {
-                              toggleSelectRequest(request.id);
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="mt-1"
-                            data-testid={`checkbox-select-${request.id}`}
-                          />
-                          <div className="flex-1 flex items-start justify-between">
-                            <div>
-                              <CardTitle className="text-base">
-                                {request.employeeName}
-                              </CardTitle>
-                              <CardDescription>
-                                {request.destination.city}, {request.destination.country}
-                              </CardDescription>
-                            </div>
-                            <div className="flex flex-col items-end gap-2">
-                              <StatusBadge status={request.status} type="request" />
-                            {escalation.shouldEscalate && (
-                              <Badge variant="destructive" className="gap-1">
-                                <Clock className="w-3 h-3" />
-                                {escalation.daysPending}d
-                              </Badge>
-                            )}
-                            {request.auditFlag && (
-                              <Badge variant="outline" className="gap-1">
-                                <Flag className="w-3 h-3" />
-                                Audit
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-sm space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Dates:</span>
-                            <span>
-                              {format(new Date(request.startDate), "MMM dd")} -{" "}
-                              {format(new Date(request.endDate), "MMM dd, yyyy")}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Per Diem:</span>
-                            <span className="font-medium">
-                              FJD {request.perDiem.totalFJD.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Cost Centre:</span>
-                            <span>{request.costCentre.code}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+          </TabsTrigger>
+          <TabsTrigger value="awaiting_quotes" data-testid="tab-awaiting-quotes">
+            Awaiting Quotes
+            {awaitingQuotesRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">{awaitingQuotesRequests.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
+        </TabsList>
 
-        <div>
-          {selectedRequest ? (
+        <TabsContent value={tab} className="mt-4">
+          {processedRequests.length === 0 ? (
             <Card>
-              <CardHeader>
-                <CardTitle>Review Request</CardTitle>
-                <CardDescription>Request ID: {selectedRequest.id}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ScrollArea className="h-[400px] pr-4">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold mb-2">Employee Details</h3>
-                      <div className="text-sm space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Name:</span>
-                          <span>{selectedRequest.employeeName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Employee #:</span>
-                          <span>{selectedRequest.employeeNumber}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Position:</span>
-                          <span>{selectedRequest.position}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Department:</span>
-                          <span>{selectedRequest.department}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <h3 className="font-semibold mb-2">Travel Details</h3>
-                      <div className="text-sm space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Destination:</span>
-                          <span>
-                            {selectedRequest.destination.city},{" "}
-                            {selectedRequest.destination.country}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Duration:</span>
-                          <span>{selectedRequest.perDiem.days} days</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Dates:</span>
-                          <span>
-                            {format(new Date(selectedRequest.startDate), "MMM dd, yyyy")} -{" "}
-                            {format(new Date(selectedRequest.endDate), "MMM dd, yyyy")}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="mt-2">
-                        <span className="text-sm text-muted-foreground">Purpose:</span>
-                        <p className="text-sm mt-1">{selectedRequest.purpose}</p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <h3 className="font-semibold mb-2">Financial Details</h3>
-                      <div className="text-sm space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Cost Centre:</span>
-                          <span>
-                            {selectedRequest.costCentre.code} -{" "}
-                            {selectedRequest.costCentre.name}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Funding Type:</span>
-                          <span>
-                            {selectedRequest.fundingType.charAt(0).toUpperCase() +
-                              selectedRequest.fundingType.slice(1)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between font-semibold text-primary">
-                          <span>Total Per Diem:</span>
-                          <span>FJD {selectedRequest.perDiem.totalFJD.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollArea>
-
-                <Separator />
-
-                {!actionMode ? (
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1 gap-2 border-[hsl(var(--coral))] text-[hsl(var(--coral))] hover:bg-[hsl(var(--coral))] hover:text-white"
-                      onClick={() => setActionMode("reject")}
-                      data-testid="button-start-reject"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Reject
-                    </Button>
-                    <Button
-                      className="flex-1 gap-2 bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90 text-white"
-                      onClick={() => setActionMode("approve")}
-                      data-testid="button-start-approve"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Approve
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="comment">
-                        Comment {actionMode === "reject" && "*"}
-                      </Label>
-                      <Textarea
-                        id="comment"
-                        placeholder={
-                          actionMode === "approve"
-                            ? "Optional approval comments..."
-                            : "Please provide a reason for rejection..."
-                        }
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        className="mt-2"
-                        data-testid="input-approval-comment"
-                      />
-                    </div>
-
-                    {actionMode === "approve" && (
-                      <div className="space-y-3 p-4 border rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="auditFlag"
-                            checked={auditFlag}
-                            onCheckedChange={(checked) =>
-                              setAuditFlag(checked as boolean)
-                            }
-                            data-testid="checkbox-audit-flag"
-                          />
-                          <Label htmlFor="auditFlag" className="cursor-pointer">
-                            Flag for Audit
-                          </Label>
-                        </div>
-                        {auditFlag && (
-                          <Textarea
-                            placeholder="Audit notes..."
-                            value={auditNote}
-                            onChange={(e) => setAuditNote(e.target.value)}
-                            data-testid="input-audit-note"
-                          />
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex gap-3">
-                      <Button variant="outline" className="flex-1" onClick={resetForm}>
-                        Cancel
-                      </Button>
-                      <Button
-                        className={`flex-1 ${actionMode === "approve" ? "bg-[hsl(var(--lagoon))] hover:bg-[hsl(var(--lagoon))]/90" : "bg-[hsl(var(--coral))] hover:bg-[hsl(var(--coral))]/90"} text-white`}
-                        onClick={actionMode === "approve" ? handleApprove : handleReject}
-                        disabled={
-                          (actionMode === "reject" && !comment.trim()) ||
-                          approveMutation.isPending ||
-                          rejectMutation.isPending
-                        }
-                        data-testid="button-confirm-action"
-                      >
-                        {approveMutation.isPending || rejectMutation.isPending
-                          ? "Processing..."
-                          : `Confirm ${
-                              actionMode === "approve" ? "Approval" : "Rejection"
-                            }`}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+              <CardContent className="p-12 text-center space-y-3">
+                <CheckCircle className="w-10 h-10 mx-auto text-muted-foreground opacity-40" />
+                <p className="text-muted-foreground font-medium">
+                  {tab === "pending"
+                    ? "No pending approvals — you're all caught up!"
+                    : tab === "awaiting_quotes"
+                    ? "No requests awaiting vendor quotes"
+                    : "No actionable requests found"}
+                </p>
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardContent className="p-12 text-center text-muted-foreground">
-                Select a request to review
-              </CardContent>
-            </Card>
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={selectedIds.size > 0 && selectedIds.size === processedRequests.length}
+                        onCheckedChange={toggleSelectAll}
+                        data-testid="checkbox-select-all"
+                      />
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort("employee")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-employee"
+                      >
+                        Employee <SortIcon field="employee" />
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort("destination")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-destination"
+                      >
+                        Destination <SortIcon field="destination" />
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort("date")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-date"
+                      >
+                        Travel Dates <SortIcon field="date" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">Department</TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort("cost")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-cost"
+                      >
+                        Per Diem <SortIcon field="cost" />
+                      </button>
+                    </TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort("submitted")}
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide"
+                        data-testid="sort-submitted"
+                      >
+                        Submitted <SortIcon field="submitted" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {processedRequests.map(request => {
+                    const escalation = checkRequestForEscalation(request);
+                    const daysLeft = daysUntilDeparture(request.startDate);
+                    const isUrgent = daysLeft >= 0 && daysLeft <= 7;
+                    return (
+                      <TableRow
+                        key={request.id}
+                        className={selectedIds.has(request.id) ? "bg-accent/30" : ""}
+                        data-testid={`row-approval-${request.id}`}
+                      >
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(request.id)}
+                            onCheckedChange={() => toggleSelectRequest(request.id)}
+                            data-testid={`checkbox-select-${request.id}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium" data-testid={`text-employee-${request.id}`}>
+                            {request.employeeName}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {request.position}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium" data-testid={`text-destination-${request.id}`}>
+                            {request.destination?.city ?? "—"}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {request.destination?.country ?? ""}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm" data-testid={`text-dates-${request.id}`}>
+                            {format(new Date(request.startDate), "MMM dd, yyyy")}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            → {format(new Date(request.endDate), "MMM dd, yyyy")}
+                          </div>
+                          {isUrgent && (
+                            <Badge variant="destructive" className="mt-1 text-xs gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              {daysLeft === 0 ? "Today" : `${daysLeft}d away`}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="text-sm">{request.department}</div>
+                          <div className="text-xs text-muted-foreground">{request.costCentre?.code}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm font-medium" data-testid={`text-cost-${request.id}`}>
+                            FJD {request.perDiem?.totalFJD?.toFixed(2) ?? "—"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {request.perDiem?.days} days
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <StatusBadge status={request.status} type="request" />
+                            {escalation.shouldEscalate && (
+                              <Badge variant="destructive" className="text-xs gap-1 w-fit">
+                                <Clock className="w-3 h-3" />
+                                {escalation.daysPending}d pending
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground">
+                            {request.submittedAt
+                              ? format(new Date(request.submittedAt), "MMM dd, yyyy")
+                              : "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div
+                            className="flex items-center justify-end gap-2"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {(request.status === "submitted" || request.status === "in_review") && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive"
+                                  onClick={() => setRejectTarget(request)}
+                                  data-testid={`button-reject-${request.id}`}
+                                >
+                                  <XCircle className="w-4 h-4 mr-1.5" />
+                                  Reject
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => approveMutation.mutate(request.id)}
+                                  disabled={approveMutation.isPending}
+                                  data-testid={`button-approve-${request.id}`}
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1.5" />
+                                  Approve
+                                </Button>
+                              </>
+                            )}
+                            <Link href={`/requests/${request.id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                data-testid={`button-view-${request.id}`}
+                              >
+                                <Eye className="w-4 h-4 mr-1.5" />
+                                View
+                              </Button>
+                            </Link>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Quick Reject dialog */}
+      <AlertDialog open={!!rejectTarget} onOpenChange={open => !open && setRejectTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-destructive" />
+              Reject Travel Request
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Reject the request from <strong>{rejectTarget?.employeeName}</strong> to{" "}
+              <strong>{rejectTarget?.destination?.city}</strong>? They will be notified of the decision.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="px-6 pb-2">
+            <Textarea
+              placeholder="Reason for rejection (required)..."
+              value={rejectComment}
+              onChange={e => setRejectComment(e.target.value)}
+              rows={3}
+              data-testid="input-reject-comment"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => { setRejectTarget(null); setRejectComment(""); }}
+              data-testid="button-reject-cancel"
+            >
+              Keep Request
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (rejectTarget && rejectComment.trim()) {
+                  rejectMutation.mutate({ requestId: rejectTarget.id, comment: rejectComment });
+                }
+              }}
+              disabled={!rejectComment.trim() || rejectMutation.isPending}
+              className="bg-destructive text-destructive-foreground"
+              data-testid="button-confirm-reject"
+            >
+              {rejectMutation.isPending ? "Rejecting..." : "Confirm Rejection"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
