@@ -112,7 +112,7 @@ export default function Home() {
       tiles.push({ label: "Travel Watch", description: "KPIs & alerts", href: "/travel-watch", icon: BarChart2, highlight: false });
     }
     if (isManagerRole) {
-      tiles.push({ label: "Analytics", description: "Trends & reports", href: "/analytics", icon: TrendingUp, highlight: false });
+      tiles.push({ label: "Reports", description: "Analytics & export", href: "/reports", icon: TrendingUp, highlight: false });
     }
     tiles.push({ label: "New Request", description: "Submit travel request", href: "/request/new", icon: Plus, highlight: false });
     return tiles;
@@ -339,7 +339,7 @@ export default function Home() {
         <div className="space-y-2">
           {navTiles.map((tile) => (
             <Link key={tile.href} href={tile.href}>
-              <div className="flex items-center gap-3 p-3 rounded-lg border hover-elevate cursor-pointer bg-card" data-testid={`nav-${tile.label.toLowerCase().replace(/\s+/g, "-")}`}>
+              <div className="flex items-center gap-3 p-3 rounded-lg border hover-elevate cursor-pointer bg-card" data-testid={`tile-${tile.label.toLowerCase().replace(/\s+/g, "-")}`}>
                 <div className={`p-2 rounded-md shrink-0 ${tile.highlight ? "bg-amber-100 dark:bg-amber-900" : "bg-muted"}`}>
                   <tile.icon className={`w-4 h-4 ${tile.highlight ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
                 </div>

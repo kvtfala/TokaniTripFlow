@@ -25,10 +25,8 @@ import {
   PlaneTakeoff, 
   CheckSquare, 
   History, 
-  FileSpreadsheet, 
   BarChart3, 
   UserCog,
-  Menu,
   Map,
   Shield
 } from "lucide-react";
@@ -39,8 +37,7 @@ import Home from "@/pages/Home";
 import NewRequest from "@/pages/NewRequest";
 import Approvals from "@/pages/Approvals";
 import MyTrips from "@/pages/MyTrips";
-import FinanceExport from "@/pages/FinanceExport";
-import Analytics from "@/pages/Analytics";
+import Reports from "@/pages/Reports";
 import DelegateSettings from "@/pages/DelegateSettings";
 import TravelWatch from "@/pages/TravelWatch";
 import CoordinatorDashboard from "@/pages/CoordinatorDashboard";
@@ -78,13 +75,9 @@ const menuItems = [
     icon: CheckSquare,
   },
   {
-    title: "Finance Export",
-    url: "/finance",
-    icon: FileSpreadsheet,
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
+    title: "Reports",
+    subtitle: "Analytics & Export",
+    url: "/reports",
     icon: BarChart3,
   },
   {
@@ -220,8 +213,7 @@ function Router() {
               <Route path="/requests/:id" component={RequestDetail} />
               <Route path="/approvals" component={Approvals} />
               <Route path="/my-trips" component={MyTrips} />
-              <Route path="/finance" component={FinanceExport} />
-              <Route path="/analytics" component={Analytics} />
+              <Route path="/reports" component={Reports} />
               <Route path="/travel-watch" component={TravelWatch} />
               <Route path="/delegations" component={DelegateSettings} />
               <Route path="/admin" component={AdminPortal} />
