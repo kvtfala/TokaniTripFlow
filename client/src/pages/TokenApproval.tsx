@@ -277,10 +277,15 @@ export default function TokenApproval() {
                       Valid until {quote.quoteExpiry ? format(new Date(quote.quoteExpiry), "MMM dd, yyyy") : "N/A"}
                     </p>
                     {quote.attachmentUrl && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <a
+                        href={quote.attachmentUrl.startsWith("/objects/") ? quote.attachmentUrl : undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
                         <FileText className="w-3 h-3" />
-                        {quote.attachmentUrl}
-                      </p>
+                        View Official PDF Quote
+                      </a>
                     )}
                     {quote.notes && <p className="text-xs text-muted-foreground">{quote.notes}</p>}
                   </div>

@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote } from "@shared/types";
 import { setupAuth, setupPassportSession, isAuthenticated } from "./replitAuth";
 import { setupDemoAuth } from "./demoAuth";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 // HMAC token secret — in production, load from env
 const APPROVAL_TOKEN_SECRET = process.env.APPROVAL_TOKEN_SECRET || "tokani-tripflow-secret-2025";
@@ -131,6 +132,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Demo Login Integration - Setup demo login path (DEMO ONLY)
   setupDemoAuth(app);
+
+  // Object Storage — presigned URL upload + file serving
+  registerObjectStorageRoutes(app);
 
   // Auth User Endpoint - Works with both Replit Auth and Demo sessions
   app.get('/api/auth/user', asyncHandler(async (req: any, res) => {

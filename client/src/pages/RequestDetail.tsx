@@ -1,5 +1,6 @@
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useUpload } from "@/hooks/use-upload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -285,31 +286,39 @@ function QuotesSection({
     if (request.quoteJustification) setQuoteJustification(request.quoteJustification);
   }, [request.selectedQuoteId, request.quoteJustification]);
   
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfObjectPath, setPdfObjectPath] = useState<string>("");
+  const { uploadFile, isUploading, progress } = useUpload({
+    onSuccess: (response) => setPdfObjectPath(response.objectPath),
+  });
+
   const [newQuote, setNewQuote] = useState({
     vendorName: "",
     quoteValue: "",
     currency: "FJD",
     quoteExpiry: "",
     notes: "",
-    attachmentName: "",
   });
 
   const createQuoteMutation = useMutation({
     mutationFn: async () => {
+      if (!pdfObjectPath) throw new Error("PDF attachment is required");
       return apiRequest("POST", `/api/requests/${requestId}/quotes`, {
         vendorName: newQuote.vendorName.trim(),
         quoteValue: parseFloat(newQuote.quoteValue),
         currency: newQuote.currency,
         quoteExpiry: newQuote.quoteExpiry,
         notes: newQuote.notes.trim() || undefined,
-        attachmentUrl: newQuote.attachmentName ? `[attached: ${newQuote.attachmentName}]` : undefined,
+        attachmentUrl: pdfObjectPath,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests", requestId, "quotes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/requests", requestId] });
       setDialogOpen(false);
-      setNewQuote({ vendorName: "", quoteValue: "", currency: "FJD", quoteExpiry: "", notes: "", attachmentName: "" });
+      setNewQuote({ vendorName: "", quoteValue: "", currency: "FJD", quoteExpiry: "", notes: "" });
+      setPdfFile(null);
+      setPdfObjectPath("");
       toast({ title: "Quote Added", description: "Vendor quote has been added successfully" });
     },
     onError: () => {
@@ -449,10 +458,17 @@ function QuotesSection({
                         {quote.currency} {quote.quoteValue.toFixed(2)} · Valid until {quote.quoteExpiry ? format(new Date(quote.quoteExpiry), "MMM dd, yyyy") : "N/A"}
                       </p>
                       {quote.attachmentUrl && (
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <a
+                          href={quote.attachmentUrl.startsWith("/objects/") ? quote.attachmentUrl : undefined}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
+                          data-testid={`link-quote-pdf-${quote.id}`}
+                        >
                           <FileText className="w-3 h-3" />
-                          {quote.attachmentUrl}
-                        </p>
+                          View PDF
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
                       )}
                       {quote.notes && (
                         <p className="text-xs text-muted-foreground mt-1">{quote.notes}</p>
@@ -490,7 +506,14 @@ function QuotesSection({
               </Alert>
             )}
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) {
+                setNewQuote({ vendorName: "", quoteValue: "", currency: "FJD", quoteExpiry: "", notes: "" });
+                setPdfFile(null);
+                setPdfObjectPath("");
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button className="w-full" variant="outline" data-testid="button-open-add-quote">
                   <Plus className="w-4 h-4 mr-2" />
@@ -558,34 +581,59 @@ function QuotesSection({
                     />
                   </div>
                   <div>
-                    <Label>Quote Document</Label>
-                    <div className="flex items-center gap-2 mt-1">
+                    <Label>
+                      Quote Document (PDF Required) <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="mt-1 space-y-2">
                       <input
                         type="file"
                         id="quote-file"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                        accept="application/pdf"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
-                          if (file) setNewQuote({ ...newQuote, attachmentName: file.name });
+                          if (!file) return;
+                          if (file.type !== "application/pdf") {
+                            toast({ title: "Invalid File Type", description: "Validation Error: A PDF copy of the official quote/itinerary is required to proceed", variant: "destructive" });
+                            e.target.value = "";
+                            return;
+                          }
+                          setPdfFile(file);
+                          setPdfObjectPath("");
+                          await uploadFile(file);
                         }}
                         data-testid="input-quote-file"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => document.getElementById("quote-file")?.click()}
-                        data-testid="button-upload-quote"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload Quote
-                      </Button>
-                      {newQuote.attachmentName && (
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          {newQuote.attachmentName}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById("quote-file")?.click()}
+                          disabled={isUploading}
+                          data-testid="button-upload-quote"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          {isUploading ? `Uploading… ${progress}%` : "Choose PDF"}
+                        </Button>
+                        {pdfFile && pdfObjectPath && (
+                          <span className="text-sm text-green-600 flex items-center gap-1">
+                            <FileText className="w-3 h-3" />
+                            {pdfFile.name} — uploaded
+                          </span>
+                        )}
+                        {pdfFile && !pdfObjectPath && !isUploading && (
+                          <span className="text-sm text-destructive flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Upload failed — try again
+                          </span>
+                        )}
+                      </div>
+                      {!pdfObjectPath && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Validation Error: A PDF copy of the official quote/itinerary is required to proceed
+                        </p>
                       )}
                     </div>
                   </div>
@@ -608,6 +656,8 @@ function QuotesSection({
                       !newQuote.vendorName.trim() ||
                       !newQuote.quoteValue ||
                       !newQuote.quoteExpiry ||
+                      !pdfObjectPath ||
+                      isUploading ||
                       createQuoteMutation.isPending
                     }
                     data-testid="button-save-quote"
