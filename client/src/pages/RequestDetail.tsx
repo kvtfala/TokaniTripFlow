@@ -279,9 +279,11 @@ function QuotesSection({
   const [quoteJustification, setQuoteJustification] = useState(request.quoteJustification || "");
   
   useEffect(() => {
-    if (request.selectedQuoteId !== selectedQuoteId) setSelectedQuoteId(request.selectedQuoteId);
-    if (request.quoteJustification !== quoteJustification) setQuoteJustification(request.quoteJustification || "");
-  }, [request.selectedQuoteId, request.quoteJustification, selectedQuoteId, quoteJustification]);
+    // Only sync from server when server has a meaningful value — avoids resetting user's
+    // local radio selection back to undefined while they are still working on the form
+    if (request.selectedQuoteId) setSelectedQuoteId(request.selectedQuoteId);
+    if (request.quoteJustification) setQuoteJustification(request.quoteJustification);
+  }, [request.selectedQuoteId, request.quoteJustification]);
   
   const [newQuote, setNewQuote] = useState({
     vendorName: "",
