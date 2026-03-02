@@ -5,9 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus,
-  Clock,
   CheckCircle,
-  XCircle,
   Calendar,
   MapPin,
   TrendingUp,
@@ -16,9 +14,10 @@ import {
   ChevronRight,
   FileText,
   BarChart2,
-  Users,
+  ArrowRight,
+  Clock,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import type { TravelRequest } from "@shared/types";
 import { useRole } from "@/contexts/RoleContext";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -47,106 +46,75 @@ export default function Home() {
   };
 
   const role = currentUser?.role || "employee";
+  const isManagerRole = role === "manager" || role === "super_admin";
 
-  // --- Computed stats ---
+  // --- Computed buckets ---
   const myRequests = requests.filter(r => r.employeeId === currentUser?.id);
-  const pendingApproval = requests.filter(r => r.status === "submitted" || r.status === "in_review");
+  const submitted = requests.filter(r => r.status === "submitted" || r.status === "in_review");
   const awaitingQuotes = requests.filter(r => r.status === "awaiting_quotes");
   const quotesReady = requests.filter(r => r.status === "quotes_submitted");
-  const approved = requests.filter(r => r.status === "approved" || r.status === "ticketed");
+  const fullyApproved = requests.filter(r => r.status === "approved" || r.status === "ticketed");
   const rejected = requests.filter(r => r.status === "rejected");
 
-  const isManagerRole = role === "manager" || role === "super_admin";
-  const needsAttentionCount = isManagerRole
-    ? pendingApproval.length + quotesReady.length
-    : 0;
+  const needsAttentionCount = isManagerRole ? submitted.length + quotesReady.length : 0;
 
-  // Recent requests — last 5 across all, or just mine for employees
+  // Upcoming departures — approved/ticketed trips in the next 30 days
+  const today = new Date();
+  const upcomingDepartures = fullyApproved
+    .filter(r => {
+      const days = differenceInDays(new Date(r.startDate), today);
+      return days >= 0 && days <= 30;
+    })
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .slice(0, 4);
+
+  // Longest-waiting — submitted requests sorted by submission date ascending (oldest first)
+  const overdueSubmitted = [...submitted]
+    .sort((a, b) => new Date(a.submittedAt || "").getTime() - new Date(b.submittedAt || "").getTime())
+    .slice(0, 3);
+
+  // Recent requests for activity feed
   const relevantRequests = role === "employee" ? myRequests : requests;
   const recentRequests = [...relevantRequests]
     .sort((a, b) => new Date(b.submittedAt || "").getTime() - new Date(a.submittedAt || "").getTime())
     .slice(0, 5);
 
-  // --- Role-aware stat cards ---
-  const statCards = (() => {
-    if (role === "employee") {
-      return [
-        { label: "My Requests", value: myRequests.length, href: "/my-trips", color: "" },
-        { label: "Pending", value: myRequests.filter(r => r.status === "submitted" || r.status === "in_review").length, href: "/my-trips", color: "text-amber-600 dark:text-amber-400" },
-        { label: "Approved", value: myRequests.filter(r => r.status === "approved" || r.status === "ticketed").length, href: "/my-trips", color: "text-green-600 dark:text-green-400" },
-        { label: "Rejected", value: myRequests.filter(r => r.status === "rejected").length, href: "/my-trips", color: "text-destructive" },
-      ];
-    }
-    if (role === "travel_desk") {
-      return [
-        { label: "Total", value: requests.length, href: "/my-trips", color: "" },
-        { label: "Approved & Ready", value: approved.length, href: "/dashboard/travel-desk", color: "text-green-600 dark:text-green-400" },
-        { label: "Pending Approval", value: pendingApproval.length, href: "/approvals", color: "text-amber-600 dark:text-amber-400" },
-        { label: "Rejected", value: rejected.length, href: "/my-trips", color: "text-destructive" },
-      ];
-    }
-    // manager, super_admin, coordinator, finance_admin
-    return [
-      { label: "Total Requests", value: requests.length, href: "/my-trips", color: "" },
-      { label: "Needs Approval", value: pendingApproval.length + quotesReady.length, href: "/approvals", color: pendingApproval.length + quotesReady.length > 0 ? "text-amber-600 dark:text-amber-400" : "" },
-      { label: "Awaiting Quotes", value: awaitingQuotes.length, href: "/approvals", color: "" },
-      { label: "Approved", value: approved.length, href: "/my-trips", color: "text-green-600 dark:text-green-400" },
-    ];
-  })();
+  // --- Workflow pipeline stages ---
+  const pipelineStages = [
+    { label: "Needs Pre-Approval", count: submitted.length, href: "/approvals", color: submitted.length > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground", dotColor: "bg-amber-400" },
+    { label: "Awaiting Quotes", count: awaitingQuotes.length, href: "/approvals", color: "text-muted-foreground", dotColor: "bg-blue-400" },
+    { label: "Quotes Ready", count: quotesReady.length, href: "/approvals", color: quotesReady.length > 0 ? "text-primary" : "text-muted-foreground", dotColor: "bg-primary" },
+    { label: "Approved", count: fullyApproved.length, href: "/my-trips", color: "text-green-600 dark:text-green-400", dotColor: "bg-green-500" },
+    { label: "Rejected", count: rejected.length, href: "/my-trips", color: "text-muted-foreground", dotColor: "bg-destructive" },
+  ];
 
-  // --- Role-aware quick nav tiles ---
+  // Employee pipeline — just their own requests
+  const myPipeline = [
+    { label: "Draft", count: myRequests.filter(r => r.status === "draft").length, href: "/my-trips", color: "text-muted-foreground", dotColor: "bg-muted-foreground" },
+    { label: "In Review", count: myRequests.filter(r => r.status === "submitted" || r.status === "in_review").length, href: "/my-trips", color: "text-amber-600 dark:text-amber-400", dotColor: "bg-amber-400" },
+    { label: "Awaiting Quotes", count: myRequests.filter(r => r.status === "awaiting_quotes").length, href: "/my-trips", color: "text-muted-foreground", dotColor: "bg-blue-400" },
+    { label: "Approved", count: myRequests.filter(r => r.status === "approved" || r.status === "ticketed").length, href: "/my-trips", color: "text-green-600 dark:text-green-400", dotColor: "bg-green-500" },
+  ];
+
+  const activePipeline = role === "employee" ? myPipeline : pipelineStages;
+
+  // --- Quick nav tiles ---
   const navTiles = (() => {
     const tiles = [];
     if (isManagerRole || role === "coordinator") {
-      tiles.push({
-        label: "Approvals Queue",
-        description: `${pendingApproval.length + quotesReady.length} need attention`,
-        href: "/approvals",
-        icon: CheckCircle,
-        highlight: (pendingApproval.length + quotesReady.length) > 0,
-      });
+      tiles.push({ label: "Approvals Queue", description: `${submitted.length + quotesReady.length} need attention`, href: "/approvals", icon: CheckCircle, highlight: (submitted.length + quotesReady.length) > 0 });
     }
     if (role === "travel_desk") {
-      tiles.push({
-        label: "Booking Queue",
-        description: `${approved.length} ready to book`,
-        href: "/dashboard/travel-desk",
-        icon: Plane,
-        highlight: approved.length > 0,
-      });
+      tiles.push({ label: "Booking Queue", description: `${fullyApproved.length} ready to book`, href: "/dashboard/travel-desk", icon: Plane, highlight: fullyApproved.length > 0 });
     }
-    tiles.push({
-      label: "My Trips",
-      description: role === "employee" ? `${myRequests.length} request${myRequests.length !== 1 ? "s" : ""}` : "View all requests",
-      href: "/my-trips",
-      icon: Calendar,
-      highlight: false,
-    });
+    tiles.push({ label: "My Trips", description: role === "employee" ? `${myRequests.length} request${myRequests.length !== 1 ? "s" : ""}` : "All requests", href: "/my-trips", icon: Calendar, highlight: false });
     if (role !== "employee") {
-      tiles.push({
-        label: "Travel Watch",
-        description: "KPIs & alerts",
-        href: "/travel-watch",
-        icon: BarChart2,
-        highlight: false,
-      });
+      tiles.push({ label: "Travel Watch", description: "KPIs & alerts", href: "/travel-watch", icon: BarChart2, highlight: false });
     }
     if (isManagerRole) {
-      tiles.push({
-        label: "Analytics",
-        description: "Trends & reports",
-        href: "/analytics",
-        icon: TrendingUp,
-        highlight: false,
-      });
+      tiles.push({ label: "Analytics", description: "Trends & reports", href: "/analytics", icon: TrendingUp, highlight: false });
     }
-    tiles.push({
-      label: "New Request",
-      description: "Submit travel request",
-      href: "/request/new",
-      icon: Plus,
-      highlight: false,
-    });
+    tiles.push({ label: "New Request", description: "Submit travel request", href: "/request/new", icon: Plus, highlight: false });
     return tiles;
   })();
 
@@ -192,8 +160,8 @@ export default function Home() {
                 {needsAttentionCount} request{needsAttentionCount !== 1 ? "s" : ""} need your attention
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-300">
-                {pendingApproval.length > 0 && `${pendingApproval.length} pending pre-approval`}
-                {pendingApproval.length > 0 && quotesReady.length > 0 && " · "}
+                {submitted.length > 0 && `${submitted.length} pending pre-approval`}
+                {submitted.length > 0 && quotesReady.length > 0 && " · "}
                 {quotesReady.length > 0 && `${quotesReady.length} ready for final approval`}
               </p>
             </div>
@@ -207,32 +175,91 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Stats strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {statCards.map((stat) => (
-          <Link key={stat.label} href={stat.href}>
-            <Card className="hover-elevate cursor-pointer h-full" data-testid={`stat-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}>
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <p className={`text-2xl font-bold mt-0.5 ${stat.color}`}>{stat.value}</p>
-              </CardContent>
-            </Card>
+      {/* ── Workflow Pipeline ── */}
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            {role === "employee" ? "My Request Pipeline" : "Request Pipeline"}
+          </CardTitle>
+          <Link href={role === "employee" ? "/my-trips" : "/approvals"}>
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-auto py-1">
+              Details <ChevronRight className="w-3 h-3 ml-1" />
+            </Button>
           </Link>
-        ))}
-      </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center gap-0 overflow-x-auto">
+            {activePipeline.map((stage, i) => (
+              <Link key={stage.label} href={stage.href} className="flex items-center flex-1 min-w-0">
+                <div className="flex-1 min-w-0 text-center px-2 py-1" data-testid={`pipeline-${stage.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${stage.dotColor}`} />
+                    <span className="text-xs text-muted-foreground truncate">{stage.label}</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${stage.color}`}>{stage.count}</p>
+                </div>
+                {i < activePipeline.length - 1 && (
+                  <ArrowRight className="w-4 h-4 text-border shrink-0" />
+                )}
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* ── Main body ── */}
+      {/* ── Main Body ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        {/* Recent Activity — 2/3 */}
-        <div className="lg:col-span-2">
+        {/* Left: Activity + Upcoming ── 2/3 */}
+        <div className="lg:col-span-2 space-y-5">
+
+          {/* Upcoming Departures — shown when relevant */}
+          {upcomingDepartures.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Plane className="w-4 h-4 text-primary" />
+                  Upcoming Departures
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">Next 30 days</span>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div>
+                  {upcomingDepartures.map((r, i) => {
+                    const daysAway = differenceInDays(new Date(r.startDate), today);
+                    return (
+                      <Link key={r.id} href={`/requests/${r.id}`}>
+                        <div className={`flex items-center justify-between py-3 gap-3 cursor-pointer hover-elevate rounded px-1 ${i < upcomingDepartures.length - 1 ? "border-b" : ""}`} data-testid={`departure-${r.id}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{r.employeeName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              <MapPin className="w-3 h-3 inline mr-0.5" />
+                              {r.destination.city}, {r.destination.country}
+                              &nbsp;·&nbsp;
+                              {format(new Date(r.startDate), "MMM d, yyyy")}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <Badge variant={daysAway <= 3 ? "destructive" : daysAway <= 7 ? "outline" : "secondary"} className="text-xs">
+                              {daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : `${daysAway} days`}
+                            </Badge>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Activity */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3 gap-2">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-base">Recent Activity</CardTitle>
               <Link href="/my-trips">
                 <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-view-all-activity">
-                  View all
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  View all <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
             </CardHeader>
@@ -242,32 +269,25 @@ export default function Home() {
                   <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">No travel requests yet</p>
                   <Link href="/request/new">
-                    <Button variant="outline" size="sm" className="mt-3">
-                      Create your first request
-                    </Button>
+                    <Button variant="outline" size="sm" className="mt-3">Create your first request</Button>
                   </Link>
                 </div>
               ) : (
                 <div>
-                  {recentRequests.map((request, i) => (
-                    <Link key={request.id} href={`/requests/${request.id}`}>
-                      <div
-                        className={`flex items-center justify-between py-3 gap-3 cursor-pointer hover-elevate rounded px-1 ${i < recentRequests.length - 1 ? "border-b" : ""}`}
-                        data-testid={`row-request-${request.id}`}
-                      >
+                  {recentRequests.map((r, i) => (
+                    <Link key={r.id} href={`/requests/${r.id}`}>
+                      <div className={`flex items-center justify-between py-3 gap-3 cursor-pointer hover-elevate rounded px-1 ${i < recentRequests.length - 1 ? "border-b" : ""}`} data-testid={`row-request-${r.id}`}>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{request.employeeName}</p>
+                          <p className="font-medium text-sm truncate">{r.employeeName}</p>
                           <p className="text-xs text-muted-foreground">
                             <MapPin className="w-3 h-3 inline mr-0.5" />
-                            {request.destination.city}, {request.destination.country}
+                            {r.destination.city}, {r.destination.country}
                             &nbsp;·&nbsp;
                             <Calendar className="w-3 h-3 inline mr-0.5" />
-                            {format(new Date(request.startDate), "MMM d, yyyy")}
+                            {format(new Date(r.startDate), "MMM d, yyyy")}
                           </p>
                         </div>
-                        <div className="shrink-0">
-                          <StatusBadge status={request.status} id={request.id} />
-                        </div>
+                        <StatusBadge status={r.status} id={r.id} />
                       </div>
                     </Link>
                   ))}
@@ -275,16 +295,51 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
+
+          {/* Longest-waiting for managers — oldest pending requests */}
+          {isManagerRole && overdueSubmitted.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                  Waiting Longest
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">Oldest pending requests</span>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div>
+                  {overdueSubmitted.map((r, i) => {
+                    const waitDays = r.submittedAt ? differenceInDays(today, new Date(r.submittedAt)) : 0;
+                    return (
+                      <Link key={r.id} href={`/requests/${r.id}`}>
+                        <div className={`flex items-center justify-between py-3 gap-3 cursor-pointer hover-elevate rounded px-1 ${i < overdueSubmitted.length - 1 ? "border-b" : ""}`} data-testid={`overdue-${r.id}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{r.employeeName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              <MapPin className="w-3 h-3 inline mr-0.5" />
+                              {r.destination.city}, {r.destination.country}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <Badge variant={waitDays >= 5 ? "destructive" : "outline"} className="text-xs">
+                              {waitDays === 0 ? "Today" : `${waitDays}d waiting`}
+                            </Badge>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        {/* Quick Navigation — 1/3 */}
+        {/* Right: Quick Navigation ── 1/3 */}
         <div className="space-y-2">
           {navTiles.map((tile) => (
             <Link key={tile.href} href={tile.href}>
-              <div
-                className="flex items-center gap-3 p-3 rounded-lg border hover-elevate cursor-pointer bg-card"
-                data-testid={`nav-${tile.label.toLowerCase().replace(/\s+/g, "-")}`}
-              >
+              <div className="flex items-center gap-3 p-3 rounded-lg border hover-elevate cursor-pointer bg-card" data-testid={`nav-${tile.label.toLowerCase().replace(/\s+/g, "-")}`}>
                 <div className={`p-2 rounded-md shrink-0 ${tile.highlight ? "bg-amber-100 dark:bg-amber-900" : "bg-muted"}`}>
                   <tile.icon className={`w-4 h-4 ${tile.highlight ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
                 </div>
