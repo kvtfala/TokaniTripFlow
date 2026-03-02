@@ -1,9 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,13 +26,14 @@ import {
   TrendingUp, DollarSign, MapPin, Clock, Download, Calendar,
   ArrowUpRight, ArrowDownRight, AlertTriangle, FileDown, FileSpreadsheet,
   FileText, BarChart3, Building2, Globe, ChevronUp, ChevronDown,
-  ArrowRight, Filter, X, FileBarChart,
+  ArrowRight, Filter, X, FileBarChart, Receipt, CheckCircle, XCircle,
+  ChevronRight, Loader2, Eye,
 } from "lucide-react";
 import {
   format, subDays, subMonths, isWithinInterval,
   startOfMonth, endOfMonth, eachMonthOfInterval,
 } from "date-fns";
-import type { TravelRequest, CostCentre } from "@shared/types";
+import type { TravelRequest, CostCentre, ExpenseClaim } from "@shared/types";
 import { CostCentreAdapter } from "@/data/adapters/CostCentreAdapter";
 import { useEffect } from "react";
 import {
@@ -44,7 +54,17 @@ type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 15;
 
+const CLAIM_STATUS_CONFIG = {
+  draft: { label: "Draft", color: "secondary" as const },
+  submitted: { label: "Submitted", color: "outline" as const },
+  under_review: { label: "Under Review", color: "default" as const },
+  approved: { label: "Approved", color: "default" as const },
+  rejected: { label: "Rejected", color: "destructive" as const },
+  paid: { label: "Paid", color: "default" as const },
+};
+
 export default function Reports() {
+  const qc = useQueryClient();
   const { data: allRequests = [], isLoading } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],
   });
@@ -64,6 +84,62 @@ export default function Reports() {
   const [sortKey, setSortKey] = useState<SortKey>("submittedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
+
+  const { data: allClaims = [] } = useQuery<ExpenseClaim[]>({
+    queryKey: ["/api/expense-claims"],
+  });
+  const [selectedClaim, setSelectedClaim] = useState<ExpenseClaim | null>(null);
+  const [claimAction, setClaimAction] = useState<"approve" | "reject" | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [claimActionLoading, setClaimActionLoading] = useState(false);
+  const [claimSearch, setClaimSearch] = useState("");
+  const [claimStatusFilter, setClaimStatusFilter] = useState("all");
+
+  async function handleClaimAction(claimId: string, action: "approve" | "reject", reason?: string) {
+    setClaimActionLoading(true);
+    try {
+      if (action === "approve") {
+        await apiRequest("POST", `/api/expense-claims/${claimId}/approve`, {});
+      } else {
+        await apiRequest("POST", `/api/expense-claims/${claimId}/reject`, { reason });
+      }
+      qc.invalidateQueries({ queryKey: ["/api/expense-claims"] });
+      setSelectedClaim(null);
+      setClaimAction(null);
+      setRejectReason("");
+    } catch (err) {
+      console.error("Failed to process claim action", err);
+    } finally {
+      setClaimActionLoading(false);
+    }
+  }
+
+  const filteredClaims = useMemo(() => {
+    return allClaims.filter(c => {
+      const matchStatus = claimStatusFilter === "all" || c.status === claimStatusFilter;
+      const matchSearch = !claimSearch ||
+        (c.travelRequestRef || c.requestId).toLowerCase().includes(claimSearch.toLowerCase()) ||
+        c.employeeName.toLowerCase().includes(claimSearch.toLowerCase());
+      return matchStatus && matchSearch;
+    });
+  }, [allClaims, claimStatusFilter, claimSearch]);
+
+  const claimTotalPending = useMemo(() =>
+    allClaims.filter(c => ["submitted", "under_review"].includes(c.status)).reduce((s, c) => s + c.totalAmount, 0),
+    [allClaims]
+  );
+  const claimTotalApproved = useMemo(() =>
+    allClaims.filter(c => ["approved", "paid"].includes(c.status)).reduce((s, c) => s + c.totalAmount, 0),
+    [allClaims]
+  );
+  const claimAwaitingReview = useMemo(() =>
+    allClaims.filter(c => ["submitted", "under_review"].includes(c.status)).length,
+    [allClaims]
+  );
+  const claimAvgSize = useMemo(() =>
+    allClaims.length > 0 ? allClaims.reduce((s, c) => s + c.totalAmount, 0) / allClaims.length : 0,
+    [allClaims]
+  );
 
   const isValidDateRange = useMemo(() => {
     if (!startDate || !endDate) return false;
@@ -498,6 +574,10 @@ export default function Reports() {
           <TabsTrigger value="export" data-testid="tab-export">
             <Download className="w-4 h-4 mr-1.5" />
             Export
+          </TabsTrigger>
+          <TabsTrigger value="expense-claims" data-testid="tab-expense-claims">
+            <Receipt className="w-4 h-4 mr-1.5" />
+            Claims
           </TabsTrigger>
         </TabsList>
 
@@ -1206,7 +1286,302 @@ export default function Reports() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ============================================================
+            TAB 5: EXPENSE CLAIMS (Finance Manager Review)
+        ============================================================ */}
+        <TabsContent value="expense-claims" className="space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-xs text-muted-foreground mb-1">Total Claims</div>
+                <div className="text-2xl font-bold" data-testid="stat-claims-total">{allClaims.length}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-xs text-muted-foreground mb-1">Awaiting Review</div>
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400" data-testid="stat-claims-awaiting">
+                  {claimAwaitingReview}
+                </div>
+                <div className="text-xs text-muted-foreground">FJD {claimTotalPending.toFixed(2)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-xs text-muted-foreground mb-1">Approved This Period</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="stat-claims-approved">
+                  FJD {claimTotalApproved.toFixed(0)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-xs text-muted-foreground mb-1">Avg. Claim Size</div>
+                <div className="text-2xl font-bold" data-testid="stat-claims-avg">
+                  FJD {claimAvgSize.toFixed(0)}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by employee or trip..."
+                value={claimSearch}
+                onChange={e => setClaimSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-claims-search"
+              />
+            </div>
+            <Select value={claimStatusFilter} onValueChange={setClaimStatusFilter}>
+              <SelectTrigger className="w-[160px]" data-testid="select-claims-status">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Claims Table */}
+          <Card>
+            <CardContent className="p-0">
+              {filteredClaims.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Receipt className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                  <p className="font-medium">No claims found</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {filteredClaims.map(claim => {
+                    const cfg = CLAIM_STATUS_CONFIG[claim.status] || CLAIM_STATUS_CONFIG.draft;
+                    const linkedRequest = allRequests.find(r => r.id === claim.requestId);
+                    const budget = linkedRequest?.estimatedCost || 0;
+                    const variance = claim.totalAmount - budget;
+                    return (
+                      <div
+                        key={claim.id}
+                        className="flex items-center justify-between gap-4 p-4 hover-elevate cursor-pointer"
+                        onClick={() => setSelectedClaim(claim)}
+                        data-testid={`claim-row-${claim.id}`}
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{claim.employeeName}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {claim.travelRequestRef || claim.requestId}
+                            {linkedRequest && linkedRequest.destination && ` • ${typeof linkedRequest.destination === "object" ? `${(linkedRequest.destination as any).city}` : linkedRequest.destination}`}
+                          </p>
+                          {claim.submittedAt && (
+                            <p className="text-xs text-muted-foreground">
+                              Submitted {format(new Date(claim.submittedAt), "d MMM yyyy")}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                          <div className="text-right hidden md:block">
+                            <p className="text-sm font-semibold">
+                              FJD {claim.totalAmount.toFixed(2)}
+                            </p>
+                            {budget > 0 && (
+                              <p className={`text-xs ${variance > 0 ? "text-destructive" : "text-green-600"}`}>
+                                {variance > 0 ? "+" : ""}{variance.toFixed(2)} vs budget
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant={cfg.color}>{cfg.label}</Badge>
+                          <Button size="icon" variant="ghost" data-testid={`button-review-${claim.id}`}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Claim Review Side Sheet */}
+      <Sheet open={!!selectedClaim} onOpenChange={v => { if (!v) { setSelectedClaim(null); setClaimAction(null); setRejectReason(""); } }}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto" data-testid="sheet-claim-review">
+          {selectedClaim && (
+            <>
+              <SheetHeader className="pb-4">
+                <SheetTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-primary" />
+                  Expense Claim Review
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="space-y-4">
+                {/* Claim meta */}
+                <div className="rounded-md border border-border p-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Employee</span>
+                    <span className="font-medium">{selectedClaim.employeeName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Trip</span>
+                    <span>{selectedClaim.travelRequestRef || selectedClaim.requestId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Submitted</span>
+                    <span>{selectedClaim.submittedAt ? format(new Date(selectedClaim.submittedAt), "d MMM yyyy") : "Draft"}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold">
+                    <span>Total Claimed</span>
+                    <span className="text-primary">{selectedClaim.currency} {selectedClaim.totalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Line items */}
+                <div>
+                  <p className="text-sm font-semibold mb-2">Line Items ({selectedClaim.lineItems.length})</p>
+                  <div className="space-y-2">
+                    {selectedClaim.lineItems.map((item, i) => (
+                      <div key={item.id || i} className="rounded-md border border-border p-3 text-sm">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{item.description || item.merchantName || "Item"}</p>
+                            <p className="text-xs text-muted-foreground">{item.category}</p>
+                            {item.merchantName && item.description !== item.merchantName && (
+                              <p className="text-xs text-muted-foreground">{item.merchantName}</p>
+                            )}
+                            {item.receiptDate && (
+                              <p className="text-xs text-muted-foreground">{item.receiptDate}</p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="font-semibold">{selectedClaim.currency} {item.amount.toFixed(2)}</p>
+                            {item.ocrConfidence && (
+                              <Badge variant={item.ocrConfidence === "high" ? "secondary" : "outline"} className="text-xs">
+                                {item.ocrConfidence === "high" ? "Auto-filled" : "Manual"}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {item.receiptUrl && (
+                          <a
+                            href={item.receiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline mt-1 block"
+                            data-testid={`link-receipt-${item.id}`}
+                          >
+                            View receipt
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Previous review notes */}
+                {selectedClaim.reviewNotes && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm">
+                    <p className="font-medium text-destructive mb-1">Previous rejection reason</p>
+                    <p>{selectedClaim.reviewNotes}</p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                {["submitted", "under_review"].includes(selectedClaim.status) && !claimAction && (
+                  <div className="flex gap-3">
+                    <Button
+                      className="flex-1"
+                      onClick={() => setClaimAction("approve")}
+                      data-testid="button-approve-claim"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => setClaimAction("reject")}
+                      data-testid="button-reject-claim"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Reject
+                    </Button>
+                  </div>
+                )}
+
+                {claimAction === "approve" && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Approve this claim for FJD {selectedClaim.totalAmount.toFixed(2)}?</p>
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1"
+                        onClick={() => handleClaimAction(selectedClaim.id, "approve")}
+                        disabled={claimActionLoading}
+                        data-testid="button-confirm-approve"
+                      >
+                        {claimActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                        Confirm Approval
+                      </Button>
+                      <Button variant="outline" onClick={() => setClaimAction(null)}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
+
+                {claimAction === "reject" && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Reason for rejection</p>
+                    <Textarea
+                      placeholder="Explain why this claim is being rejected..."
+                      value={rejectReason}
+                      onChange={e => setRejectReason(e.target.value)}
+                      data-testid="textarea-reject-reason"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={() => handleClaimAction(selectedClaim.id, "reject", rejectReason)}
+                        disabled={claimActionLoading || !rejectReason.trim()}
+                        data-testid="button-confirm-reject"
+                      >
+                        {claimActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
+                        Reject Claim
+                      </Button>
+                      <Button variant="outline" onClick={() => setClaimAction(null)}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
+
+                {["approved", "paid"].includes(selectedClaim.status) && (
+                  <div className="rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
+                    <p className="font-medium flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Approved</p>
+                    {selectedClaim.reviewedBy && <p className="mt-1">by {selectedClaim.reviewedBy}</p>}
+                    {selectedClaim.reviewedAt && <p>{format(new Date(selectedClaim.reviewedAt), "d MMM yyyy")}</p>}
+                  </div>
+                )}
+
+                {selectedClaim.status === "rejected" && !["submitted", "under_review"].includes(selectedClaim.status) && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm">
+                    <p className="font-medium text-destructive flex items-center gap-2"><XCircle className="w-4 h-4" /> Rejected</p>
+                    {selectedClaim.reviewedBy && <p className="mt-1">by {selectedClaim.reviewedBy}</p>}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

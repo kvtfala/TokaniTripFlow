@@ -2,7 +2,8 @@ import type { Express, Request, Response, NextFunction, RequestHandler } from "e
 import { createServer, type Server } from "http";
 import { createHmac, timingSafeEqual } from "crypto";
 import { storage } from "./storage";
-import type { TravelRequest, HistoryEntry, TravelQuote } from "@shared/types";
+import type { TravelRequest, HistoryEntry, TravelQuote, ExpenseClaim } from "@shared/types";
+import { extractReceiptData } from "./services/receiptOcr";
 import { setupAuth, setupPassportSession, isAuthenticated } from "./replitAuth";
 import { setupDemoAuth } from "./demoAuth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
@@ -1428,6 +1429,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     res.json({ success: true, status: newStatus });
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // EXPENSE CLAIMS
+  // ──────────────────────────────────────────────────────────────────────
+
+  // List all claims (finance manager view)
+  app.get("/api/expense-claims", isAuthenticated, asyncHandler(async (req, res) => {
+    const claims = await storage.getExpenseClaims();
+    res.json(claims);
+  }));
+
+  // List claims for a specific travel request
+  app.get("/api/requests/:id/expense-claims", isAuthenticated, asyncHandler(async (req, res) => {
+    const claims = await storage.getExpenseClaims(req.params.id);
+    res.json(claims);
+  }));
+
+  // Get single claim
+  app.get("/api/expense-claims/:id", isAuthenticated, asyncHandler(async (req, res) => {
+    const claim = await storage.getExpenseClaim(req.params.id);
+    if (!claim) return res.status(404).json({ error: "Expense claim not found" });
+    res.json(claim);
+  }));
+
+  // Create draft claim linked to a travel request
+  app.post("/api/requests/:id/expense-claims", isAuthenticated, asyncHandler(async (req, res) => {
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: "Travel request not found" });
+
+    const allUsers = await storage.getAllUsers();
+    const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+    const user = allUsers.find(u => u.id === userId);
+    const employeeName = user ? `${user.firstName} ${user.lastName}` : "Unknown";
+
+    const claim = await storage.createExpenseClaim({
+      requestId: req.params.id,
+      travelRequestRef: request.reference,
+      employeeId: userId || "unknown",
+      employeeName,
+      lineItems: [],
+      totalAmount: 0,
+      currency: "FJD",
+      status: "draft",
+    });
+    res.status(201).json(claim);
+  }));
+
+  // Update claim (add/edit line items, update fields)
+  app.patch("/api/expense-claims/:id", isAuthenticated, asyncHandler(async (req, res) => {
+    const existing = await storage.getExpenseClaim(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Expense claim not found" });
+    if (!["draft", "rejected"].includes(existing.status)) {
+      return res.status(400).json({ error: `Cannot edit a claim with status '${existing.status}'` });
+    }
+
+    const updates = req.body as Partial<ExpenseClaim>;
+    // Recalculate totalAmount from lineItems if provided
+    if (updates.lineItems) {
+      updates.totalAmount = updates.lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+    }
+    const updated = await storage.updateExpenseClaim(req.params.id, updates);
+    res.json(updated);
+  }));
+
+  // Submit claim for review
+  app.post("/api/expense-claims/:id/submit", isAuthenticated, asyncHandler(async (req, res) => {
+    const existing = await storage.getExpenseClaim(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Expense claim not found" });
+    if (existing.status !== "draft" && existing.status !== "rejected") {
+      return res.status(400).json({ error: `Claim is already '${existing.status}'` });
+    }
+    if (existing.lineItems.length === 0) {
+      return res.status(400).json({ error: "Cannot submit a claim with no line items" });
+    }
+
+    const updated = await storage.updateExpenseClaim(req.params.id, {
+      status: "submitted",
+      submittedAt: new Date().toISOString(),
+    });
+    res.json(updated);
+  }));
+
+  // Finance manager: approve claim
+  app.post("/api/expense-claims/:id/approve", isAuthenticated, asyncHandler(async (req, res) => {
+    const existing = await storage.getExpenseClaim(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Expense claim not found" });
+    if (!["submitted", "under_review"].includes(existing.status)) {
+      return res.status(400).json({ error: `Cannot approve a claim with status '${existing.status}'` });
+    }
+
+    const allUsers = await storage.getAllUsers();
+    const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+    const user = allUsers.find(u => u.id === userId);
+    const reviewerName = user ? `${user.firstName} ${user.lastName}` : "Finance Manager";
+
+    const { reconciliation } = req.body as { reconciliation?: ExpenseClaim["reconciliation"] };
+
+    const updated = await storage.updateExpenseClaim(req.params.id, {
+      status: "approved",
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: reviewerName,
+      reconciliation,
+    });
+    res.json(updated);
+  }));
+
+  // Finance manager: reject claim
+  app.post("/api/expense-claims/:id/reject", isAuthenticated, asyncHandler(async (req, res) => {
+    const existing = await storage.getExpenseClaim(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Expense claim not found" });
+    if (!["submitted", "under_review"].includes(existing.status)) {
+      return res.status(400).json({ error: `Cannot reject a claim with status '${existing.status}'` });
+    }
+
+    const { reason } = req.body as { reason: string };
+    if (!reason?.trim()) {
+      return res.status(400).json({ error: "A rejection reason is required" });
+    }
+
+    const allUsers = await storage.getAllUsers();
+    const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+    const user = allUsers.find(u => u.id === userId);
+    const reviewerName = user ? `${user.firstName} ${user.lastName}` : "Finance Manager";
+
+    const updated = await storage.updateExpenseClaim(req.params.id, {
+      status: "rejected",
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: reviewerName,
+      reviewNotes: reason,
+    });
+    res.json(updated);
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // RECEIPT OCR — Gemini Vision
+  // Accepts base64 image data, returns extracted receipt fields
+  // ──────────────────────────────────────────────────────────────────────
+  app.post("/api/uploads/ocr-receipt", isAuthenticated, asyncHandler(async (req, res) => {
+    const { imageBase64, mimeType } = req.body as {
+      imageBase64: string;
+      mimeType: string;
+    };
+
+    if (!imageBase64 || !mimeType) {
+      return res.status(400).json({ error: "imageBase64 and mimeType are required" });
+    }
+
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+    if (!allowedMimeTypes.includes(mimeType)) {
+      return res.status(400).json({ error: `Unsupported file type: ${mimeType}` });
+    }
+
+    const extractedData = await extractReceiptData(imageBase64, mimeType);
+    res.json({ extractedData });
   }));
 
   const httpServer = createServer(app);

@@ -47,14 +47,16 @@ import {
   Link as LinkIcon,
   Upload,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Receipt
 } from "lucide-react";
 import type { Vendor } from "@shared/schema";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { TravelRequest, RequestStatus, TravelQuote, QuotePolicy } from "@shared/types";
+import type { TravelRequest, RequestStatus, TravelQuote, QuotePolicy, ExpenseClaim } from "@shared/types";
+import { ClaimWizard } from "@/components/expenses/ClaimWizard";
 
 // RFQ Section Component — pulls approved vendors from the directory
 function RfqSection({ requestId, request }: { requestId: string; request: TravelRequest }) {
@@ -810,6 +812,7 @@ export default function RequestDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [comment, setComment] = useState("");
+  const [claimWizardOpen, setClaimWizardOpen] = useState(false);
 
   // Fetch the currently logged-in user so we can apply proper permission checks
   const { data: currentUser } = useQuery<{ id: string; role: string; firstName?: string; lastName?: string }>({
@@ -833,6 +836,18 @@ export default function RequestDetail() {
   const { data: quotePolicy } = useQuery<QuotePolicy>({
     queryKey: ["/api/quote-policy"],
     enabled: shouldFetchQuotes,
+  });
+
+  // Fetch expense claims for this request
+  const isApprovedOrCompleted = request?.status === "approved" || request?.status === "ticketed";
+  const { data: expenseClaims = [] } = useQuery<ExpenseClaim[]>({
+    queryKey: ["/api/requests", id, "expense-claims"],
+    queryFn: async () => {
+      const res = await fetch(`/api/requests/${id}/expense-claims`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch claims");
+      return res.json();
+    },
+    enabled: !!id && isApprovedOrCompleted,
   });
 
   // Approve mutation (supports both regular and pre-approval)
@@ -1247,6 +1262,63 @@ export default function RequestDetail() {
               </TabsContent>
             )}
           </Tabs>
+
+          {/* ── Expense Claims Section (approved/ticketed trips only) ── */}
+          {isApprovedOrCompleted && (
+            <Card className="mt-5">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-primary" />
+                    Expense Claims
+                  </CardTitle>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setClaimWizardOpen(true)}
+                    data-testid="button-new-expense-claim"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    New Claim
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {expenseClaims.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Receipt className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm">No expense claims yet. Submit receipts for reimbursement.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {expenseClaims.map(claim => (
+                      <div key={claim.id} className="flex items-center justify-between gap-3 p-3 rounded-md border border-border" data-testid={`claim-item-${claim.id}`}>
+                        <div>
+                          <p className="text-sm font-medium">{claim.lineItems.length} item{claim.lineItems.length !== 1 ? "s" : ""}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {claim.currency} {claim.totalAmount.toFixed(2)} •{" "}
+                            {claim.submittedAt
+                              ? `Submitted ${format(new Date(claim.submittedAt), "d MMM yyyy")}`
+                              : `Draft`}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={
+                            claim.status === "approved" || claim.status === "paid" ? "default" :
+                            claim.status === "rejected" ? "destructive" : "secondary"
+                          }
+                          className="capitalize"
+                          data-testid={`claim-status-${claim.id}`}
+                        >
+                          {claim.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* ── Right: Sticky action sidebar ── */}
@@ -1457,6 +1529,15 @@ export default function RequestDetail() {
           )}
         </div>
       </div>
+
+      {/* Claim Wizard Dialog */}
+      {id && (
+        <ClaimWizard
+          open={claimWizardOpen}
+          onClose={() => setClaimWizardOpen(false)}
+          preselectedRequestId={id}
+        />
+      )}
     </div>
   );
 }

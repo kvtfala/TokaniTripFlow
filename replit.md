@@ -22,13 +22,24 @@ The system features a mobile-first responsive design with 44px touch targets, pr
 ### Technical Implementations
 The frontend uses React with TypeScript, Vite, TailwindCSS, Wouter for routing, Radix UI for primitives, and shadcn/ui for components. State management and data fetching are handled by TanStack Query, while forms use react-hook-form with Zod validation. The backend is built with Express.js and TypeScript, following a RESTful API design. It implements business logic for per-diem calculations, visa checks, multi-level configurable approval flows, delegation, budget validation, and immutable audit trails. The Admin Portal features comprehensive CRUD operations across seven sections (Vendor, Email Template, Per Diem, Travel Policy, Workflow Rules, System Notifications, Audit Log Viewer) with robust 3-layer JSON validation and audit logging. Authentication supports both Replit Auth (OpenID Connect with PostgreSQL session storage) and a demo login system. Role-based access control is foundational, with a `RoleContext` and `useRole` hook.
 
+**Expense Claims Module (v1.0):**
+- Travellers submit expense claims after approved trips via `/expenses` page
+- Multi-step ClaimWizard: select trip → add line items with receipt upload → summary & submit
+- AI-powered receipt OCR via Google Gemini 1.5 Flash Vision (`server/services/receiptOcr.ts`) auto-fills merchant name, date, amount, and category
+- Receipt categories: Meals, Accommodation, Transport (Local), Flights, Visa / Entry Fees, Communication, Other
+- Claim status lifecycle: `draft → submitted → under_review → approved/rejected → paid`
+- Finance managers review claims in the Reports → Claims tab with full approve/reject workflow
+- Expense claims linked to TravelRequest by `requestId` and `travelRequestRef`
+- RequestDetail page shows expense claims section for approved/ticketed trips
+
 ### System Design Choices
-The system uses an abstracted storage adapter (`IStorage`) with an in-memory implementation for development, designed for migration to persistent storage like PostgreSQL with Drizzle ORM. The data model includes entities such as `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, `Vendor`, `EmailTemplate`, `PerDiemRate`, `TravelPolicy`, `WorkflowRule`, `SystemNotification`, and `AuditLog`. Data immutability is enforced through multiple layers, including cloning entities before updates and when retrieved. Backend routes enforce strict Zod validation and comprehensive audit logging with before/after snapshots. The Admin Portal utilizes a consistent UI pattern with shadcn/ui tables and dialogs, TanStack Query for state, and react-hook-form for forms.
+The system uses an abstracted storage adapter (`IStorage`) with an in-memory implementation for development, designed for migration to persistent storage like PostgreSQL with Drizzle ORM. The data model includes entities such as `TravelRequest`, `DelegateAssignment`, `CostCentre`, `HistoryEntry`, `Vendor`, `EmailTemplate`, `PerDiemRate`, `TravelPolicy`, `WorkflowRule`, `SystemNotification`, `AuditLog`, and `ExpenseClaim`. Data immutability is enforced through multiple layers, including cloning entities before updates and when retrieved. Backend routes enforce strict Zod validation and comprehensive audit logging with before/after snapshots. The Admin Portal utilizes a consistent UI pattern with shadcn/ui tables and dialogs, TanStack Query for state, and react-hook-form for forms.
 
 ## External Dependencies
 
 ### Third-Party APIs
 - **Amadeus Self-Service API**: For airport/city code autocomplete (currently mocked).
+- **Google Gemini 1.5 Flash Vision** (`@google/generative-ai`): Receipt OCR via `POST /api/uploads/ocr-receipt`. API key stored as `GOOGLE_API_KEY_GEMINI` environment secret.
 
 ### UI Libraries & Components
 - **Radix UI**: Accessible component primitives.

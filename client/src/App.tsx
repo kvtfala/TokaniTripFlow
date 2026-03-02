@@ -28,7 +28,8 @@ import {
   BarChart3, 
   UserCog,
   Map,
-  Shield
+  Shield,
+  Receipt
 } from "lucide-react";
 import { TokaniLogo } from "@/components/brand/TokaniLogo";
 import NotFound from "@/pages/not-found";
@@ -47,6 +48,7 @@ import TravelDeskDashboard from "@/pages/TravelDeskDashboard";
 import LandingPage from "@/pages/LandingPage";
 import AdminPortal from "@/pages/AdminPortal";
 import TokenApproval from "@/pages/TokenApproval";
+import ExpenseClaims from "@/pages/ExpenseClaims";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthSplash } from "@/components/layout/AuthSplash";
 import { useState, useEffect } from "react";
@@ -73,6 +75,12 @@ const menuItems = [
     title: "Approvals",
     url: "/approvals",
     icon: CheckSquare,
+  },
+  {
+    title: "Expenses",
+    subtitle: "Claims & Receipts",
+    url: "/expenses",
+    icon: Receipt,
   },
   {
     title: "Reports",
@@ -213,6 +221,7 @@ function Router() {
               <Route path="/requests/:id" component={RequestDetail} />
               <Route path="/approvals" component={Approvals} />
               <Route path="/my-trips" component={MyTrips} />
+              <Route path="/expenses" component={ExpenseClaims} />
               <Route path="/reports" component={Reports} />
               <Route path="/travel-watch" component={TravelWatch} />
               <Route path="/delegations" component={DelegateSettings} />

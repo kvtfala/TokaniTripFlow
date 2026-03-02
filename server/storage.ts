@@ -16,7 +16,7 @@ import {
   type AuditLog,
   type InsertAuditLog,
 } from "@shared/schema";
-import type { TravelRequest, DelegateAssignment, CostCentre, HistoryEntry, TravelQuote, QuotePolicy } from "@shared/types";
+import type { TravelRequest, DelegateAssignment, CostCentre, HistoryEntry, TravelQuote, QuotePolicy, ExpenseClaim } from "@shared/types";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -98,6 +98,13 @@ export interface IStorage {
   getAuditLogs(entityType?: string, entityId?: string): Promise<AuditLog[]>;
   getAuditLog(id: string): Promise<AuditLog | undefined>;
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+
+  // Expense Claims
+  getExpenseClaims(requestId?: string): Promise<ExpenseClaim[]>;
+  getExpenseClaim(id: string): Promise<ExpenseClaim | undefined>;
+  createExpenseClaim(claim: Omit<ExpenseClaim, "id" | "createdAt" | "updatedAt">): Promise<ExpenseClaim>;
+  updateExpenseClaim(id: string, updates: Partial<ExpenseClaim>): Promise<ExpenseClaim | undefined>;
+  deleteExpenseClaim(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -115,6 +122,7 @@ export class MemStorage implements IStorage {
   private workflowRules: Map<string, WorkflowRule>;
   private systemNotifications: Map<string, SystemNotification>;
   private auditLogs: Map<string, AuditLog>;
+  private expenseClaims: Map<string, ExpenseClaim>;
 
   constructor() {
     this.users = new Map();
@@ -130,6 +138,7 @@ export class MemStorage implements IStorage {
     this.workflowRules = new Map();
     this.systemNotifications = new Map();
     this.auditLogs = new Map();
+    this.expenseClaims = new Map();
     
     // Seed with sample data
     this.seedSampleData();
@@ -1524,6 +1533,52 @@ export class MemStorage implements IStorage {
     };
     this.auditLogs.set(id, newLog);
     return newLog;
+  }
+
+  // Expense Claims
+  async getExpenseClaims(requestId?: string): Promise<ExpenseClaim[]> {
+    let claims = Array.from(this.expenseClaims.values());
+    if (requestId) {
+      claims = claims.filter(c => c.requestId === requestId);
+    }
+    return claims
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(c => structuredClone(c));
+  }
+
+  async getExpenseClaim(id: string): Promise<ExpenseClaim | undefined> {
+    const claim = this.expenseClaims.get(id);
+    return claim ? structuredClone(claim) : undefined;
+  }
+
+  async createExpenseClaim(claim: Omit<ExpenseClaim, "id" | "createdAt" | "updatedAt">): Promise<ExpenseClaim> {
+    const id = `claim-${randomUUID().slice(0, 8)}`;
+    const now = new Date().toISOString();
+    const newClaim: ExpenseClaim = {
+      ...claim,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.expenseClaims.set(id, newClaim);
+    return structuredClone(newClaim);
+  }
+
+  async updateExpenseClaim(id: string, updates: Partial<ExpenseClaim>): Promise<ExpenseClaim | undefined> {
+    const existing = this.expenseClaims.get(id);
+    if (!existing) return undefined;
+    const updated: ExpenseClaim = {
+      ...existing,
+      ...updates,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+    this.expenseClaims.set(id, updated);
+    return structuredClone(updated);
+  }
+
+  async deleteExpenseClaim(id: string): Promise<boolean> {
+    return this.expenseClaims.delete(id);
   }
 }
 

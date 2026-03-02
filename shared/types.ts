@@ -138,15 +138,43 @@ export interface QuotePolicy {
   updatedAt: string;
 }
 
+export type ClaimStatus = "draft" | "submitted" | "under_review" | "approved" | "rejected" | "paid";
+export type ExpenseCategory = "Meals" | "Accommodation" | "Transport (Local)" | "Flights" | "Visa / Entry Fees" | "Communication" | "Other";
+
+export interface ExpenseLineItem {
+  id: string;
+  description: string;
+  category: ExpenseCategory;
+  amount: number;
+  receiptUrl?: string;
+  merchantName?: string;
+  receiptDate?: string;
+  ocrConfidence?: "high" | "medium" | "low";
+  notes?: string;
+}
+
 export interface ExpenseClaim {
   id: string;
   requestId: string;
+  travelRequestRef?: string;
+  employeeId: string;
   employeeName: string;
-  description: string;
-  amount: number;
-  receiptUrl?: string;
-  claimedAt: string;
-  status: RequestStatus;
+  lineItems: ExpenseLineItem[];
+  totalAmount: number;
+  currency: string;
+  status: ClaimStatus;
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  reconciliation?: {
+    advanceAmount?: number;
+    varianceAmount?: number;
+    paymentMethod?: string;
+    paidAt?: string;
+  };
 }
 
 export interface DelegateAssignment {
