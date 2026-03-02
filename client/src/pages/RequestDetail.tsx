@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -902,339 +903,358 @@ export default function RequestDetail() {
   const canPreApprove = (request.status === "submitted" || request.status === "in_review") && (isSuperAdmin || currentUserId === expectedApprover);
   const canFinalApprove = request.status === "quotes_submitted" && (isSuperAdmin || currentUserId === expectedApprover);
 
+  // Workflow stepper helper
+  const stepIndex = (() => {
+    switch (request.status) {
+      case "draft": return 0;
+      case "submitted": case "in_review": return 1;
+      case "awaiting_quotes": return 2;
+      case "quotes_submitted": return 3;
+      case "approved": case "ticketed": return 4;
+      case "rejected": return -1;
+      default: return 1;
+    }
+  })();
+
+  const daysUntilDeparture = Math.ceil(
+    (new Date(request.startDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  );
+
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+    <div className="container mx-auto p-4 md:p-6 space-y-5">
+
+      {/* ── Header ── */}
+      <div className="flex items-start gap-3 flex-wrap">
         <Link href="/approvals">
-          <Button variant="ghost" size="icon" data-testid="button-back">
+          <Button variant="ghost" size="icon" className="shrink-0 mt-0.5" data-testid="button-back">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">Travel Request Details</h1>
-          <p className="text-muted-foreground mt-1">Request ID: {request.id}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold tracking-tight">{request.employeeName}</h1>
+            <Badge {...getStatusBadge(request.status)} data-testid="badge-request-status">
+              <StatusIcon className="w-3.5 h-3.5 mr-1" />
+              {request.status.replace(/_/g, " ")}
+            </Badge>
+            {request.auditFlag && (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="w-3 h-3" /> Out of Policy
+              </Badge>
+            )}
+          </div>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            <MapPin className="w-3.5 h-3.5 inline mr-1" />
+            {request.destination.city}, {request.destination.country}
+            &nbsp;·&nbsp;
+            <Calendar className="w-3.5 h-3.5 inline mr-1" />
+            {format(new Date(request.startDate), "MMM dd")}–{format(new Date(request.endDate), "MMM dd, yyyy")}
+            &nbsp;·&nbsp;{request.perDiem?.days} days
+            &nbsp;·&nbsp;
+            <span className="font-medium">FJD {request.perDiem?.totalFJD?.toFixed(2)}</span>
+            &nbsp;·&nbsp;<span className="opacity-60">{request.id}</span>
+          </p>
         </div>
-        <Badge {...getStatusBadge(request.status)} data-testid="badge-request-status">
-          <StatusIcon className="w-4 h-4 mr-1" />
-          {request.status.replace("_", " ").toUpperCase()}
-        </Badge>
       </div>
 
-      {/* Urgent alert */}
-      {isPendingApproval && (() => {
-        const daysUntil = Math.ceil(
-          (new Date(request.startDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-        );
-        if (daysUntil <= 7) {
-          return (
-            <Alert variant="destructive">
-              <AlertTriangle className="w-5 h-5" />
-              <AlertDescription className="ml-2">
-                <span className="font-semibold">URGENT:</span> Travel departure in {daysUntil} days - please review immediately
-              </AlertDescription>
-            </Alert>
-          );
-        }
-        return null;
-      })()}
-
-      {/* Out of policy alert */}
-      {request.auditFlag && (
+      {/* ── Workflow Progress Stepper ── */}
+      {request.status !== "rejected" ? (
+        <div className="flex items-center gap-0">
+          {["Submitted", "Pre-Approved", "Quotes Collected", "Quotes Reviewed", "Approved"].map((label, i) => {
+            const isDone = stepIndex > i;
+            const isCurrent = stepIndex === i;
+            const isLast = i === 4;
+            return (
+              <div key={label} className="flex items-center flex-1 min-w-0">
+                <div className="flex flex-col items-center min-w-0">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 shrink-0 ${
+                    isDone
+                      ? "bg-green-600 border-green-600 text-white"
+                      : isCurrent
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "bg-muted border-border text-muted-foreground"
+                  }`}>
+                    {isDone ? <CheckCircle className="w-4 h-4" /> : i + 1}
+                  </div>
+                  <span className={`text-xs mt-1 text-center leading-tight hidden sm:block ${
+                    isCurrent ? "font-semibold text-foreground" : isDone ? "text-green-700 dark:text-green-400" : "text-muted-foreground"
+                  }`}>
+                    {label}
+                  </span>
+                </div>
+                {!isLast && (
+                  <div className={`flex-1 h-0.5 mx-1 mb-3 ${isDone ? "bg-green-500" : "bg-border"}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
         <Alert variant="destructive">
-          <AlertTriangle className="w-5 h-5" />
+          <XCircle className="w-5 h-5" />
           <AlertDescription className="ml-2">
-            <span className="font-semibold">Out of Policy:</span> {request.auditNote}
+            <span className="font-semibold">Request Declined</span>
+            {request.reviewComment && ` — ${request.reviewComment}`}
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content - 2 columns on large screens */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Traveller Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Traveller Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm text-muted-foreground">Name</p>
-                <p className="font-semibold text-lg">{request.employeeName}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Employee Number</p>
-                  <p className="font-medium">{request.employeeNumber}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Position</p>
-                  <p className="font-medium">{request.position}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Department</p>
-                  <p className="font-medium">{request.department}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* ── Contextual Alerts ── */}
+      {isPendingApproval && daysUntilDeparture <= 7 && daysUntilDeparture >= 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="w-5 h-5" />
+          <AlertDescription className="ml-2">
+            <span className="font-semibold">URGENT:</span> Departure in {daysUntilDeparture} day{daysUntilDeparture !== 1 ? "s" : ""} — please review immediately
+          </AlertDescription>
+        </Alert>
+      )}
+      {request.auditFlag && request.auditNote && (
+        <Alert variant="destructive">
+          <AlertTriangle className="w-5 h-5" />
+          <AlertDescription className="ml-2">
+            <span className="font-semibold">Out of Policy Note:</span> {request.auditNote}
+          </AlertDescription>
+        </Alert>
+      )}
 
-          {/* Trip Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plane className="w-5 h-5" />
-                Trip Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Purpose of Travel</p>
-                <p className="font-medium">{request.purpose}</p>
-              </div>
+      {/* ── Main Body ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 
-              <Separator />
+        {/* ── Left: Tabbed information panel ── */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="overview">
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+              <TabsTrigger value="financial" data-testid="tab-financial">Financial</TabsTrigger>
+              {shouldFetchQuotes && (
+                <TabsTrigger value="vendors" data-testid="tab-vendors">Vendors &amp; Quotes</TabsTrigger>
+              )}
+            </TabsList>
 
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Destination</p>
-                  <p className="font-semibold text-lg">
-                    {request.destination.city}, {request.destination.country}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Airport: {request.destination.code}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Travel Dates</p>
-                  <p className="font-medium">
-                    {format(new Date(request.startDate), "MMMM dd, yyyy")} - {format(new Date(request.endDate), "MMMM dd, yyyy")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Duration: {request.perDiem?.days ?? "—"} days
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Flights Required</p>
-                  <p className="font-medium">{request.needsFlights ? "Yes" : "No"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Accommodation</p>
-                  <p className="font-medium">{request.needsAccommodation ? "Yes" : "No"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Visa Required</p>
-                  <Badge variant={request.visaCheck?.status === "OK" ? "default" : "destructive"}>
-                    {request.visaCheck?.message ?? "Not checked"}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Ground Transport</p>
-                  <p className="font-medium">{request.needsTransport ? "Yes" : "No"}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Financial Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Financial Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Cost Centre</p>
-                  <p className="font-medium">{request.costCentre.code}</p>
-                  <p className="text-xs text-muted-foreground">{request.costCentre.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Funding Type</p>
-                  <p className="font-medium capitalize">{request.fundingType}</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <p className="text-sm font-semibold mb-2">Per Diem Calculation</p>
-                {request.perDiem ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Daily MIE Rate:</span>
-                    <span className="font-medium">FJD {request.perDiem.mieFJD.toFixed(2)}</span>
+            {/* ── Overview Tab ── */}
+            <TabsContent value="overview" className="mt-4">
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  {/* Traveller */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5" /> Traveller
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
+                      <div className="sm:col-span-2">
+                        <p className="text-xs text-muted-foreground">Full Name</p>
+                        <p className="font-semibold">{request.employeeName}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Employee #</p>
+                        <p className="font-medium">{request.employeeNumber}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Position</p>
+                        <p className="font-medium">{request.position}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Department</p>
+                        <p className="font-medium">{request.department}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">First Day (75%):</span>
-                    <span className="font-medium">FJD {request.perDiem.firstDayFJD.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Middle Days ({request.perDiem.days - 2} days):</span>
-                    <span className="font-medium">FJD {request.perDiem.middleDaysFJD.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last Day (75%):</span>
-                    <span className="font-medium">FJD {request.perDiem.lastDayFJD.toFixed(2)}</span>
-                  </div>
+
                   <Separator />
-                  <div className="flex justify-between font-semibold text-base">
-                    <span>Total Per Diem:</span>
-                    <span className="text-primary">FJD {request.perDiem.totalFJD.toFixed(2)}</span>
+
+                  {/* Purpose */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Purpose of Travel</p>
+                    <p className="text-sm leading-relaxed">{request.purpose}</p>
                   </div>
-                </div>
-                ) : (
-                <p className="text-sm text-muted-foreground">Per diem calculation pending.</p>
+
+                  <Separator />
+
+                  {/* Trip */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                      <Plane className="w-3.5 h-3.5" /> Trip Details
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
+                      <div className="sm:col-span-2">
+                        <p className="text-xs text-muted-foreground">Destination</p>
+                        <p className="font-semibold">{request.destination.city}, {request.destination.country}</p>
+                        <p className="text-xs text-muted-foreground">Airport code: {request.destination.code}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Departs</p>
+                        <p className="font-medium">{format(new Date(request.startDate), "MMM dd, yyyy")}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Returns</p>
+                        <p className="font-medium">{format(new Date(request.endDate), "MMM dd, yyyy")}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Duration</p>
+                        <p className="font-medium">{request.perDiem?.days ?? "—"} days</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Flights</p>
+                        <p className="font-medium">{request.needsFlights ? "Required" : "Not needed"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Accommodation</p>
+                        <p className="font-medium">{request.needsAccommodation ? "Required" : "Not needed"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Ground Transport</p>
+                        <p className="font-medium">{request.needsTransport ? "Required" : "Not needed"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Visa Status</p>
+                        <Badge variant={request.visaCheck?.status === "OK" ? "secondary" : "destructive"} className="text-xs mt-0.5">
+                          {request.visaCheck?.message ?? "Not checked"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ── Financial Tab ── */}
+            <TabsContent value="financial" className="mt-4">
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5" /> Budget Coding
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Cost Centre</p>
+                        <p className="font-semibold">{request.costCentre.code}</p>
+                        <p className="text-xs text-muted-foreground">{request.costCentre.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Funding Type</p>
+                        <p className="font-medium capitalize">{request.fundingType}</p>
+                      </div>
+                      {request.totalEstimatedBudget && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Est. Total Budget</p>
+                          <p className="font-medium">FJD {request.totalEstimatedBudget.toFixed(2)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                      <DollarSign className="w-3.5 h-3.5" /> Per Diem Breakdown
+                    </p>
+                    {request.perDiem ? (
+                      <div className="space-y-0 rounded-md border overflow-hidden">
+                        {[
+                          { label: "Daily MIE Rate", value: `FJD ${request.perDiem.mieFJD.toFixed(2)}` },
+                          { label: "First Day (75%)", value: `FJD ${request.perDiem.firstDayFJD.toFixed(2)}` },
+                          { label: `Middle Days (${Math.max(0, request.perDiem.days - 2)} days)`, value: `FJD ${request.perDiem.middleDaysFJD.toFixed(2)}` },
+                          { label: "Last Day (75%)", value: `FJD ${request.perDiem.lastDayFJD.toFixed(2)}` },
+                        ].map(row => (
+                          <div key={row.label} className="flex justify-between px-4 py-2.5 text-sm even:bg-muted/40">
+                            <span className="text-muted-foreground">{row.label}</span>
+                            <span className="font-medium tabular-nums">{row.value}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between px-4 py-3 text-sm font-semibold bg-muted border-t">
+                          <span>Total Per Diem</span>
+                          <span className="text-primary tabular-nums">FJD {request.perDiem.totalFJD.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Per diem calculation pending.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ── Vendors & Quotes Tab ── */}
+            {shouldFetchQuotes && (
+              <TabsContent value="vendors" className="mt-4 space-y-4">
+                {request.status === "awaiting_quotes" && (
+                  <RfqSection requestId={id!} request={request} />
                 )}
-              </div>
-            </CardContent>
-          </Card>
+                <QuotesSection
+                  requestId={id!}
+                  request={request}
+                  quotes={quotes}
+                  quotesLoading={quotesLoading}
+                  quotePolicy={quotePolicy}
+                />
+                {(request.status === "quotes_submitted" || request.status === "awaiting_quotes") && (
+                  <ApprovalLinkSection requestId={id!} request={request} />
+                )}
+              </TabsContent>
+            )}
+          </Tabs>
         </div>
 
-        {/* Sidebar - 1 column on large screens */}
-        <div className="space-y-6">
-          {/* Approval Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                Approval Timeline
-              </CardTitle>
-              <CardDescription>
-                {isPendingApproval ? "Current approval progress" : "Completed approval flow"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {request.history.map((entry, index) => (
-                  <div key={index} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-2 h-2 rounded-full ${
-                        entry.action === "APPROVE" ? "bg-green-600" : 
-                        entry.action === "REJECT" ? "bg-red-600" : 
-                        "bg-blue-600"
-                      }`} />
-                      {index < request.history.length - 1 && (
-                        <div className="w-0.5 h-full bg-border mt-1" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <p className="font-medium text-sm">{entry.action}</p>
-                      <p className="text-xs text-muted-foreground">
-                        by {entry.actor}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(entry.ts), "MMM dd, yyyy 'at' h:mm a")}
-                      </p>
-                      {entry.note && (
-                        <p className="text-sm mt-1">{entry.note}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* ── Right: Sticky action sidebar ── */}
+        <div className="space-y-4 lg:sticky lg:top-6">
 
-          {/* RFQ Section - For Coordinators when status is awaiting_quotes */}
-          {request.status === "awaiting_quotes" && (
-            <RfqSection requestId={id!} request={request} />
-          )}
-
-          {/* Quotes Section - Show when quotes exist or can be added */}
-          {shouldFetchQuotes && (
-            <QuotesSection 
-              requestId={id!}
-              request={request}
-              quotes={quotes}
-              quotesLoading={quotesLoading}
-              quotePolicy={quotePolicy}
-            />
-          )}
-
-          {/* Generate Tokenized Approval Link */}
-          {(request.status === "quotes_submitted" || request.status === "awaiting_quotes") && (
-            <ApprovalLinkSection requestId={id!} request={request} />
-          )}
-
-          {/* Decision Section — Pre-approval stage (submitted / in_review) */}
+          {/* Step 1 decision — Pre-approval */}
           {canPreApprove && (
             <Card className="border-primary">
-              <CardHeader>
-                <CardTitle>Step 1 of 2 — Pre-Approval for Quote Collection</CardTitle>
-                <CardDescription>
-                  Pre-approve this request so the travel coordinator can collect vendor quotes.
-                  Final approval happens after quotes are reviewed.
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                  <CardTitle className="text-base">Pre-Approval Required</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
+                  Pre-approve so the coordinator can collect vendor quotes. Final decision happens after quotes are reviewed.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Comments <span className="text-muted-foreground font-normal">(optional for pre-approval, required for decline)</span>
-                  </label>
-                  <Textarea
-                    placeholder="Add any comments or conditions for the quote collection..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={3}
-                    data-testid="textarea-decision-comment"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Button
-                    size="lg"
-                    onClick={() => approveMutation.mutate({ approvalType: "pre_approval" })}
-                    disabled={approveMutation.isPending || rejectMutation.isPending}
-                    className="w-full"
-                    data-testid="button-pre-approve"
-                  >
-                    <DollarSign className="w-5 h-5 mr-2" />
-                    Pre-Approve to Collect Quotes
-                  </Button>
-
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    onClick={() => rejectMutation.mutate()}
-                    disabled={approveMutation.isPending || rejectMutation.isPending || !comment.trim()}
-                    className="w-full"
-                    data-testid="button-reject"
-                  >
-                    <XCircle className="w-5 h-5 mr-2" />
-                    Decline Request
-                  </Button>
-                </div>
+              <CardContent className="space-y-3">
+                <Textarea
+                  placeholder="Comments (optional for pre-approval, required to decline)..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={2}
+                  data-testid="textarea-decision-comment"
+                />
+                <Button
+                  className="w-full"
+                  onClick={() => approveMutation.mutate({ approvalType: "pre_approval" })}
+                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                  data-testid="button-pre-approve"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Pre-Approve for Quote Collection
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => rejectMutation.mutate()}
+                  disabled={approveMutation.isPending || rejectMutation.isPending || !comment.trim()}
+                  data-testid="button-reject"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Decline Request
+                </Button>
               </CardContent>
             </Card>
           )}
 
-          {/* Awaiting quotes — info state for approver */}
-          {request.status === "awaiting_quotes" && (
+          {/* Awaiting quotes — status info for approver */}
+          {request.status === "awaiting_quotes" && !canFinalApprove && (
             <Card>
-              <CardContent className="p-5">
+              <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-md bg-orange-50 dark:bg-orange-950 shrink-0">
-                    <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                    <DollarSign className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div>
-                    <p className="font-semibold">Waiting for Vendor Quotes</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      This request has been pre-approved. The travel coordinator is collecting quotes
-                      from vendors. You will be notified once quotes are ready for your final review.
+                    <p className="font-semibold text-sm">Waiting for Vendor Quotes</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Pre-approved. The coordinator is collecting vendor quotes. You'll be notified when quotes are ready.
                     </p>
                   </div>
                 </div>
@@ -1242,88 +1262,142 @@ export default function RequestDetail() {
             </Card>
           )}
 
-          {/* Decision Section for final approval of quotes */}
+          {/* Step 2 decision — Final approval */}
           {request.status === "quotes_submitted" && canFinalApprove && (
             <Card className="border-primary">
-              <CardHeader>
-                <CardTitle>Step 2 of 2 — Final Approval</CardTitle>
-                <CardDescription>
-                  Review the submitted quote(s) and make your final decision on this travel request.
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                  <CardTitle className="text-base">Final Approval</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
+                  Quotes have been submitted. Review them in the Vendors &amp; Quotes tab, then make your final decision.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {request.selectedQuoteId && (
-                  <Alert>
-                    <CheckCircle className="w-4 h-4" />
-                    <AlertDescription>
-                      Selected quote: {quotes.find(q => q.id === request.selectedQuoteId)?.vendorName} - {quotes.find(q => q.id === request.selectedQuoteId)?.currency} {quotes.find(q => q.id === request.selectedQuoteId)?.quoteValue.toFixed(2)}
-                    </AlertDescription>
-                  </Alert>
+                  <div className="p-3 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-sm">
+                    <p className="font-medium text-green-800 dark:text-green-300">Selected quote</p>
+                    <p className="text-green-700 dark:text-green-400 text-xs mt-0.5">
+                      {quotes.find(q => q.id === request.selectedQuoteId)?.vendorName} — {quotes.find(q => q.id === request.selectedQuoteId)?.currency} {quotes.find(q => q.id === request.selectedQuoteId)?.quoteValue.toFixed(2)}
+                    </p>
+                  </div>
                 )}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Final Review Comments {!comment.trim() && "(optional for approval, required for rejection)"}
-                  </label>
-                  <Textarea
-                    placeholder="Add any comments about the selected quote..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={4}
-                    data-testid="textarea-final-comment"
-                  />
-                </div>
+                <Textarea
+                  placeholder="Final comments (optional for approval, required for rejection)..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={2}
+                  data-testid="textarea-final-comment"
+                />
+                <Button
+                  className="w-full"
+                  onClick={() => approveMutation.mutate(undefined)}
+                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                  data-testid="button-final-approve"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Final Approve
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => rejectMutation.mutate()}
+                  disabled={approveMutation.isPending || rejectMutation.isPending || !comment.trim()}
+                  data-testid="button-final-reject"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Reject Request
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
-                <div className="flex flex-col gap-2">
-                  <Button
-                    size="lg"
-                    onClick={() => approveMutation.mutate(undefined)}
-                    disabled={approveMutation.isPending || rejectMutation.isPending}
-                    className="w-full"
-                    data-testid="button-final-approve"
-                  >
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Final Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    onClick={() => rejectMutation.mutate()}
-                    disabled={approveMutation.isPending || rejectMutation.isPending || !comment.trim()}
-                    className="w-full"
-                    data-testid="button-final-reject"
-                  >
-                    <XCircle className="w-5 h-5 mr-2" />
-                    Reject Request
-                  </Button>
+          {/* Approved / ticketed state */}
+          {(request.status === "approved" || request.status === "ticketed") && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-md bg-green-50 dark:bg-green-950 shrink-0">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">
+                      {request.status === "ticketed" ? "Ticketed" : "Approved"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This request has been fully approved{request.status === "ticketed" ? " and tickets have been issued" : ""}.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Previous review (if exists) */}
+          {/* Approval Timeline */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="w-4 h-4" /> Approval History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {request.history.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No history yet.</p>
+              ) : (
+                <div className="space-y-0">
+                  {request.history.map((entry, index) => (
+                    <div key={index} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                          entry.action.includes("APPROVE") || entry.action.includes("PRE_APPROVE") ? "bg-green-500" :
+                          entry.action.includes("REJECT") || entry.action.includes("DECLINE") ? "bg-red-500" :
+                          "bg-blue-500"
+                        }`} />
+                        {index < request.history.length - 1 && (
+                          <div className="w-px flex-1 bg-border mt-1 mb-1" />
+                        )}
+                      </div>
+                      <div className={`flex-1 ${index < request.history.length - 1 ? "pb-4" : ""}`}>
+                        <p className="text-xs font-semibold">{entry.action}</p>
+                        <p className="text-xs text-muted-foreground">by {entry.actor}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(entry.ts), "MMM dd, yyyy 'at' h:mm a")}
+                        </p>
+                        {entry.note && (
+                          <p className="text-xs text-foreground mt-1 italic">"{entry.note}"</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Previous review */}
           {request.reviewedBy && (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Previous Review
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Previous Review
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 text-sm">
                 <div>
-                  <p className="text-sm text-muted-foreground">Reviewed By</p>
+                  <p className="text-xs text-muted-foreground">Reviewed By</p>
                   <p className="font-medium">{request.reviewedBy}</p>
                 </div>
                 {request.reviewedAt && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Reviewed On</p>
-                    <p className="text-sm">{format(new Date(request.reviewedAt), "MMM dd, yyyy 'at' h:mm a")}</p>
+                    <p className="text-xs text-muted-foreground">Reviewed On</p>
+                    <p>{format(new Date(request.reviewedAt), "MMM dd, yyyy 'at' h:mm a")}</p>
                   </div>
                 )}
                 {request.reviewComment && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Comment</p>
-                    <p className="text-sm">{request.reviewComment}</p>
+                    <p className="text-xs text-muted-foreground">Comment</p>
+                    <p className="italic">"{request.reviewComment}"</p>
                   </div>
                 )}
               </CardContent>

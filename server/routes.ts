@@ -220,8 +220,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const actor = await resolveActingUser(req);
     const isSuperAdmin = actor.role === "super_admin";
-    // For audit trail use the real actor id; display name appended for super_admin clarity
-    const currentApproverId = isSuperAdmin ? `${actor.id} (Super Admin)` : actor.id;
+    // Audit trail uses the actor's display name for readability
+    const currentApproverId = isSuperAdmin ? `${actor.displayName} (Super Admin)` : actor.displayName;
 
     // Handle different approval types based on current status
     
@@ -401,8 +401,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Request not found" });
     }
 
-    // Validate request status - can only reject submitted or in_review requests
-    if (request.status !== "submitted" && request.status !== "in_review") {
+    // Validate request status — can reject at any active approval stage
+    const rejectableStatuses = ["submitted", "in_review", "awaiting_quotes", "quotes_submitted"];
+    if (!rejectableStatuses.includes(request.status)) {
       return res.status(400).json({ 
         error: `Cannot reject request with status: ${request.status}` 
       });
@@ -415,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const actor = await resolveActingUser(req);
     const isSuperAdmin = actor.role === "super_admin";
-    const currentApproverId = isSuperAdmin ? `${actor.id} (Super Admin)` : actor.id;
+    const currentApproverId = isSuperAdmin ? `${actor.displayName} (Super Admin)` : actor.displayName;
     const expectedApproverId = request.approverFlow[request.approverIndex];
     
     // Super admin bypasses identity check; others must match expected approver
