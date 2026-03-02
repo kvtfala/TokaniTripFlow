@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import type { ExpenseCategory } from "@shared/types";
 
 export interface OcrLineItem {
@@ -65,13 +65,13 @@ export async function extractReceiptData(
   imageBase64: string,
   mimeType: string
 ): Promise<OcrResult> {
-  const apiKey = process.env.GOOGLE_API_KEY_GEMINI;
-  if (!apiKey) {
-    throw new Error("GOOGLE_API_KEY_GEMINI environment variable not set");
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const ai = new GoogleGenAI({
+    apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+    httpOptions: {
+      apiVersion: "",
+      baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+    },
+  });
 
   const prompt = `You are a receipt data extraction assistant. Analyze this receipt image and extract the following information.
 
@@ -94,17 +94,25 @@ Rules:
 - If a field is truly unreadable, use null
 - Do not include any text outside the JSON object`;
 
-  const result = await model.generateContent([
-    prompt,
-    {
-      inlineData: {
-        data: imageBase64,
-        mimeType: mimeType as any,
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType,
+              data: imageBase64,
+            },
+          },
+        ],
       },
-    },
-  ]);
+    ],
+  });
 
-  const text = result.response.text().trim();
+  const text = (response.text ?? "").trim();
 
   let parsed: Partial<OcrResult & { lineItems: OcrLineItem[] }>;
   try {
