@@ -731,7 +731,7 @@ export default function Reports() {
                 <table className="w-full text-sm" data-testid="table-transactions">
                   <thead className="border-b bg-muted/40">
                     <tr>
-                      <SortTh col="id" className="pl-4">Ref</SortTh>
+                      <th className="px-3 py-2 pl-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">TTR #</th>
                       <SortTh col="employeeName">Employee</SortTh>
                       <SortTh col="department">Department</SortTh>
                       <SortTh col="destination">Destination</SortTh>
@@ -765,8 +765,10 @@ export default function Reports() {
                             } hover:bg-muted/40 transition-colors`}
                             data-testid={`row-request-${req.id}`}
                           >
-                            <td className="px-3 py-3 pl-4 font-mono text-xs text-muted-foreground">
-                              {req.id.slice(0, 8)}…
+                            <td className="px-3 py-3 pl-4">
+                              <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-report-${req.id}`}>
+                                {req.ttrNumber ?? req.id.slice(0, 8)}
+                              </span>
                             </td>
                             <td className="px-3 py-3 font-medium">{req.employeeName}</td>
                             <td className="px-3 py-3 text-muted-foreground">{req.department}</td>
@@ -1362,62 +1364,77 @@ export default function Reports() {
                   <p className="font-medium">No claims found</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border">
-                  {filteredClaims.map(claim => {
-                    const cfg = CLAIM_STATUS_CONFIG[claim.status] || CLAIM_STATUS_CONFIG.draft;
-                    const linkedRequest = allRequests.find(r => r.id === claim.requestId);
-                    const budget = linkedRequest?.estimatedCost || 0;
-                    const variance = claim.totalAmount - budget;
-                    return (
-                      <div
-                        key={claim.id}
-                        className="flex items-center justify-between gap-4 p-4 hover-elevate cursor-pointer"
-                        onClick={() => setSelectedClaim(claim)}
-                        data-testid={`claim-row-${claim.id}`}
-                      >
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm truncate">{claim.employeeName}</p>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {claim.tclNumber && (
-                              <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-tcl-${claim.id}`}>{claim.tclNumber}</span>
-                            )}
-                            {claim.travelRequestRef && (
-                              <>
-                                <span className="text-xs text-muted-foreground">→</span>
-                                <span className="font-mono text-xs text-muted-foreground">{claim.travelRequestRef}</span>
-                              </>
-                            )}
-                            {linkedRequest?.destination && (
-                              <span className="text-xs text-muted-foreground">
-                                • {typeof linkedRequest.destination === "object" ? `${(linkedRequest.destination as any).city}` : linkedRequest.destination}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" data-testid="table-claims">
+                    <thead className="border-b bg-muted/40">
+                      <tr>
+                        <th className="px-3 py-2 pl-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">TCL #</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Employee</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Trip (TTR)</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Destination</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Submitted</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total FJD</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                        <th className="px-3 py-2 pr-4" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredClaims.map((claim, idx) => {
+                        const cfg = CLAIM_STATUS_CONFIG[claim.status] || CLAIM_STATUS_CONFIG.draft;
+                        const linkedRequest = allRequests.find(r => r.id === claim.requestId);
+                        const budget = linkedRequest?.estimatedCost || 0;
+                        const variance = claim.totalAmount - budget;
+                        return (
+                          <tr
+                            key={claim.id}
+                            className={`border-b last:border-0 cursor-pointer ${
+                              idx % 2 === 0 ? "bg-background" : "bg-muted/20"
+                            } hover:bg-muted/40 transition-colors`}
+                            onClick={() => setSelectedClaim(claim)}
+                            data-testid={`claim-row-${claim.id}`}
+                          >
+                            <td className="px-3 py-3 pl-4">
+                              <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-tcl-${claim.id}`}>
+                                {claim.tclNumber ?? claim.id.slice(0, 8)}
                               </span>
-                            )}
-                          </div>
-                          {claim.submittedAt && (
-                            <p className="text-xs text-muted-foreground">
-                              Submitted {format(new Date(claim.submittedAt), "d MMM yyyy")}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 shrink-0">
-                          <div className="text-right hidden md:block">
-                            <p className="text-sm font-semibold">
-                              FJD {claim.totalAmount.toFixed(2)}
-                            </p>
-                            {budget > 0 && (
-                              <p className={`text-xs ${variance > 0 ? "text-destructive" : "text-green-600"}`}>
-                                {variance > 0 ? "+" : ""}{variance.toFixed(2)} vs budget
-                              </p>
-                            )}
-                          </div>
-                          <Badge variant={cfg.color}>{cfg.label}</Badge>
-                          <Button size="icon" variant="ghost" data-testid={`button-review-${claim.id}`}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                            </td>
+                            <td className="px-3 py-3">
+                              <p className="font-medium truncate max-w-[140px]">{claim.employeeName}</p>
+                            </td>
+                            <td className="px-3 py-3 hidden md:table-cell">
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {claim.travelRequestRef ?? "—"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 hidden lg:table-cell text-muted-foreground text-xs">
+                              {linkedRequest?.destination && typeof linkedRequest.destination === "object"
+                                ? `${(linkedRequest.destination as any).city}, ${(linkedRequest.destination as any).country}`
+                                : "—"}
+                            </td>
+                            <td className="px-3 py-3 hidden lg:table-cell text-muted-foreground text-xs whitespace-nowrap">
+                              {claim.submittedAt ? format(new Date(claim.submittedAt), "dd MMM yyyy") : "—"}
+                            </td>
+                            <td className="px-3 py-3 text-right font-semibold tabular-nums">
+                              <p>{claim.totalAmount.toFixed(2)}</p>
+                              {budget > 0 && (
+                                <p className={`text-xs font-normal ${variance > 0 ? "text-destructive" : "text-green-600"}`}>
+                                  {variance > 0 ? "+" : ""}{variance.toFixed(2)}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-3 py-3">
+                              <Badge variant={cfg.color}>{cfg.label}</Badge>
+                            </td>
+                            <td className="px-3 py-3 pr-4">
+                              <Button size="icon" variant="ghost" data-testid={`button-review-${claim.id}`}>
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
