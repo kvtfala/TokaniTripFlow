@@ -173,7 +173,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Travel Requests
   app.get("/api/requests", asyncHandler(async (req, res) => {
-    const requests = await storage.getTravelRequests();
+    let requests = await storage.getTravelRequests();
+    const ttr = (req.query.ttr as string | undefined)?.toLowerCase();
+    if (ttr) {
+      requests = requests.filter(r => r.ttrNumber?.toLowerCase().includes(ttr));
+    }
     res.json(requests);
   }));
 
@@ -1437,7 +1441,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // List all claims (finance manager view)
   app.get("/api/expense-claims", isAuthenticated, asyncHandler(async (req, res) => {
-    const claims = await storage.getExpenseClaims();
+    let claims = await storage.getExpenseClaims();
+    const tcl = (req.query.tcl as string | undefined)?.toLowerCase();
+    const ttr = (req.query.ttr as string | undefined)?.toLowerCase();
+    if (tcl) claims = claims.filter(c => c.tclNumber?.toLowerCase().includes(tcl));
+    if (ttr) claims = claims.filter(c => c.travelRequestRef?.toLowerCase().includes(ttr));
     res.json(claims);
   }));
 
@@ -1466,7 +1474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const claim = await storage.createExpenseClaim({
       requestId: req.params.id,
-      travelRequestRef: request.reference,
+      travelRequestRef: request.ttrNumber,
       employeeId: userId || "unknown",
       employeeName,
       lineItems: [],

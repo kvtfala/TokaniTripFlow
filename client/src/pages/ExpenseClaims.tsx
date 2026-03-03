@@ -60,10 +60,14 @@ function ClaimCard({ claim }: { claim: ExpenseClaim }) {
           <Receipt className="w-4 h-4 text-primary" />
         </div>
         <div className="min-w-0">
-          <p className="font-medium text-sm truncate">
-            {claim.travelRequestRef || claim.requestId}
+          <p className="font-medium text-sm truncate font-mono" data-testid={`text-tcl-${claim.id}`}>
+            {claim.tclNumber ?? claim.id}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground truncate">
+            {claim.travelRequestRef && (
+              <span className="font-mono font-medium text-primary">{claim.travelRequestRef}</span>
+            )}
+            {claim.travelRequestRef && " · "}
             {claim.lineItems.length} item{claim.lineItems.length !== 1 ? "s" : ""} •{" "}
             {claim.submittedAt
               ? `Submitted ${format(new Date(claim.submittedAt), "d MMM yyyy")}`

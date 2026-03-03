@@ -1377,10 +1377,22 @@ export default function Reports() {
                       >
                         <div className="min-w-0">
                           <p className="font-medium text-sm truncate">{claim.employeeName}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {claim.travelRequestRef || claim.requestId}
-                            {linkedRequest && linkedRequest.destination && ` • ${typeof linkedRequest.destination === "object" ? `${(linkedRequest.destination as any).city}` : linkedRequest.destination}`}
-                          </p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {claim.tclNumber && (
+                              <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-tcl-${claim.id}`}>{claim.tclNumber}</span>
+                            )}
+                            {claim.travelRequestRef && (
+                              <>
+                                <span className="text-xs text-muted-foreground">→</span>
+                                <span className="font-mono text-xs text-muted-foreground">{claim.travelRequestRef}</span>
+                              </>
+                            )}
+                            {linkedRequest?.destination && (
+                              <span className="text-xs text-muted-foreground">
+                                • {typeof linkedRequest.destination === "object" ? `${(linkedRequest.destination as any).city}` : linkedRequest.destination}
+                              </span>
+                            )}
+                          </div>
                           {claim.submittedAt && (
                             <p className="text-xs text-muted-foreground">
                               Submitted {format(new Date(claim.submittedAt), "d MMM yyyy")}
@@ -1423,6 +1435,9 @@ export default function Reports() {
                   <Receipt className="w-5 h-5 text-primary" />
                   Expense Claim Review
                 </SheetTitle>
+                {selectedClaim.tclNumber && (
+                  <p className="font-mono text-sm font-semibold text-primary" data-testid="text-sheet-tcl">{selectedClaim.tclNumber}</p>
+                )}
               </SheetHeader>
 
               <div className="space-y-4">
@@ -1433,8 +1448,8 @@ export default function Reports() {
                     <span className="font-medium">{selectedClaim.employeeName}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Trip</span>
-                    <span>{selectedClaim.travelRequestRef || selectedClaim.requestId}</span>
+                    <span className="text-muted-foreground">Trip (TTR)</span>
+                    <span className="font-mono font-medium text-primary">{selectedClaim.travelRequestRef || selectedClaim.requestId}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Submitted</span>

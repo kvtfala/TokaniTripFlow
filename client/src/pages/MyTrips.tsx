@@ -114,6 +114,7 @@ export default function MyTrips() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(r =>
+        r.ttrNumber?.toLowerCase().includes(q) ||
         r.destination?.city?.toLowerCase().includes(q) ||
         r.destination?.country?.toLowerCase().includes(q) ||
         r.purpose?.toLowerCase().includes(q) ||
@@ -299,6 +300,7 @@ export default function MyTrips() {
                         Travel Dates <SortIcon field="date" />
                       </button>
                     </TableHead>
+                    <TableHead className="hidden lg:table-cell text-xs font-semibold uppercase tracking-wide">TTR #</TableHead>
                     <TableHead className="hidden md:table-cell">Purpose</TableHead>
                     <TableHead>
                       <button
@@ -344,6 +346,11 @@ export default function MyTrips() {
                         <div className="text-sm text-muted-foreground">
                           → {format(new Date(request.endDate), "MMM dd, yyyy")}
                         </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <span className="font-mono text-xs font-medium text-primary" data-testid={`text-ttr-${request.id}`}>
+                          {request.ttrNumber ?? "—"}
+                        </span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div

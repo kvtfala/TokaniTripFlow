@@ -227,6 +227,7 @@ export default function Approvals() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(r =>
+        r.ttrNumber?.toLowerCase().includes(q) ||
         r.employeeName?.toLowerCase().includes(q) ||
         r.destination?.city?.toLowerCase().includes(q) ||
         r.destination?.country?.toLowerCase().includes(q) ||
@@ -656,6 +657,11 @@ export default function Approvals() {
                           <div className="text-sm text-muted-foreground">
                             {request.position}
                           </div>
+                          {request.ttrNumber && (
+                            <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-${request.id}`}>
+                              {request.ttrNumber}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="font-medium" data-testid={`text-destination-${request.id}`}>

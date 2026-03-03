@@ -124,6 +124,23 @@ export class MemStorage implements IStorage {
   private auditLogs: Map<string, AuditLog>;
   private expenseClaims: Map<string, ExpenseClaim>;
 
+  private ttrCounter: number = 0;
+  private ttrYear: number = new Date().getFullYear();
+  private tclCounter: number = 0;
+  private tclYear: number = new Date().getFullYear();
+
+  private generateTTRNumber(): string {
+    const year = new Date().getFullYear();
+    if (year !== this.ttrYear) { this.ttrYear = year; this.ttrCounter = 0; }
+    return `TTR-${this.ttrYear}-${String(++this.ttrCounter).padStart(5, "0")}`;
+  }
+
+  private generateTCLNumber(): string {
+    const year = new Date().getFullYear();
+    if (year !== this.tclYear) { this.tclYear = year; this.tclCounter = 0; }
+    return `TCL-${this.tclYear}-${String(++this.tclCounter).padStart(5, "0")}`;
+  }
+
   constructor() {
     this.users = new Map();
     this.travelRequests = new Map();
@@ -180,6 +197,7 @@ export class MemStorage implements IStorage {
     const sampleRequests: TravelRequest[] = [
       {
         id: "req-001",
+        ttrNumber: "TTR-2026-00001",
         employeeName: "Ratu Epeli Cakobau",
         employeeNumber: "ITT-BOD-001",
         position: "Chairman & CEO",
@@ -216,6 +234,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-002",
+        ttrNumber: "TTR-2026-00002",
         employeeName: "Litiana Ravouvou",
         employeeNumber: "ITT-EXE-012",
         position: "Chief Operating Officer",
@@ -252,6 +271,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-003",
+        ttrNumber: "TTR-2026-00003",
         employeeName: "Jone Navuso",
         employeeNumber: "ITT-TRV-047",
         position: "Travel Booking Specialist",
@@ -288,6 +308,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-004",
+        ttrNumber: "TTR-2026-00004",
         employeeName: "Setareki Tukana",
         employeeNumber: "ITT-VIS-023",
         position: "Visa Processing Manager",
@@ -322,6 +343,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-005",
+        ttrNumber: "TTR-2026-00005",
         employeeName: "Mereoni Delai",
         employeeNumber: "ITT-CSR-089",
         position: "Customer Service Lead",
@@ -358,6 +380,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-006",
+        ttrNumber: "TTR-2026-00006",
         employeeName: "Tevita Raicebe",
         employeeNumber: "ITT-FIN-065",
         position: "Chief Financial Officer",
@@ -393,6 +416,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-007",
+        ttrNumber: "TTR-2026-00007",
         employeeName: "Kalisi Radrodro",
         employeeNumber: "ITT-TEC-112",
         position: "Head of Data Analytics",
@@ -429,6 +453,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-008",
+        ttrNumber: "TTR-2026-00008",
         employeeName: "Roshni Lal",
         employeeNumber: "ITT-MKT-134",
         position: "Regional Marketing Director",
@@ -464,6 +489,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-009",
+        ttrNumber: "TTR-2026-00009",
         employeeName: "Apisai Koroiadi",
         employeeNumber: "ITT-CMP-078",
         position: "Compliance & Risk Manager",
@@ -500,6 +526,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-010",
+        ttrNumber: "TTR-2026-00010",
         employeeName: "Salome Tawake",
         employeeNumber: "ITT-ADM-091",
         position: "Head of Human Resources",
@@ -534,6 +561,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "req-011",
+        ttrNumber: "TTR-2026-00011",
         employeeName: "Viliame Koroi",
         employeeNumber: "ITT-SUB-145",
         position: "Subsidiary Operations Director",
@@ -571,6 +599,8 @@ export class MemStorage implements IStorage {
     ];
 
     sampleRequests.forEach(req => this.travelRequests.set(req.id, req));
+    // Resume TTR counter from the last seeded number
+    this.ttrCounter = sampleRequests.length;
   }
 
   // Replit Auth Integration - User operations
@@ -627,9 +657,11 @@ export class MemStorage implements IStorage {
 
   async createTravelRequest(request: Omit<TravelRequest, "id">): Promise<TravelRequest> {
     const id = `req-${randomUUID().slice(0, 8)}`;
+    const ttrNumber = this.generateTTRNumber();
     const newRequest: TravelRequest = {
       ...request,
       id,
+      ttrNumber,
       status: "submitted",
       submittedAt: new Date().toISOString(),
       approverIndex: 0,
@@ -1553,10 +1585,12 @@ export class MemStorage implements IStorage {
 
   async createExpenseClaim(claim: Omit<ExpenseClaim, "id" | "createdAt" | "updatedAt">): Promise<ExpenseClaim> {
     const id = `claim-${randomUUID().slice(0, 8)}`;
+    const tclNumber = this.generateTCLNumber();
     const now = new Date().toISOString();
     const newClaim: ExpenseClaim = {
       ...claim,
       id,
+      tclNumber,
       createdAt: now,
       updatedAt: now,
     };

@@ -1019,7 +1019,7 @@ export default function RequestDetail() {
             &nbsp;·&nbsp;{request.perDiem?.days} days
             &nbsp;·&nbsp;
             <span className="font-medium">FJD {request.perDiem?.totalFJD?.toFixed(2)}</span>
-            &nbsp;·&nbsp;<span className="opacity-60">{request.id}</span>
+            &nbsp;·&nbsp;<span className="font-mono font-semibold text-primary" data-testid="text-ttr-number">{request.ttrNumber ?? request.id}</span>
           </p>
         </div>
       </div>

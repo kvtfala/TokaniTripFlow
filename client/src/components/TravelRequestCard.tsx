@@ -45,6 +45,12 @@ export function TravelRequestCard({ request, onClick }: TravelRequestCardProps) 
           <span className="text-sm text-muted-foreground">Per Diem</span>
           <span className="font-semibold text-primary">FJD {request.perDiem.totalFJD.toFixed(2)}</span>
         </div>
+        {request.ttrNumber && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">TTR #</span>
+            <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-card-${request.id}`}>{request.ttrNumber}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

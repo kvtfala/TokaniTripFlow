@@ -60,6 +60,7 @@ export interface HistoryEntry {
 
 export interface TravelRequest {
   id: string;
+  ttrNumber?: string;
   employeeName: string;
   employeeNumber: string;
   position: string;
@@ -155,6 +156,7 @@ export interface ExpenseLineItem {
 
 export interface ExpenseClaim {
   id: string;
+  tclNumber?: string;
   requestId: string;
   travelRequestRef?: string;
   employeeId: string;
