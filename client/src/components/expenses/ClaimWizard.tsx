@@ -242,7 +242,7 @@ export function ClaimWizard({ open, onClose, preselectedRequestId }: ClaimWizard
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div>
-                          <p className="font-mono font-semibold text-sm text-primary">{trip.ttrNumber ?? trip.id}</p>
+                          <p className="font-semibold text-sm">{trip.ttrNumber ?? trip.id}</p>
                           <p className="text-xs text-muted-foreground">
                             {typeof trip.destination === "object" && trip.destination !== null
                               ? `${(trip.destination as any).city}, ${(trip.destination as any).country}`
@@ -375,7 +375,7 @@ export function ClaimWizard({ open, onClose, preselectedRequestId }: ClaimWizard
             <div className="rounded-md border border-border p-4 space-y-2" data-testid="claim-summary">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Trip</span>
-                <span className="font-mono font-semibold text-primary">{selectedTrip?.ttrNumber ?? selectedTrip?.id}</span>
+                <span className="font-semibold">{selectedTrip?.ttrNumber ?? selectedTrip?.id}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Destination</span>

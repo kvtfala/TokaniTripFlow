@@ -332,7 +332,7 @@ export default function MyTrips() {
                       data-testid={`row-request-${request.id}`}
                     >
                       <TableCell>
-                        <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-${request.id}`}>
+                        <span className="text-xs font-semibold" data-testid={`text-ttr-${request.id}`}>
                           {request.ttrNumber ?? "—"}
                         </span>
                       </TableCell>

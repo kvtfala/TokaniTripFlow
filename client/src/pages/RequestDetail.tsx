@@ -1019,7 +1019,7 @@ export default function RequestDetail() {
             &nbsp;·&nbsp;{request.perDiem?.days} days
             &nbsp;·&nbsp;
             <span className="font-medium">FJD {request.perDiem?.totalFJD?.toFixed(2)}</span>
-            &nbsp;·&nbsp;<span className="font-mono font-semibold text-primary" data-testid="text-ttr-number">{request.ttrNumber ?? request.id}</span>
+            &nbsp;·&nbsp;<span className="font-semibold" data-testid="text-ttr-number">{request.ttrNumber ?? request.id}</span>
           </p>
         </div>
       </div>
@@ -1294,7 +1294,7 @@ export default function RequestDetail() {
                     {expenseClaims.map(claim => (
                       <div key={claim.id} className="flex items-center justify-between gap-3 p-3 rounded-md border border-border" data-testid={`claim-item-${claim.id}`}>
                         <div className="min-w-0">
-                          <p className="font-mono text-xs font-semibold text-primary" data-testid={`text-tcl-${claim.id}`}>
+                          <p className="text-xs font-semibold" data-testid={`text-tcl-${claim.id}`}>
                             {claim.tclNumber ?? claim.id}
                           </p>
                           <p className="text-sm font-medium">

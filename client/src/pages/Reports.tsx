@@ -766,7 +766,7 @@ export default function Reports() {
                             data-testid={`row-request-${req.id}`}
                           >
                             <td className="px-3 py-3 pl-4">
-                              <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-report-${req.id}`}>
+                              <span className="text-xs font-semibold" data-testid={`text-ttr-report-${req.id}`}>
                                 {req.ttrNumber ?? req.id.slice(0, 8)}
                               </span>
                             </td>
@@ -1394,7 +1394,7 @@ export default function Reports() {
                             data-testid={`claim-row-${claim.id}`}
                           >
                             <td className="px-3 py-3 pl-4">
-                              <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-tcl-${claim.id}`}>
+                              <span className="text-xs font-semibold" data-testid={`text-tcl-${claim.id}`}>
                                 {claim.tclNumber ?? claim.id.slice(0, 8)}
                               </span>
                             </td>
@@ -1402,7 +1402,7 @@ export default function Reports() {
                               <p className="font-medium truncate max-w-[140px]">{claim.employeeName}</p>
                             </td>
                             <td className="px-3 py-3 hidden md:table-cell">
-                              <span className="font-mono text-xs text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 {claim.travelRequestRef ?? "—"}
                               </span>
                             </td>
@@ -1453,7 +1453,7 @@ export default function Reports() {
                   Expense Claim Review
                 </SheetTitle>
                 {selectedClaim.tclNumber && (
-                  <p className="font-mono text-sm font-semibold text-primary" data-testid="text-sheet-tcl">{selectedClaim.tclNumber}</p>
+                  <p className="text-sm font-semibold" data-testid="text-sheet-tcl">{selectedClaim.tclNumber}</p>
                 )}
               </SheetHeader>
 
@@ -1466,7 +1466,7 @@ export default function Reports() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Trip (TTR)</span>
-                    <span className="font-mono font-medium text-primary">{selectedClaim.travelRequestRef || selectedClaim.requestId}</span>
+                    <span className="font-medium">{selectedClaim.travelRequestRef || selectedClaim.requestId}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Submitted</span>

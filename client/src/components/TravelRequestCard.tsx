@@ -48,7 +48,7 @@ export function TravelRequestCard({ request, onClick }: TravelRequestCardProps) 
         {request.ttrNumber && (
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">TTR #</span>
-            <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-card-${request.id}`}>{request.ttrNumber}</span>
+            <span className="text-xs font-semibold" data-testid={`text-ttr-card-${request.id}`}>{request.ttrNumber}</span>
           </div>
         )}
       </CardContent>
