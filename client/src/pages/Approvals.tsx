@@ -582,6 +582,7 @@ export default function Approvals() {
                         data-testid="checkbox-select-all"
                       />
                     </TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide">TTR #</TableHead>
                     <TableHead>
                       <button
                         onClick={() => toggleSort("employee")}
@@ -651,17 +652,17 @@ export default function Approvals() {
                           />
                         </TableCell>
                         <TableCell>
+                          <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-${request.id}`}>
+                            {request.ttrNumber ?? "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
                           <div className="font-medium" data-testid={`text-employee-${request.id}`}>
                             {request.employeeName}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {request.position}
                           </div>
-                          {request.ttrNumber && (
-                            <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-${request.id}`}>
-                              {request.ttrNumber}
-                            </span>
-                          )}
                         </TableCell>
                         <TableCell>
                           <div className="font-medium" data-testid={`text-destination-${request.id}`}>

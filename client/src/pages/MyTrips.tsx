@@ -282,6 +282,7 @@ export default function MyTrips() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide">TTR #</TableHead>
                     <TableHead>
                       <button
                         onClick={() => toggleSort("destination")}
@@ -300,7 +301,6 @@ export default function MyTrips() {
                         Travel Dates <SortIcon field="date" />
                       </button>
                     </TableHead>
-                    <TableHead className="hidden lg:table-cell text-xs font-semibold uppercase tracking-wide">TTR #</TableHead>
                     <TableHead className="hidden md:table-cell">Purpose</TableHead>
                     <TableHead>
                       <button
@@ -332,6 +332,11 @@ export default function MyTrips() {
                       data-testid={`row-request-${request.id}`}
                     >
                       <TableCell>
+                        <span className="font-mono text-xs font-semibold text-primary" data-testid={`text-ttr-${request.id}`}>
+                          {request.ttrNumber ?? "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
                         <div className="font-medium" data-testid={`text-destination-${request.id}`}>
                           {request.destination?.city ?? "—"}
                         </div>
@@ -346,11 +351,6 @@ export default function MyTrips() {
                         <div className="text-sm text-muted-foreground">
                           → {format(new Date(request.endDate), "MMM dd, yyyy")}
                         </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <span className="font-mono text-xs font-medium text-primary" data-testid={`text-ttr-${request.id}`}>
-                          {request.ttrNumber ?? "—"}
-                        </span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div

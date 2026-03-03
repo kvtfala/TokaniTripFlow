@@ -1293,13 +1293,17 @@ export default function RequestDetail() {
                   <div className="space-y-2">
                     {expenseClaims.map(claim => (
                       <div key={claim.id} className="flex items-center justify-between gap-3 p-3 rounded-md border border-border" data-testid={`claim-item-${claim.id}`}>
-                        <div>
-                          <p className="text-sm font-medium">{claim.lineItems.length} item{claim.lineItems.length !== 1 ? "s" : ""}</p>
+                        <div className="min-w-0">
+                          <p className="font-mono text-xs font-semibold text-primary" data-testid={`text-tcl-${claim.id}`}>
+                            {claim.tclNumber ?? claim.id}
+                          </p>
+                          <p className="text-sm font-medium">
+                            {claim.lineItems.length} item{claim.lineItems.length !== 1 ? "s" : ""} &middot; {claim.currency} {claim.totalAmount.toFixed(2)}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {claim.currency} {claim.totalAmount.toFixed(2)} •{" "}
                             {claim.submittedAt
                               ? `Submitted ${format(new Date(claim.submittedAt), "d MMM yyyy")}`
-                              : `Draft`}
+                              : "Draft"}
                           </p>
                         </div>
                         <Badge
@@ -1307,7 +1311,7 @@ export default function RequestDetail() {
                             claim.status === "approved" || claim.status === "paid" ? "default" :
                             claim.status === "rejected" ? "destructive" : "secondary"
                           }
-                          className="capitalize"
+                          className="capitalize shrink-0"
                           data-testid={`claim-status-${claim.id}`}
                         >
                           {claim.status.replace("_", " ")}
