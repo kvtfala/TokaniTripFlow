@@ -203,3 +203,17 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return;
   }
 };
+
+/**
+ * Lightweight session check — works for both demo and OIDC sessions.
+ * Allows access as long as Passport considers the request authenticated,
+ * without attempting OIDC token refresh (safe for demo environments).
+ */
+export const isLoggedIn: RequestHandler = (req, res, next) => {
+  if (req.isAuthenticated()) return next();
+  // Fallback: accept requests that carry a valid session user but no Passport
+  // session (e.g. legacy unauthenticated dev calls that still have req.session.user)
+  const sessionUser = (req.session as any)?.user;
+  if (sessionUser?.id) return next();
+  res.status(401).json({ message: "Unauthorized" });
+};

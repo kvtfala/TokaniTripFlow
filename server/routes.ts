@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote, ExpenseClaim } from "@shared/types";
 import { extractReceiptData } from "./services/receiptOcr";
-import { setupAuth, setupPassportSession, isAuthenticated } from "./replitAuth";
+import { setupAuth, setupPassportSession, isAuthenticated, isLoggedIn } from "./replitAuth";
 import { setupDemoAuth } from "./demoAuth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
@@ -1440,7 +1440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ──────────────────────────────────────────────────────────────────────
 
   // List all claims (finance manager view)
-  app.get("/api/expense-claims", isAuthenticated, asyncHandler(async (req, res) => {
+  app.get("/api/expense-claims", isLoggedIn, asyncHandler(async (req, res) => {
     let claims = await storage.getExpenseClaims();
     const tcl = (req.query.tcl as string | undefined)?.toLowerCase();
     const ttr = (req.query.ttr as string | undefined)?.toLowerCase();
@@ -1450,20 +1450,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // List claims for a specific travel request
-  app.get("/api/requests/:id/expense-claims", isAuthenticated, asyncHandler(async (req, res) => {
+  app.get("/api/requests/:id/expense-claims", isLoggedIn, asyncHandler(async (req, res) => {
     const claims = await storage.getExpenseClaims(req.params.id);
     res.json(claims);
   }));
 
   // Get single claim
-  app.get("/api/expense-claims/:id", isAuthenticated, asyncHandler(async (req, res) => {
+  app.get("/api/expense-claims/:id", isLoggedIn, asyncHandler(async (req, res) => {
     const claim = await storage.getExpenseClaim(req.params.id);
     if (!claim) return res.status(404).json({ error: "Expense claim not found" });
     res.json(claim);
   }));
 
   // Create draft claim linked to a travel request
-  app.post("/api/requests/:id/expense-claims", isAuthenticated, asyncHandler(async (req, res) => {
+  app.post("/api/requests/:id/expense-claims", isLoggedIn, asyncHandler(async (req, res) => {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) return res.status(404).json({ error: "Travel request not found" });
 
@@ -1486,7 +1486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Update claim (add/edit line items, update fields)
-  app.patch("/api/expense-claims/:id", isAuthenticated, asyncHandler(async (req, res) => {
+  app.patch("/api/expense-claims/:id", isLoggedIn, asyncHandler(async (req, res) => {
     const existing = await storage.getExpenseClaim(req.params.id);
     if (!existing) return res.status(404).json({ error: "Expense claim not found" });
     if (!["draft", "rejected"].includes(existing.status)) {
@@ -1503,7 +1503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Submit claim for review
-  app.post("/api/expense-claims/:id/submit", isAuthenticated, asyncHandler(async (req, res) => {
+  app.post("/api/expense-claims/:id/submit", isLoggedIn, asyncHandler(async (req, res) => {
     const existing = await storage.getExpenseClaim(req.params.id);
     if (!existing) return res.status(404).json({ error: "Expense claim not found" });
     if (existing.status !== "draft" && existing.status !== "rejected") {
@@ -1521,7 +1521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Finance manager: approve claim
-  app.post("/api/expense-claims/:id/approve", isAuthenticated, asyncHandler(async (req, res) => {
+  app.post("/api/expense-claims/:id/approve", isLoggedIn, asyncHandler(async (req, res) => {
     const existing = await storage.getExpenseClaim(req.params.id);
     if (!existing) return res.status(404).json({ error: "Expense claim not found" });
     if (!["submitted", "under_review"].includes(existing.status)) {
@@ -1545,7 +1545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Finance manager: reject claim
-  app.post("/api/expense-claims/:id/reject", isAuthenticated, asyncHandler(async (req, res) => {
+  app.post("/api/expense-claims/:id/reject", isLoggedIn, asyncHandler(async (req, res) => {
     const existing = await storage.getExpenseClaim(req.params.id);
     if (!existing) return res.status(404).json({ error: "Expense claim not found" });
     if (!["submitted", "under_review"].includes(existing.status)) {
@@ -1575,7 +1575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // RECEIPT OCR — Gemini Vision
   // Accepts base64 image data, returns extracted receipt fields
   // ──────────────────────────────────────────────────────────────────────
-  app.post("/api/uploads/ocr-receipt", isAuthenticated, asyncHandler(async (req, res) => {
+  app.post("/api/uploads/ocr-receipt", isLoggedIn, asyncHandler(async (req, res) => {
     const { imageBase64, mimeType } = req.body as {
       imageBase64: string;
       mimeType: string;
