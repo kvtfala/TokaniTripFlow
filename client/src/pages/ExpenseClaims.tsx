@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { ClaimWizard } from "@/components/expenses/ClaimWizard";
 import type { ExpenseClaim } from "@shared/types";
 import {
@@ -21,12 +27,12 @@ import {
   Receipt,
   Search,
   ExternalLink,
-  ChevronRight,
   Clock,
   CheckCircle,
   XCircle,
   DollarSign,
   FileText,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -49,11 +55,12 @@ function StatusBadge({ status }: { status: ExpenseClaim["status"] }) {
   );
 }
 
-function ClaimCard({ claim }: { claim: ExpenseClaim }) {
+function ClaimCard({ claim, onClick }: { claim: ExpenseClaim; onClick: () => void }) {
   return (
     <div
-      className="flex items-center justify-between gap-4 p-4 rounded-md border border-border hover-elevate"
+      className="flex items-center justify-between gap-4 p-4 rounded-md border border-border hover-elevate cursor-pointer"
       data-testid={`claim-card-${claim.id}`}
+      onClick={onClick}
     >
       <div className="flex items-start gap-3 min-w-0">
         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -86,11 +93,7 @@ function ClaimCard({ claim }: { claim: ExpenseClaim }) {
         <div className="block sm:hidden">
           <StatusBadge status={claim.status} />
         </div>
-        <Link href={`/requests/${claim.requestId}`}>
-          <Button size="icon" variant="ghost" data-testid={`button-view-request-${claim.id}`}>
-            <ExternalLink className="w-4 h-4" />
-          </Button>
-        </Link>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
       </div>
     </div>
   );
@@ -115,10 +118,130 @@ function StatCard({ label, value, icon: Icon, sub }: { label: string; value: str
   );
 }
 
+function ClaimDetailSheet({ claim, onClose }: { claim: ExpenseClaim; onClose: () => void }) {
+  const cfg = STATUS_CONFIG[claim.status] || STATUS_CONFIG.draft;
+  return (
+    <Sheet open onOpenChange={v => { if (!v) onClose(); }}>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto" data-testid="sheet-claim-detail">
+        <SheetHeader className="pb-4">
+          <SheetTitle className="flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-primary" />
+            Claim Details
+          </SheetTitle>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-sm font-semibold" data-testid="text-sheet-tcl">
+              {claim.tclNumber ?? claim.id}
+            </p>
+            <StatusBadge status={claim.status} />
+          </div>
+        </SheetHeader>
+
+        <div className="space-y-5">
+          {/* Summary */}
+          <div className="rounded-md border border-border p-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Employee</span>
+              <span className="font-medium">{claim.employeeName}</span>
+            </div>
+            {claim.travelRequestRef && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Trip (TTR)</span>
+                <span className="font-medium">{claim.travelRequestRef}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Currency</span>
+              <span>{claim.currency}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Submitted</span>
+              <span>{claim.submittedAt ? format(new Date(claim.submittedAt), "d MMM yyyy") : "Not yet submitted"}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-semibold">
+              <span>Total</span>
+              <span>{claim.currency} {claim.totalAmount.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Line Items */}
+          <div>
+            <p className="text-sm font-semibold mb-2">
+              Line Items ({claim.lineItems.length})
+            </p>
+            <div className="space-y-2">
+              {claim.lineItems.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-3 rounded-md border border-border p-3 text-sm"
+                  data-testid={`line-item-${i}`}
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{item.merchant || item.category}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.category}
+                      {item.date ? ` · ${format(new Date(item.date), "d MMM yyyy")}` : ""}
+                    </p>
+                    {item.description && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.description}</p>
+                    )}
+                  </div>
+                  <p className="font-semibold shrink-0">{claim.currency} {item.amount.toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Review Notes */}
+          {claim.reviewNotes && (
+            <div className="rounded-md border border-border p-3 text-sm space-y-1">
+              <p className="font-medium text-muted-foreground">Review Note</p>
+              <p>{claim.reviewNotes}</p>
+            </div>
+          )}
+
+          {/* Approval Info */}
+          {(claim.status === "approved" || claim.status === "paid") && (
+            <div className="rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 text-sm space-y-1">
+              <p className="font-medium flex items-center gap-2 text-green-700 dark:text-green-400">
+                <CheckCircle className="w-4 h-4" />
+                {claim.status === "paid" ? "Paid" : "Approved"}
+              </p>
+              {claim.reviewedBy && <p className="text-muted-foreground">by {claim.reviewedBy}</p>}
+              {claim.reviewedAt && <p className="text-muted-foreground">{format(new Date(claim.reviewedAt), "d MMM yyyy")}</p>}
+            </div>
+          )}
+
+          {claim.status === "rejected" && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm space-y-1">
+              <p className="font-medium text-destructive flex items-center gap-2">
+                <XCircle className="w-4 h-4" />
+                Rejected
+              </p>
+              {claim.reviewedBy && <p className="text-muted-foreground">by {claim.reviewedBy}</p>}
+            </div>
+          )}
+
+          {/* Link to trip */}
+          {claim.requestId && (
+            <Link href={`/requests/${claim.requestId}`}>
+              <Button variant="outline" className="w-full" data-testid="button-view-trip">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View Trip ({claim.travelRequestRef ?? claim.requestId})
+              </Button>
+            </Link>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export default function ExpenseClaims() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedClaim, setSelectedClaim] = useState<ExpenseClaim | null>(null);
 
   const { data: claims = [], isLoading } = useQuery<ExpenseClaim[]>({
     queryKey: ["/api/expense-claims"],
@@ -128,6 +251,7 @@ export default function ExpenseClaims() {
     const matchStatus = statusFilter === "all" || c.status === statusFilter;
     const matchSearch =
       !search ||
+      (c.tclNumber ?? "").toLowerCase().includes(search.toLowerCase()) ||
       (c.travelRequestRef || c.requestId).toLowerCase().includes(search.toLowerCase()) ||
       c.employeeName.toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
@@ -167,7 +291,7 @@ export default function ExpenseClaims() {
             <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search claims..."
+                placeholder="Search by TCL #, TTR #, or name..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="pl-9"
@@ -214,7 +338,13 @@ export default function ExpenseClaims() {
               )}
             </div>
           ) : (
-            filtered.map(claim => <ClaimCard key={claim.id} claim={claim} />)
+            filtered.map(claim => (
+              <ClaimCard
+                key={claim.id}
+                claim={claim}
+                onClick={() => setSelectedClaim(claim)}
+              />
+            ))
           )}
         </CardContent>
       </Card>
@@ -223,6 +353,13 @@ export default function ExpenseClaims() {
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}
       />
+
+      {selectedClaim && (
+        <ClaimDetailSheet
+          claim={selectedClaim}
+          onClose={() => setSelectedClaim(null)}
+        />
+      )}
     </div>
   );
 }
