@@ -9,7 +9,7 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### UI/UX Decisions
-The system features a mobile-first responsive design with 44px touch targets, professional aesthetics, and progressive enhancement for offline UX. The UI includes a personalized dashboard, comprehensive "MyTrips" and "Approvals Workflow" pages with advanced search/filtering/sorting, and a unified "Reports" page (replacing separate Analytics and Finance Export pages) that consolidates trend analysis, transaction detail, cost analysis, and multi-format data export. A multi-step wizard guides travel request creation, and a "Travel Watch" dashboard provides KPI summaries and alerts.
+The system features a mobile-first responsive design with 44px touch targets, professional aesthetics, and progressive enhancement for offline UX. The UI includes a personalized dashboard, comprehensive "MyTrips" and "Approvals Workflow" pages with advanced search/filtering/sorting, and a unified "Reports" page (replacing separate Analytics and Finance Export pages) that consolidates trend analysis, transaction detail, cost analysis, and multi-format data export. A multi-step wizard guides travel request creation, and a "Travel Command Centre" provides a full duty-of-care dashboard — interactive world map, live GDACS threat feed, real-time weather, welfare alerts, 14-day Gantt timeline, and destination roster.
 
 **Design System (Tokani Official Brand - v3.0):**
 - **Typography:** Inter font family loaded from Google Fonts with defined type scale (H1: 32px, H2: 26px, H3: 20px, Body: 16px)

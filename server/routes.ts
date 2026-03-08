@@ -1594,6 +1594,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ extractedData });
   }));
 
+  // ──────────────────────────────────────────────────────────────────────
+  // THREAT FEED — GDACS RSS Proxy (15-min cache)
+  // ──────────────────────────────────────────────────────────────────────
+  let threatFeedCache: { data: GdacsEvent[]; fetchedAt: Date } | null = null;
+
+  interface GdacsEvent {
+    id: string;
+    title: string;
+    description: string;
+    alertLevel: "Green" | "Orange" | "Red";
+    eventType: string;
+    country: string;
+    lat: number;
+    lng: number;
+    publishedAt: string;
+  }
+
+  app.get("/api/threat-feed", asyncHandler(async (req, res) => {
+    const now = new Date();
+    const CACHE_TTL_MS = 15 * 60 * 1000;
+
+    if (threatFeedCache && (now.getTime() - threatFeedCache.fetchedAt.getTime()) < CACHE_TTL_MS) {
+      return res.json({ events: threatFeedCache.data, cachedAt: threatFeedCache.fetchedAt, cached: true });
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch("https://www.gdacs.org/xml/rss.xml", { signal: controller.signal });
+      clearTimeout(timeout);
+      const xml = await response.text();
+
+      const { parseStringPromise } = await import("xml2js");
+      const result = await parseStringPromise(xml, { explicitArray: false });
+      const rawItems = result?.rss?.channel?.item || [];
+      const itemArray: any[] = Array.isArray(rawItems) ? rawItems : [rawItems];
+
+      const events: GdacsEvent[] = itemArray.slice(0, 30).map((item: any, idx: number) => ({
+        id: `gdacs-${idx}-${Date.now()}`,
+        title: String(item.title || ""),
+        description: String(item.description || ""),
+        alertLevel: (String(item["gdacs:alertlevel"] || "Green")) as "Green" | "Orange" | "Red",
+        eventType: String(item["gdacs:eventtype"] || "EQ"),
+        country: String(item["gdacs:country"] || ""),
+        lat: parseFloat(String(item["geo:lat"] || "0")),
+        lng: parseFloat(String(item["geo:long"] || "0")),
+        publishedAt: String(item.pubDate || new Date().toISOString()),
+      }));
+
+      threatFeedCache = { data: events, fetchedAt: now };
+      return res.json({ events, cachedAt: now, cached: false });
+    } catch (err) {
+      if (threatFeedCache) {
+        return res.json({ events: threatFeedCache.data, cachedAt: threatFeedCache.fetchedAt, cached: true, error: "Using cached data" });
+      }
+      return res.status(503).json({ error: "Unable to fetch threat feed", events: [] });
+    }
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // TRAVEL ADVISORIES — DFAT Smartraveller (curated static dataset)
+  // ──────────────────────────────────────────────────────────────────────
+  const TRAVEL_ADVISORIES: Record<string, { level: 1 | 2 | 3 | 4; name: string; summary: string }> = {
+    "Australia":          { level: 1, name: "Australia",          summary: "Exercise normal precautions." },
+    "New Zealand":        { level: 1, name: "New Zealand",        summary: "Exercise normal precautions." },
+    "Fiji":               { level: 1, name: "Fiji",               summary: "Exercise normal precautions. Petty crime in urban areas. Cyclone season Nov–Apr." },
+    "Samoa":              { level: 1, name: "Samoa",              summary: "Exercise normal precautions. Cyclone season Nov–Apr." },
+    "Tonga":              { level: 1, name: "Tonga",              summary: "Exercise normal precautions. Volcanic and cyclone risk." },
+    "Cook Islands":       { level: 1, name: "Cook Islands",       summary: "Exercise normal precautions." },
+    "Niue":               { level: 1, name: "Niue",               summary: "Exercise normal precautions." },
+    "Kiribati":           { level: 1, name: "Kiribati",           summary: "Exercise normal precautions." },
+    "Vanuatu":            { level: 2, name: "Vanuatu",            summary: "Exercise a high degree of caution. Petty crime, volcanic activity, and cyclone risk." },
+    "Solomon Islands":    { level: 2, name: "Solomon Islands",    summary: "Exercise a high degree of caution. High crime rate; avoid isolated areas after dark." },
+    "Papua New Guinea":   { level: 3, name: "Papua New Guinea",   summary: "Reconsider your need to travel. High crime, civil unrest, and limited emergency services." },
+    "Indonesia":          { level: 2, name: "Indonesia",          summary: "Exercise a high degree of caution. Terrorism risk, natural disasters, petty crime." },
+    "Philippines":        { level: 2, name: "Philippines",        summary: "Exercise a high degree of caution. Crime, terrorism and kidnapping risk in some regions." },
+    "Singapore":          { level: 1, name: "Singapore",          summary: "Exercise normal precautions." },
+    "Japan":              { level: 1, name: "Japan",              summary: "Exercise normal precautions. Be aware of earthquake and tsunami risk." },
+    "Thailand":           { level: 2, name: "Thailand",           summary: "Exercise a high degree of caution. Civil unrest possible. Southern border regions avoid." },
+    "India":              { level: 2, name: "India",              summary: "Exercise a high degree of caution. Crime, civil unrest, terrorism risk in some areas." },
+    "China":              { level: 2, name: "China",              summary: "Exercise a high degree of caution. Arbitrary detention risk for some nationalities." },
+    "Hong Kong":          { level: 2, name: "Hong Kong",          summary: "Exercise a high degree of caution. Public order laws carry strict penalties." },
+    "Taiwan":             { level: 2, name: "Taiwan",             summary: "Exercise a high degree of caution due to cross-strait geopolitical tensions." },
+    "Malaysia":           { level: 1, name: "Malaysia",           summary: "Exercise normal precautions." },
+    "South Korea":        { level: 1, name: "South Korea",        summary: "Exercise normal precautions." },
+    "United States":      { level: 1, name: "United States",      summary: "Exercise normal precautions." },
+    "United Kingdom":     { level: 1, name: "United Kingdom",     summary: "Exercise normal precautions." },
+    "United Arab Emirates": { level: 1, name: "United Arab Emirates", summary: "Exercise normal precautions." },
+    "Canada":             { level: 1, name: "Canada",             summary: "Exercise normal precautions." },
+    "France":             { level: 2, name: "France",             summary: "Exercise a high degree of caution. Terrorism risk." },
+    "Germany":            { level: 1, name: "Germany",            summary: "Exercise normal precautions." },
+    "Myanmar":            { level: 4, name: "Myanmar",            summary: "Do not travel. Civil war, arbitrary detention, terrorism risk." },
+    "Russia":             { level: 4, name: "Russia",             summary: "Do not travel. Armed conflict, arbitrary detention risk." },
+    "Ukraine":            { level: 4, name: "Ukraine",            summary: "Do not travel. Ongoing armed conflict." },
+    "North Korea":        { level: 4, name: "North Korea",        summary: "Do not travel. Arbitrary detention, no consular access." },
+    "Afghanistan":        { level: 4, name: "Afghanistan",        summary: "Do not travel. Extreme terrorism, civil unrest, kidnapping risk." },
+    "Iran":               { level: 4, name: "Iran",               summary: "Do not travel. Arbitrary detention, terrorism risk." },
+    "Sudan":              { level: 4, name: "Sudan",              summary: "Do not travel. Armed conflict, civil unrest." },
+  };
+
+  app.get("/api/travel-advisories", (_req, res) => {
+    res.json({
+      advisories: TRAVEL_ADVISORIES,
+      source: "Australian DFAT Smartraveller",
+      lastReviewed: "2026-02-28",
+      disclaimer: "Advisory levels curated from DFAT Smartraveller. For the most current information, visit smartraveller.gov.au",
+    });
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -110,6 +110,11 @@ export interface TravelRequest {
   // Tokenized approval (Phase 3)
   approvalToken?: string;           // HMAC-signed token for manager email link
   approvalTokenExpiry?: string;     // ISO date string
+
+  // Traveler welfare fields (Travel Command Centre)
+  emergencyContactName?: string;    // Name of emergency contact
+  emergencyContactPhone?: string;   // Phone number of emergency contact
+  countryRiskLevel?: "low" | "medium" | "high"; // DFAT advisory level for destination
 }
 
 export interface TravelQuote {
