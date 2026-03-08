@@ -81,6 +81,7 @@ export default function Reports() {
   const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [department, setDepartment] = useState("all");
   const [costCentre, setCostCentre] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   const [sortKey, setSortKey] = useState<SortKey>("submittedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -471,94 +472,117 @@ export default function Reports() {
       </div>
 
       {/* Shared Filter Bar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Filter className="w-4 h-4" />
-              Filters
-            </div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-                className="w-36"
-                data-testid="input-report-start-date"
-              />
-              <span className="text-sm text-muted-foreground">to</span>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-                className="w-36"
-                data-testid="input-report-end-date"
-              />
-            </div>
-            <Select
-              value={department}
-              onValueChange={(v) => { setDepartment(v); setPage(1); }}
+      {(() => {
+        const activeFilterCount = [department !== "all", costCentre !== "all"].filter(Boolean).length;
+        return (
+          <Card>
+            <button
+              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover-elevate rounded-xl"
+              onClick={() => setShowFilters(v => !v)}
+              data-testid="button-toggle-filters"
+              aria-expanded={showFilters}
             >
-              <SelectTrigger className="w-44" data-testid="select-report-department">
-                <SelectValue placeholder="All departments" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All departments</SelectItem>
-                {departments.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={costCentre}
-              onValueChange={(v) => { setCostCentre(v); setPage(1); }}
-            >
-              <SelectTrigger className="w-44" data-testid="select-report-cost-centre">
-                <SelectValue placeholder="All cost centres" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All cost centres</SelectItem>
-                {costCentres.map((cc) => (
-                  <SelectItem key={cc.code} value={cc.code}>
-                    {cc.code} — {cc.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-1.5 flex-wrap">
-              {(["7d", "30d", "90d", "6m", "1y"] as const).map((p) => (
-                <Button
-                  key={p}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDatePreset(p)}
-                  data-testid={`button-preset-${p}`}
-                >
-                  {p === "7d" ? "7 days" : p === "30d" ? "30 days" : p === "90d" ? "90 days" : p === "6m" ? "6 months" : "1 year"}
-                </Button>
-              ))}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="gap-1.5"
-              data-testid="button-clear-filters"
-            >
-              <X className="w-3 h-3" />
-              Reset
-            </Button>
-          </div>
-          {!isValidDateRange && (
-            <Alert variant="destructive" className="mt-3">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Invalid date range — end date must be after start date.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="text-xs px-1.5 py-0" data-testid="badge-active-filter-count">
+                    {activeFilterCount} active
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <span>{showFilters ? "Hide" : "Show"}</span>
+                {showFilters ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </div>
+            </button>
+            {showFilters && (
+              <CardContent className="pt-0 pb-4 px-4 border-t">
+                <div className="flex flex-wrap items-end gap-3 pt-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                      className="w-36"
+                      data-testid="input-report-start-date"
+                    />
+                    <span className="text-sm text-muted-foreground">to</span>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                      className="w-36"
+                      data-testid="input-report-end-date"
+                    />
+                  </div>
+                  <Select
+                    value={department}
+                    onValueChange={(v) => { setDepartment(v); setPage(1); }}
+                  >
+                    <SelectTrigger className="w-44" data-testid="select-report-department">
+                      <SelectValue placeholder="All departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All departments</SelectItem>
+                      {departments.map((d) => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={costCentre}
+                    onValueChange={(v) => { setCostCentre(v); setPage(1); }}
+                  >
+                    <SelectTrigger className="w-44" data-testid="select-report-cost-centre">
+                      <SelectValue placeholder="All cost centres" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All cost centres</SelectItem>
+                      {costCentres.map((cc) => (
+                        <SelectItem key={cc.code} value={cc.code}>
+                          {cc.code} — {cc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {(["7d", "30d", "90d", "6m", "1y"] as const).map((p) => (
+                      <Button
+                        key={p}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDatePreset(p)}
+                        data-testid={`button-preset-${p}`}
+                      >
+                        {p === "7d" ? "7 days" : p === "30d" ? "30 days" : p === "90d" ? "90 days" : p === "6m" ? "6 months" : "1 year"}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="gap-1.5"
+                    data-testid="button-clear-filters"
+                  >
+                    <X className="w-3 h-3" />
+                    Reset
+                  </Button>
+                </div>
+                {!isValidDateRange && (
+                  <Alert variant="destructive" className="mt-3">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Invalid date range — end date must be after start date.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        );
+      })()}
 
       {/* Tabs */}
       <Tabs defaultValue="overview">

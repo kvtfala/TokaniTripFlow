@@ -157,7 +157,7 @@ function Router() {
   const [showSplash, setShowSplash] = useState(false);
 
   const style = {
-    "--sidebar-width": "11rem",
+    "--sidebar-width": "13rem",
     "--sidebar-width-icon": "3rem",
   };
 

@@ -40,7 +40,7 @@ html, body {
 
   --sidebar-border: 228 32% 20%;  /* Dark borders */
 
-  --sidebar-primary: 351 75% 56%;  /* Primary Red (#E53950) */
+  --sidebar-primary: 211 72% 48%;  /* Primary Blue (#2274D1) */
 
   --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
@@ -48,7 +48,7 @@ html, body {
 
   --sidebar-accent-foreground: 0 0% 98%;  /* Near-white text */
 
-  --sidebar-ring: 351 75% 56%;  /* Primary Red ring */
+  --sidebar-ring: 211 72% 48%;  /* Primary Blue ring */
 
   --popover: 0 0% 100%;  /* White popovers */
 
@@ -56,11 +56,11 @@ html, body {
 
   --popover-border: 0 0% 90%;  /* Light grey border */
 
-  --primary: 351 75% 56%;  /* Primary Red for CTAs (#E53950) */
+  --primary: 211 72% 48%;  /* Primary Blue for CTAs (#2274D1) */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
+  --secondary: 189 75% 48%;  /* Teal Accent (#1FBED6) */
 
   --secondary-foreground: 0 0% 100%;  /* White text */
 
@@ -68,7 +68,7 @@ html, body {
 
   --muted-foreground: 0 0% 50%;  /* Medium grey for labels */
 
-  --accent: 211 72% 48%;  /* Blue Accent (#2274D1) */
+  --accent: 189 75% 48%;  /* Teal Highlight (#1FBED6) */
 
   --accent-foreground: 0 0% 100%;  /* White text */
 
@@ -89,21 +89,21 @@ html, body {
   --neutral-foreground: 0 0% 10%;  /* Dark grey text */
 
   --input: 0 0% 85%;  /* Light grey for inputs */
-  --ring: 351 75% 56%;  /* Primary Red ring for focus */
+  --ring: 211 72% 48%;  /* Primary Blue ring for focus */
   
   /* Chart colors - TTF Official theme */
-  --chart-1: 351 75% 56%;  /* Primary Red */
-  --chart-2: 211 72% 48%;  /* Blue Accent */
-  --chart-3: 342 100% 65%;  /* Magenta Accent */
-  --chart-4: 145 63% 42%;  /* Success Green */
+  --chart-1: 211 72% 48%;  /* Primary Blue */
+  --chart-2: 189 75% 48%;  /* Teal Accent */
+  --chart-3: 145 63% 42%;  /* Success Green */
+  --chart-4: 28 87% 62%;   /* Warning Orange */
   --chart-5: 228 56% 16%;  /* Primary Navy */
 
   /* TTF Official Brand Colors - Logo Palette */
-  --ttf-blue: 211 72% 48%;  /* Blue Accent (#2274D1) */
+  --ttf-blue: 211 72% 48%;  /* Blue Primary (#2274D1) */
   --ttf-navy: 228 56% 16%;  /* Primary Navy (#111B3F) */
-  --ttf-aqua: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
+  --ttf-aqua: 189 75% 48%;  /* Teal Accent (#1FBED6) */
   --ttf-light-sky: 0 0% 98%;  /* Light background for accents */
-  --ttf-red: 351 75% 56%;  /* Primary Red (#E53950) */
+  --ttf-red: 351 75% 56%;  /* Brand Red (#E53950) — destructive/reject states only */
 
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, serif;
@@ -200,7 +200,7 @@ html, body {
 
   --sidebar-border: 228 32% 20%;  /* Dark borders */
 
-  --sidebar-primary: 351 75% 56%;  /* Primary Red (#E53950) */
+  --sidebar-primary: 211 72% 48%;  /* Primary Blue (#2274D1) */
 
   --sidebar-primary-foreground: 0 0% 100%;  /* White text */
 
@@ -208,7 +208,7 @@ html, body {
 
   --sidebar-accent-foreground: 0 0% 98%;  /* Near-white text */
 
-  --sidebar-ring: 351 75% 56%;  /* Primary Red ring */
+  --sidebar-ring: 211 72% 48%;  /* Primary Blue ring */
 
   --popover: 228 32% 17%;  /* Dark Navy popover */
 
@@ -216,11 +216,11 @@ html, body {
 
   --popover-border: 228 32% 25%;  /* Dark border */
 
-  --primary: 351 75% 56%;  /* Primary Red for CTAs (#E53950) */
+  --primary: 211 72% 48%;  /* Primary Blue for CTAs (#2274D1) */
 
   --primary-foreground: 0 0% 100%;  /* White text */
 
-  --secondary: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
+  --secondary: 189 75% 48%;  /* Teal Accent (#1FBED6) */
 
   --secondary-foreground: 0 0% 100%;  /* White text */
 
@@ -228,7 +228,7 @@ html, body {
 
   --muted-foreground: 214 16% 75%;  /* Soft grey (#A0AEC0) */
 
-  --accent: 211 72% 48%;  /* Blue Accent (#2274D1) */
+  --accent: 189 75% 48%;  /* Teal Highlight (#1FBED6) */
 
   --accent-foreground: 0 0% 100%;  /* White text */
 
@@ -249,21 +249,21 @@ html, body {
   --neutral-foreground: 0 0% 100%;  /* White text */
 
   --input: 228 32% 25%;  /* Medium navy-grey inputs */
-  --ring: 351 75% 56%;  /* Primary Red ring for focus */
+  --ring: 211 72% 48%;  /* Primary Blue ring for focus */
   
   /* Chart colors - TTF Official theme (dark mode) */
-  --chart-1: 351 75% 56%;  /* Primary Red */
-  --chart-2: 211 72% 48%;  /* Blue Accent */
-  --chart-3: 342 100% 65%;  /* Magenta Accent */
-  --chart-4: 145 63% 50%;  /* Success Green */
-  --chart-5: 228 56% 35%;  /* Lighter Navy */
+  --chart-1: 211 72% 55%;  /* Primary Blue (brighter for dark) */
+  --chart-2: 189 75% 55%;  /* Teal Accent (brighter for dark) */
+  --chart-3: 145 63% 50%;  /* Success Green */
+  --chart-4: 28 87% 68%;   /* Warning Orange */
+  --chart-5: 228 56% 45%;  /* Lighter Navy */
 
   /* TTF Official Brand Colors - Dark Mode - Logo Palette */
-  --ttf-blue: 211 72% 48%;  /* Blue Accent (#2274D1) */
+  --ttf-blue: 211 72% 55%;  /* Blue Primary (brighter for dark) */
   --ttf-navy: 228 56% 16%;  /* Primary Navy (#111B3F) */
-  --ttf-aqua: 342 100% 65%;  /* Magenta Accent (#FF4F81) */
+  --ttf-aqua: 189 75% 55%;  /* Teal Accent (brighter for dark) */
   --ttf-light-sky: 228 32% 17%;  /* Card background for accents */
-  --ttf-red: 351 75% 56%;  /* Primary Red (#E53950) */
+  --ttf-red: 351 75% 56%;  /* Brand Red — destructive/reject states only */
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.20);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);

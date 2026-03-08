@@ -185,6 +185,40 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── Quick Access ── */}
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Quick Access</h2>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {([
+            { icon: IconTrips, title: "My Trips", description: "View and manage all your travel requests", href: "/my-trips" },
+            { icon: IconApprovals, title: "Approvals", description: "Review and action pending travel approvals", href: "/approvals" },
+            { icon: IconExpense, title: "Expenses", description: "Submit claims and upload receipts", href: "/expenses" },
+            { icon: IconReports, title: "Reports", description: "Analytics, exports and financial overview", href: "/reports" },
+            { icon: IconDutyOfCare, title: "Travel Watch", description: "Live traveler welfare and threat monitoring", href: "/travel-watch" },
+            { icon: IconFlights, title: "New Request", description: "Submit a new travel request for approval", href: "/request/new" },
+          ] as { icon: React.FC<TokaniIconProps>; title: string; description: string; href: string }[]).map((mod) => (
+            <Link key={mod.href} href={mod.href}>
+              <Card className="hover-elevate cursor-pointer h-full" data-testid={`quickaccess-${mod.title.toLowerCase().replace(/\s+/g, "-")}`}>
+                <CardContent className="p-5 flex flex-col items-start gap-3 h-full">
+                  <mod.icon size={40} accentColor="#1FBED6" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm">{mod.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{mod.description}</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span>Open</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* ── Workflow Pipeline ── */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
@@ -364,39 +398,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Quick Access ── */}
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Quick Access</h2>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {([
-            { icon: IconTrips, title: "My Trips", description: "View and manage all your travel requests", href: "/my-trips" },
-            { icon: IconApprovals, title: "Approvals", description: "Review and action pending travel approvals", href: "/approvals" },
-            { icon: IconExpense, title: "Expenses", description: "Submit claims and upload receipts", href: "/expenses" },
-            { icon: IconReports, title: "Reports", description: "Analytics, exports and financial overview", href: "/reports" },
-            { icon: IconDutyOfCare, title: "Travel Watch", description: "Live traveler welfare and threat monitoring", href: "/travel-watch" },
-            { icon: IconFlights, title: "New Request", description: "Submit a new travel request for approval", href: "/request/new" },
-          ] as { icon: React.FC<TokaniIconProps>; title: string; description: string; href: string }[]).map((mod) => (
-            <Link key={mod.href} href={mod.href}>
-              <Card className="hover-elevate cursor-pointer h-full" data-testid={`quickaccess-${mod.title.toLowerCase().replace(/\s+/g, "-")}`}>
-                <CardContent className="p-5 flex flex-col items-start gap-3 h-full">
-                  <mod.icon size={40} accentColor="#1FBED6" />
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">{mod.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{mod.description}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <span>Open</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

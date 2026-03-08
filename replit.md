@@ -14,7 +14,7 @@ The system features a mobile-first responsive design with 44px touch targets, pr
 **Design System (Tokani Official Brand - v3.0):**
 - **Typography:** Inter font family loaded from Google Fonts with defined type scale (H1: 32px, H2: 26px, H3: 20px, Body: 16px)
 - **Spacing:** 8px rhythm system (4px, 8px, 12px, 16px, 20px, 24px, 32px, 40px) with ttf-* spacing utilities
-- **Colors:** Centralized ttf-* brand color classes (ttf-blue #0057B8, ttf-navy #002A52, ttf-aqua #1FBED6, ttf-light-sky #EAF7FF)
+- **Colors:** Centralized ttf-* brand color classes — Primary Blue #2274D1 (`--primary`), Navy #111B3F (`--sidebar`/`--ttf-navy`), Teal #1FBED6 (`--secondary`/`--accent`/`--ttf-aqua`). Brand Red #E53950 reserved for destructive/rejection states only. CSS token `--ttf-aqua` correctly maps to actual Teal (#1FBED6). Chart colors: Blue → Teal → Green → Orange → Navy.
 - **Components:** Buttons use rounded-full, Cards use rounded-2xl, Inputs use rounded-lg for consistent enterprise aesthetic
 - **Accessibility:** WCAG 2.1 AA compliant with verified contrast ratios (≥4.5:1 for body text, ≥5.2:1 for white text on gradients)
 - **Documentation:** Comprehensive design guidelines in design_guidelines.md covering typography, layout, spacing, components, and accessibility rules

@@ -14,29 +14,38 @@
 
 ### Primary Brand Colors
 
-**Tokani Blue (Primary)**
-- Hex: `#0057B8`
-- HSL: `212 100% 36%`
-- Usage: Primary actions, main brand color, CTAs
+**Tokani Blue (Primary — CTAs & interactive states)**
+- Hex: `#2274D1`
+- HSL: `211 72% 48%`
+- Usage: All primary CTA buttons, focus rings, active nav states, chart series 1
 - Classes: `bg-primary`, `text-primary`, `bg-ttf-blue`, `text-ttf-blue`
+- CSS token: `--primary: 211 72% 48%`
 
-**Navy (Dark Accent)**
-- Hex: `#002A52`
-- HSL: `212 100% 16%`
-- Usage: Headers, dark text, professional accents
+**Navy (Dark Accent — sidebar & headers)**
+- Hex: `#111B3F`
+- HSL: `228 56% 16%`
+- Usage: Sidebar background, page header text, dark surface
 - Classes: `bg-ttf-navy`, `text-ttf-navy`
+- CSS token: `--ttf-navy: 228 56% 16%`
 
-**Aqua (Secondary)**
+**Teal / Aqua (Secondary — highlights & accents)**
 - Hex: `#1FBED6`
 - HSL: `189 75% 48%`
-- Usage: Secondary actions, highlights, success states
-- Classes: `bg-secondary`, `text-secondary`, `bg-ttf-aqua`, `text-ttf-aqua`
+- Usage: Secondary actions, icon accents, chart series 2, hover highlights
+- Classes: `bg-secondary`, `text-secondary`, `bg-accent`, `bg-ttf-aqua`, `text-ttf-aqua`
+- CSS token: `--secondary: 189 75% 48%`, `--accent: 189 75% 48%`, `--ttf-aqua: 189 75% 48%`
 
 **Light Sky (Backgrounds)**
-- Hex: `#EAF7FF`
-- HSL: `200 100% 97%`
-- Usage: Sidebar backgrounds, subtle sections
-- Classes: `bg-ttf-light-sky`
+- Hex: `#FAFAFA`
+- HSL: `0 0% 98%`
+- Usage: Page backgrounds, subtle sections
+- Classes: `bg-ttf-light-sky`, `bg-background`
+
+**Brand Red (Destructive & rejection states ONLY)**
+- Hex: `#E53950`
+- HSL: `351 75% 56%`
+- Usage: Reject buttons, rejected status badges, delete actions, error states ONLY. Never use as a primary CTA colour.
+- CSS token: `--ttf-red: 351 75% 56%`, `--destructive: 0 79% 63%`
 
 ### Semantic Colors
 
