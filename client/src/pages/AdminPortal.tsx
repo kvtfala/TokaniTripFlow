@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Package, Mail, DollarSign, FileText, GitBranch, Bell, History } from "lucide-react";
+import { IconSettings } from "@/components/icons/TokaniIcons";
 import { useRole } from "@/contexts/RoleContext";
 import { Redirect } from "wouter";
 import { VendorManagement } from "@/components/admin/VendorManagement";
@@ -37,8 +38,11 @@ export default function AdminPortal() {
   return (
     <div className="container mx-auto p-6 max-w-7xl" data-testid="page-admin-portal">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Portal</h1>
-        <p className="text-muted-foreground mt-2">
+        <div className="flex items-center gap-3 mb-1">
+          <IconSettings size={36} accentColor="#1FBED6" />
+          <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-admin-portal">Admin Portal</h1>
+        </div>
+        <p className="text-muted-foreground mt-1">
           Manage system configuration, content, and compliance settings
         </p>
       </div>

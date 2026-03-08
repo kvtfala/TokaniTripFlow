@@ -29,6 +29,7 @@ import {
   ArrowRight, Filter, X, FileBarChart, Receipt, CheckCircle, XCircle,
   ChevronRight, Loader2, Eye,
 } from "lucide-react";
+import { IconReports } from "@/components/icons/TokaniIcons";
 import {
   format, subDays, subMonths, isWithinInterval,
   startOfMonth, endOfMonth, eachMonthOfInterval,
@@ -460,7 +461,10 @@ export default function Reports() {
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Reports</h1>
+        <div className="flex items-center gap-3 mb-1">
+          <IconReports size={36} accentColor="#1FBED6" />
+          <h1 className="text-3xl font-bold" data-testid="heading-reports">Reports</h1>
+        </div>
         <p className="text-muted-foreground">
           Travel analytics, transaction detail, and accounting exports
         </p>

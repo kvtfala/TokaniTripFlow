@@ -26,6 +26,7 @@ import {
   Filter, X, Eye, ArrowUpDown, ArrowUp, ArrowDown,
   DollarSign, FileText, CheckCircle2,
 } from "lucide-react";
+import { IconApprovals } from "@/components/icons/TokaniIcons";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -307,7 +308,10 @@ export default function Approvals() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Approvals</h1>
+          <div className="flex items-center gap-3">
+            <IconApprovals size={36} accentColor="#1FBED6" />
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-approvals">Approvals</h1>
+          </div>
           <p className="text-muted-foreground mt-1">
             Review and action pending travel requests
             {isSuperAdmin && (
@@ -559,14 +563,21 @@ export default function Approvals() {
         <TabsContent value={tab} className="mt-4">
           {processedRequests.length === 0 ? (
             <Card>
-              <CardContent className="p-12 text-center space-y-3">
-                <CheckCircle className="w-10 h-10 mx-auto text-muted-foreground opacity-40" />
-                <p className="text-muted-foreground font-medium">
+              <CardContent className="p-12 text-center space-y-3" data-testid="empty-state-approvals">
+                <IconApprovals size={56} accentColor="#1FBED6" className="mx-auto opacity-40" />
+                <h3 className="font-semibold text-base mt-3">
                   {tab === "pending"
-                    ? "No pending approvals — you're all caught up!"
+                    ? "No pending approvals"
                     : tab === "awaiting_quotes"
                     ? "No requests awaiting vendor quotes"
                     : "No actionable requests found"}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {tab === "pending"
+                    ? "All caught up — no requests need your attention right now"
+                    : tab === "awaiting_quotes"
+                    ? "Requests awaiting vendor quotes will appear here"
+                    : "All travel requests are up to date"}
                 </p>
               </CardContent>
             </Card>

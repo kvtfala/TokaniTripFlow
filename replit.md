@@ -19,6 +19,16 @@ The system features a mobile-first responsive design with 44px touch targets, pr
 - **Accessibility:** WCAG 2.1 AA compliant with verified contrast ratios (≥4.5:1 for body text, ≥5.2:1 for white text on gradients)
 - **Documentation:** Comprehensive design guidelines in design_guidelines.md covering typography, layout, spacing, components, and accessibility rules
 
+**Custom Icon Library (TokaniIcons v1.0):**
+- `client/src/components/icons/TokaniIcons.tsx` — 19 travel-domain SVG React components
+- Icons: Dashboard, Trips, Travellers, Approvals, TravelPolicies, Flights, Hotels, Expense, Transport, Documents, Alerts, Reports, Teams, DutyOfCare, Messages, Calendar, Upload, Settings, Search
+- Props: `size` (default 24), `strokeWidth` (default 1.5), `accentColor` (default `#1FBED6`), `className`
+- Dual-tone style: `currentColor` for structural strokes (adapts to light/dark mode), `accentColor` for teal accent elements
+- Exported as named components + `TOKANI_ICONS` record map
+- Used in: sidebar navigation (App.tsx), page headers (all main pages), Quick Access grid (Home.tsx), empty states (MyTrips, Approvals, ExpenseClaims)
+- Sidebar: active item at full opacity, inactive at opacity-60; both use `accentColor="#1FBED6"`
+- Home dashboard has a 3×2 "Quick Access" branded card grid using TokaniIcons at 40px
+
 ### Technical Implementations
 The frontend uses React with TypeScript, Vite, TailwindCSS, Wouter for routing, Radix UI for primitives, and shadcn/ui for components. State management and data fetching are handled by TanStack Query, while forms use react-hook-form with Zod validation. The backend is built with Express.js and TypeScript, following a RESTful API design. It implements business logic for per-diem calculations, visa checks, multi-level configurable approval flows, delegation, budget validation, and immutable audit trails. The Admin Portal features comprehensive CRUD operations across seven sections (Vendor, Email Template, Per Diem, Travel Policy, Workflow Rules, System Notifications, Audit Log Viewer) with robust 3-layer JSON validation and audit logging. Authentication supports both Replit Auth (OpenID Connect with PostgreSQL session storage) and a demo login system. Role-based access control is foundational, with a `RoleContext` and `useRole` hook.
 

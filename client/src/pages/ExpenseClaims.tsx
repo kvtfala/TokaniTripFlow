@@ -34,6 +34,7 @@ import {
   FileText,
   ChevronRight,
 } from "lucide-react";
+import { IconExpense } from "@/components/icons/TokaniIcons";
 import { format } from "date-fns";
 
 const STATUS_CONFIG: Record<ExpenseClaim["status"], { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: typeof Clock }> = {
@@ -269,7 +270,10 @@ export default function ExpenseClaims() {
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Expense Claims</h1>
+          <div className="flex items-center gap-3">
+            <IconExpense size={32} accentColor="#1FBED6" />
+            <h1 className="text-2xl font-bold" data-testid="heading-expense-claims">Expense Claims</h1>
+          </div>
           <p className="text-muted-foreground text-sm">Submit and track your post-trip expense claims</p>
         </div>
         <Button onClick={() => setWizardOpen(true)} data-testid="button-new-claim">
@@ -320,14 +324,14 @@ export default function ExpenseClaims() {
               <Skeleton key={i} className="h-16 w-full rounded-md" />
             ))
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Receipt className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="font-medium">
+            <div className="text-center py-12" data-testid="empty-state-expense">
+              <IconExpense size={56} accentColor="#1FBED6" className="mx-auto opacity-40" />
+              <h3 className="font-semibold text-base mt-4">
                 {claims.length === 0 ? "No expense claims yet" : "No claims match your filters"}
-              </p>
+              </h3>
               {claims.length === 0 && (
-                <p className="text-sm mt-1">
-                  Submit your first claim after returning from an approved trip.
+                <p className="text-sm text-muted-foreground mt-1">
+                  Submit your first claim after returning from an approved trip
                 </p>
               )}
               {claims.length === 0 && (

@@ -20,6 +20,7 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, FileText, Plane,
   AlertTriangle, DollarSign,
 } from "lucide-react";
+import { IconTrips } from "@/components/icons/TokaniIcons";
 import type { TravelRequest } from "@shared/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
@@ -165,7 +166,10 @@ export default function MyTrips() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Travel Requests</h1>
+          <div className="flex items-center gap-3">
+            <IconTrips size={36} accentColor="#1FBED6" />
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-my-trips">My Travel Requests</h1>
+          </div>
           <p className="text-muted-foreground mt-1">Track, view, and manage all your travel requests</p>
         </div>
         <Link href="/request/new">
@@ -260,12 +264,17 @@ export default function MyTrips() {
         <TabsContent value={tab} className="mt-4">
           {processedRequests.length === 0 ? (
             <Card>
-              <CardContent className="p-12 text-center space-y-3">
-                <Plane className="w-10 h-10 mx-auto text-muted-foreground opacity-40" />
-                <p className="text-muted-foreground font-medium">
-                  {tab === "active" ? "No active requests" :
+              <CardContent className="p-12 text-center space-y-3" data-testid="empty-state-trips">
+                <IconTrips size={56} accentColor="#1FBED6" className="mx-auto opacity-40" />
+                <h3 className="font-semibold text-base mt-3">
+                  {tab === "active" ? "No travel requests yet" :
                    tab === "approved" ? "No approved requests yet" :
                    "No rejected requests"}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {tab === "active" ? "Submit a new request to get started" :
+                   tab === "approved" ? "Approved trips will appear here once your requests are processed" :
+                   "Rejected requests will appear here for reference"}
                 </p>
                 {tab === "active" && (
                   <Link href="/request/new">

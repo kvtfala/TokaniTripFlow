@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { UserPlus, Trash2 } from "lucide-react";
+import { IconTravellers } from "@/components/icons/TokaniIcons";
 import type { DelegateAssignment } from "@shared/types";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
@@ -71,7 +72,10 @@ export default function DelegateSettings() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Delegation Settings</h1>
+        <div className="flex items-center gap-3 mb-1">
+          <IconTravellers size={36} accentColor="#1FBED6" />
+          <h1 className="text-3xl font-bold" data-testid="heading-delegations">Delegation Settings</h1>
+        </div>
         <p className="text-muted-foreground">
           Manage approval delegation when you're away or unavailable
         </p>

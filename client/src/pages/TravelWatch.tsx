@@ -17,6 +17,7 @@ import {
   Zap, Waves, Wind, CloudRain, Sun, Cloud, Activity,
   CheckCircle2, XCircle, SortAsc, Flag
 } from "lucide-react";
+import { IconDutyOfCare } from "@/components/icons/TokaniIcons";
 import { useTripsNowAndUpcoming, type Trip } from "@/data/hooks";
 import { format, differenceInDays, addDays, subDays } from "date-fns";
 import Papa from "papaparse";
@@ -971,6 +972,7 @@ export default function TravelWatch() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-3" data-testid="heading-travel-watch">
+              <IconDutyOfCare size={32} accentColor="#1FBED6" />
               Travel Command Centre
               <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/20 text-xs font-semibold text-green-800 dark:text-green-300">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />

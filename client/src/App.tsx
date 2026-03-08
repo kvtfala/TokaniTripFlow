@@ -20,17 +20,18 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { 
-  LayoutDashboard, 
-  PlaneTakeoff, 
-  CheckSquare, 
-  History, 
-  BarChart3, 
-  UserCog,
-  Map,
-  Shield,
-  Receipt
-} from "lucide-react";
+import {
+  IconDashboard,
+  IconFlights,
+  IconApprovals,
+  IconTrips,
+  IconExpense,
+  IconReports,
+  IconDutyOfCare,
+  IconTravellers,
+  IconSettings,
+  type TokaniIconProps,
+} from "@/components/icons/TokaniIcons";
 import { TokaniLogo } from "@/components/brand/TokaniLogo";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -53,57 +54,57 @@ import { useAuth } from "@/hooks/useAuth";
 import { AuthSplash } from "@/components/layout/AuthSplash";
 import { useState, useEffect } from "react";
 
-const menuItems = [
+const menuItems: { title: string; subtitle?: string; url: string; icon: React.FC<TokaniIconProps> }[] = [
   {
     title: "Home",
     subtitle: "Overview",
     url: "/",
-    icon: LayoutDashboard,
+    icon: IconDashboard,
   },
   {
     title: "New Request",
     url: "/request/new",
-    icon: PlaneTakeoff,
+    icon: IconFlights,
   },
   {
     title: "My Requests",
     subtitle: "Personal",
     url: "/my-trips",
-    icon: History,
+    icon: IconTrips,
   },
   {
     title: "Approvals",
     url: "/approvals",
-    icon: CheckSquare,
+    icon: IconApprovals,
   },
   {
     title: "Expenses",
     subtitle: "Claims & Receipts",
     url: "/expenses",
-    icon: Receipt,
+    icon: IconExpense,
   },
   {
     title: "Reports",
     subtitle: "Analytics & Export",
     url: "/reports",
-    icon: BarChart3,
+    icon: IconReports,
   },
   {
     title: "Travel Watch",
     subtitle: "Live Tracking",
     url: "/travel-watch",
-    icon: Map,
+    icon: IconDutyOfCare,
   },
   {
     title: "Delegations",
     url: "/delegations",
-    icon: UserCog,
+    icon: IconTravellers,
   },
   {
     title: "Admin Portal",
     subtitle: "System Config",
     url: "/admin",
-    icon: Shield,
+    icon: IconSettings,
   },
 ];
 
@@ -117,24 +118,31 @@ function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location === item.url}
-                  >
-                    <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "dashboard"}`}>
-                      <item.icon className="w-4 h-4" />
-                      <div className="flex flex-col">
-                        <span>{item.title}</span>
-                        {item.subtitle && (
-                          <span className="text-xs text-muted-foreground">{item.subtitle}</span>
-                        )}
-                      </div>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const isActive = location === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                    >
+                      <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "dashboard"}`}>
+                        <item.icon
+                          size={20}
+                          accentColor="#1FBED6"
+                          className={isActive ? "" : "opacity-60"}
+                        />
+                        <div className="flex flex-col">
+                          <span>{item.title}</span>
+                          {item.subtitle && (
+                            <span className="text-xs text-muted-foreground">{item.subtitle}</span>
+                          )}
+                        </div>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
