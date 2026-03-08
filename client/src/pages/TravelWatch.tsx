@@ -286,6 +286,14 @@ function TravelerCard({
 }
 
 // ── GDACS Threat Feed panel ───────────────────────────────────────────────────
+// Pacific region countries for regional tier
+const PACIFIC_REGION_LOWER = new Set([
+  "fiji", "samoa", "tonga", "vanuatu", "solomon islands", "papua new guinea",
+  "new caledonia", "kiribati", "tuvalu", "nauru", "palau", "marshall islands",
+  "micronesia", "cook islands", "niue", "french polynesia", "new zealand",
+  "australia", "indonesia", "philippines", "timor-leste",
+]);
+
 function ThreatFeedPanel({
   events, cachedAt, cached, isLoading, isError, onRefresh, travelerCountries,
 }: {
@@ -297,15 +305,6 @@ function ThreatFeedPanel({
   onRefresh: () => void;
   travelerCountries: Set<string>;
 }) {
-  const [myTravelers, setMyTravelers] = useState(false);
-
-  const displayed = useMemo(() => {
-    if (myTravelers) {
-      return events.filter(e => travelerCountries.has(e.country.toLowerCase()));
-    }
-    return events;
-  }, [events, myTravelers, travelerCountries]);
-
   const getEventIcon = (type: string) => {
     switch (type) {
       case "EQ": return <Activity className="w-4 h-4" />;
@@ -316,8 +315,89 @@ function ThreatFeedPanel({
     }
   };
 
+  // Sort into three priority tiers
+  const { travelerEvents, regionalEvents, globalEvents } = useMemo(() => {
+    const travelerEvents: GdacsEvent[] = [];
+    const regionalEvents: GdacsEvent[] = [];
+    const globalEvents: GdacsEvent[] = [];
+    events.forEach(e => {
+      const c = e.country.toLowerCase();
+      if (travelerCountries.has(c)) {
+        travelerEvents.push(e);
+      } else if (PACIFIC_REGION_LOWER.has(c)) {
+        regionalEvents.push(e);
+      } else {
+        globalEvents.push(e);
+      }
+    });
+    // Within each tier: Red first, then Orange, then Green
+    const sortByAlert = (a: GdacsEvent, b: GdacsEvent) => {
+      const order: Record<string, number> = { Red: 0, Orange: 1, Green: 2 };
+      return (order[a.alertLevel] ?? 2) - (order[b.alertLevel] ?? 2);
+    };
+    return {
+      travelerEvents: travelerEvents.sort(sortByAlert),
+      regionalEvents: regionalEvents.sort(sortByAlert),
+      globalEvents: globalEvents.sort(sortByAlert),
+    };
+  }, [events, travelerCountries]);
+
+  const renderEvent = (event: GdacsEvent, isTravelerDest: boolean) => (
+    <div
+      key={event.id}
+      className={`px-4 py-3 text-sm ${
+        event.alertLevel === "Red" ? "border-l-4 border-l-red-500" :
+        event.alertLevel === "Orange" ? "border-l-4 border-l-amber-500" : "pl-4"
+      }`}
+      data-testid={`threat-event-${event.id}`}
+    >
+      <div className="flex items-start gap-2">
+        <span className={`p-1 rounded shrink-0 ${ALERT_COLORS[event.alertLevel]}`}>
+          {getEventIcon(event.eventType)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-medium text-xs">{EVENT_TYPE_LABEL[event.eventType] || event.eventType}</span>
+            <span className={`text-xs px-1.5 py-0.5 rounded border ${ALERT_COLORS[event.alertLevel]}`}>
+              {event.alertLevel}
+            </span>
+            {isTravelerDest && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">
+                Traveler here
+              </span>
+            )}
+          </div>
+          <p className="text-muted-foreground text-xs mt-0.5 font-medium">{event.country}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{event.description}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 opacity-70">
+            {event.publishedAt ? format(new Date(event.publishedAt), "d MMM, HH:mm") : ""}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSection = (label: string, sectionEvents: GdacsEvent[], isTraveler: boolean, icon: typeof Activity) => {
+    if (sectionEvents.length === 0) return null;
+    const IconComp = icon;
+    return (
+      <>
+        <div className="px-4 py-2 bg-muted/40 border-y flex items-center gap-2 sticky top-0 z-10">
+          <IconComp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</span>
+          <span className="ml-auto text-xs text-muted-foreground">{sectionEvents.length}</span>
+        </div>
+        <div className="divide-y">
+          {sectionEvents.map(e => renderEvent(e, isTraveler))}
+        </div>
+      </>
+    );
+  };
+
+  const hasAny = travelerEvents.length + regionalEvents.length + globalEvents.length > 0;
+
   return (
-    <Card className="flex flex-col h-full" data-testid="card-threat-feed">
+    <Card className="flex flex-col" data-testid="card-threat-feed">
       <CardHeader className="pb-3 shrink-0">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div>
@@ -328,38 +408,24 @@ function ThreatFeedPanel({
             <p className="text-xs text-muted-foreground mt-0.5">
               GDACS · {cachedAt ? format(new Date(cachedAt), "HH:mm") : "—"}
               {cached && <span className="ml-1 opacity-60">(cached)</span>}
+              {travelerEvents.length > 0 && (
+                <span className="ml-2 text-red-500 font-medium">{travelerEvents.length} at your destinations</span>
+              )}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={onRefresh}
-              disabled={isLoading}
-              data-testid="button-refresh-feed"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 mt-1">
-          <button
-            onClick={() => setMyTravelers(false)}
-            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${!myTravelers ? "bg-foreground text-background border-foreground" : "border-border text-muted-foreground"}`}
-            data-testid="tab-all-events"
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onRefresh}
+            disabled={isLoading}
+            data-testid="button-refresh-feed"
           >
-            All events
-          </button>
-          <button
-            onClick={() => setMyTravelers(true)}
-            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${myTravelers ? "bg-foreground text-background border-foreground" : "border-border text-muted-foreground"}`}
-            data-testid="tab-my-travelers"
-          >
-            My travelers only
-          </button>
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+          </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-0 min-h-0">
+
+      <CardContent className="p-0 overflow-y-auto" style={{ maxHeight: "480px" }}>
         {isError ? (
           <div className="p-4 text-center text-muted-foreground text-sm">
             <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -368,63 +434,30 @@ function ThreatFeedPanel({
         ) : isLoading ? (
           <div className="p-4 space-y-2">
             {[1,2,3,4].map(i => (
-              <div key={i} className="h-16 rounded-md bg-muted animate-pulse" />
+              <div key={i} className="h-14 rounded-md bg-muted animate-pulse" />
             ))}
           </div>
-        ) : displayed.length === 0 ? (
+        ) : !hasAny ? (
           <div className="p-6 text-center text-muted-foreground text-sm">
             <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            {myTravelers ? "No active GDACS events in your travelers' destinations" : "No events found"}
+            No active GDACS events
           </div>
         ) : (
-          <div className="divide-y">
-            {displayed.map(event => {
-              const isTravelerDest = travelerCountries.has(event.country.toLowerCase());
-              return (
-                <div
-                  key={event.id}
-                  className={`px-4 py-3 text-sm hover-elevate ${
-                    event.alertLevel === "Red" ? "border-l-4 border-l-red-500" :
-                    event.alertLevel === "Orange" ? "border-l-4 border-l-amber-500" : ""
-                  }`}
-                  data-testid={`threat-event-${event.id}`}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className={`p-1 rounded ${ALERT_COLORS[event.alertLevel]}`}>
-                      {getEventIcon(event.eventType)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-medium">{EVENT_TYPE_LABEL[event.eventType] || event.eventType}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded border ${ALERT_COLORS[event.alertLevel]}`}>
-                          {event.alertLevel}
-                        </span>
-                        {isTravelerDest && (
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">
-                            Traveler here
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-muted-foreground text-xs mt-0.5 truncate">{event.country}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{event.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {event.publishedAt ? format(new Date(event.publishedAt), "d MMM yyyy, HH:mm") : ""}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <>
+            {renderSection("Your Travelers' Destinations", travelerEvents, true, Users)}
+            {renderSection("Pacific Region", regionalEvents, false, MapPin)}
+            {renderSection("Global", globalEvents, false, Activity)}
+          </>
         )}
       </CardContent>
+
       <div className="px-4 py-2 border-t shrink-0">
         <p className="text-xs text-muted-foreground">
           Powered by{" "}
           <a href="https://www.gdacs.org" target="_blank" rel="noopener noreferrer" className="underline">
             GDACS
           </a>{" "}
-          · UN Emergency Management
+          · UN Office for the Coordination of Humanitarian Affairs
         </p>
       </div>
     </Card>
@@ -938,13 +971,13 @@ export default function TravelWatch() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 relative">
-            <div className="relative bg-muted/30 rounded-md overflow-hidden" style={{ height: "360px" }}>
+            <div className="relative bg-muted/30 rounded-md overflow-hidden" style={{ height: "520px" }}>
               <ComposableMap
                 projection="geoMercator"
-                projectionConfig={{ rotate: [-160, 0, 0], scale: 120, center: [0, -15] }}
+                projectionConfig={{ rotate: [-155, 0, 0], scale: 160, center: [0, -10] }}
                 style={{ width: "100%", height: "100%" }}
               >
-                <ZoomableGroup zoom={1} minZoom={0.8} maxZoom={6}>
+                <ZoomableGroup zoom={1} minZoom={0.6} maxZoom={8}>
                   <Geographies geography={GEO_URL}>
                     {({ geographies }) =>
                       geographies.map(geo => {
@@ -985,23 +1018,40 @@ export default function TravelWatch() {
                         coordinates={[coords.lng, coords.lat]}
                         onClick={() => setSelectedCountry(dest.country)}
                       >
-                        <circle r={8} fill={markerColor} fillOpacity={0.3} stroke={markerColor} strokeWidth={1}>
-                          <animate attributeName="r" from="8" to="16" dur="2s" repeatCount="indefinite" />
-                          <animate attributeName="opacity" from="0.5" to="0" dur="2s" repeatCount="indefinite" />
+                        {/* Pulse ring animation */}
+                        <circle r={10} fill={markerColor} fillOpacity={0.15} stroke="none">
+                          <animate attributeName="r" from="10" to="22" dur="2.5s" repeatCount="indefinite" />
+                          <animate attributeName="fill-opacity" from="0.4" to="0" dur="2.5s" repeatCount="indefinite" />
                         </circle>
+                        {/* Solid dot */}
                         <circle
-                          r={6}
+                          r={8}
                           fill={markerColor}
                           stroke="white"
-                          strokeWidth={1.5}
+                          strokeWidth={2}
                           style={{ cursor: "pointer" }}
                         />
+                        {/* Count label inside dot */}
                         <text
                           textAnchor="middle"
-                          y={-12}
-                          style={{ fontSize: "9px", fill: "hsl(var(--foreground))", fontWeight: 600, pointerEvents: "none" }}
+                          dominantBaseline="central"
+                          style={{ fontSize: "8px", fill: "white", fontWeight: 700, pointerEvents: "none" }}
                         >
-                          {dest.city} ({totalCount})
+                          {totalCount}
+                        </text>
+                        {/* City name below, small and readable */}
+                        <text
+                          textAnchor="middle"
+                          y={18}
+                          style={{
+                            fontSize: "8px",
+                            fill: "hsl(var(--foreground))",
+                            fontWeight: 600,
+                            pointerEvents: "none",
+                            textShadow: "0 1px 3px white, 0 -1px 3px white",
+                          }}
+                        >
+                          {dest.city}
                         </text>
                       </Marker>
                     );
@@ -1141,7 +1191,7 @@ export default function TravelWatch() {
           </div>
 
           {/* Right: Threat Feed */}
-          <div className="lg:col-span-2" style={{ minHeight: "400px" }}>
+          <div className="lg:col-span-2">
             <ThreatFeedPanel
               events={gdacsEvents}
               cachedAt={threatData?.cachedAt}
