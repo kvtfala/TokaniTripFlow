@@ -5,19 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import {
   Users, MapPin, PlaneTakeoff, PlaneLanding, ShieldAlert, ShieldCheck,
-  AlertCircle, AlertTriangle, Phone, User, Calendar, Clock,
-  RefreshCw, Download, FileDown, ExternalLink, Thermometer,
-  Zap, Waves, Wind, CloudRain, Sun, Cloud, Eye, Activity,
-  CheckCircle2, XCircle, Info, ChevronRight, Wifi
+  AlertCircle, AlertTriangle, Phone, Calendar, Clock, Search, X,
+  RefreshCw, FileDown, Thermometer,
+  Zap, Waves, Wind, CloudRain, Sun, Cloud, Activity,
+  CheckCircle2, XCircle, SortAsc, Flag
 } from "lucide-react";
 import { useTripsNowAndUpcoming, type Trip } from "@/data/hooks";
-import { format, differenceInDays, addDays, subDays, isWithinInterval } from "date-fns";
+import { format, differenceInDays, addDays, subDays } from "date-fns";
 import Papa from "papaparse";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -36,8 +37,8 @@ const ISO_NUM_TO_NAME: Record<number, string> = {
   887: "Yemen", 434: "Libya",
 };
 
-// ── Destination lat/lng for markers and weather ───────────────────────────────
-const DEST_COORDS: Record<string, { lat: number; lng: number; countryCapital?: boolean }> = {
+// ── City lat/lng for weather widgets only ─────────────────────────────────────
+const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
   "Sydney":       { lat: -33.87,  lng: 151.21  },
   "Melbourne":    { lat: -37.81,  lng: 144.96  },
   "Brisbane":     { lat: -27.47,  lng: 153.02  },
@@ -62,6 +63,44 @@ const DEST_COORDS: Record<string, { lat: number; lng: number; countryCapital?: b
   "New York":     { lat: 40.71,   lng: -74.01  },
   "Los Angeles":  { lat: 34.05,   lng: -118.24 },
   "Honolulu":     { lat: 21.31,   lng: -157.86 },
+};
+
+// ── Country capital coords for map markers (one pin per country) ──────────────
+const COUNTRY_CAPITAL_COORDS: Record<string, { lat: number; lng: number }> = {
+  "Australia":            { lat: -35.31,  lng: 149.12  }, // Canberra
+  "New Zealand":          { lat: -41.29,  lng: 174.78  }, // Wellington
+  "Fiji":                 { lat: -18.14,  lng: 178.44  }, // Suva
+  "Samoa":                { lat: -13.83,  lng: -172.13 }, // Apia
+  "Tonga":                { lat: -21.14,  lng: -175.20 }, // Nukualofa
+  "Vanuatu":              { lat: -17.73,  lng: 168.32  }, // Port Vila
+  "Solomon Islands":      { lat: -9.43,   lng: 160.03  }, // Honiara
+  "Papua New Guinea":     { lat: -9.44,   lng: 147.18  }, // Port Moresby
+  "Singapore":            { lat: 1.35,    lng: 103.82  },
+  "Japan":                { lat: 35.69,   lng: 139.69  }, // Tokyo
+  "Thailand":             { lat: 13.75,   lng: 100.52  }, // Bangkok
+  "Indonesia":            { lat: -6.21,   lng: 106.85  }, // Jakarta
+  "Philippines":          { lat: 14.60,   lng: 120.98  }, // Manila
+  "Malaysia":             { lat: 3.15,    lng: 101.69  }, // Kuala Lumpur
+  "United Arab Emirates": { lat: 25.20,   lng: 55.27   }, // Dubai
+  "United Kingdom":       { lat: 51.51,   lng: -0.13   }, // London
+  "United States":        { lat: 38.89,   lng: -77.04  }, // Washington DC
+  "Canada":               { lat: 45.42,   lng: -75.69  }, // Ottawa
+  "India":                { lat: 28.61,   lng: 77.23   }, // New Delhi
+  "China":                { lat: 39.91,   lng: 116.39  }, // Beijing
+  "South Korea":          { lat: 37.57,   lng: 126.98  }, // Seoul
+  "France":               { lat: 48.86,   lng: 2.35    }, // Paris
+  "Germany":              { lat: 52.52,   lng: 13.41   }, // Berlin
+  "Kiribati":             { lat: -1.87,   lng: -157.36 }, // South Tarawa
+  "Tuvalu":               { lat: -8.52,   lng: 179.20  }, // Funafuti
+  "Nauru":                { lat: -0.53,   lng: 166.92  },
+};
+
+// Short display labels for countries on the map (to avoid long text labels)
+const COUNTRY_SHORT: Record<string, string> = {
+  "Australia": "AUS", "New Zealand": "NZ", "Papua New Guinea": "PNG",
+  "Solomon Islands": "SI", "United Arab Emirates": "UAE",
+  "United Kingdom": "UK", "United States": "USA",
+  "South Korea": "Korea",
 };
 
 // ── WMO weather codes → description + icon ───────────────────────────────────
@@ -465,7 +504,10 @@ function ThreatFeedPanel({
 }
 
 // ── 14-day Deployment Timeline (Gantt) ───────────────────────────────────────
+const GANTT_MAX_ROWS = 25;
+
 function DeploymentTimeline({ trips }: { trips: Trip[] }) {
+  const [showAll, setShowAll] = useState(false);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const ganttStart = subDays(today, 3);
@@ -474,7 +516,6 @@ function DeploymentTimeline({ trips }: { trips: Trip[] }) {
   const ROW_H = 36;
   const LABEL_W = 140;
   const CHART_W = 600;
-  const TOTAL_H = Math.max(80, trips.length * ROW_H + 40);
 
   const todayX = LABEL_W + (differenceInDays(today, ganttStart) / totalDays) * CHART_W;
 
@@ -484,21 +525,51 @@ function DeploymentTimeline({ trips }: { trips: Trip[] }) {
     dateLabels.push({ label: format(d, "d MMM"), x: LABEL_W + (i / totalDays) * CHART_W });
   }
 
-  const activeTrips = trips.filter(t => t.tripStatus === "current" || t.tripStatus === "upcoming");
+  const rawActive = trips.filter(t => t.tripStatus === "current" || t.tripStatus === "upcoming");
+
+  // Sort: welfare-flagged current first → non-flagged current → flagged upcoming → upcoming
+  const sortedTrips = [...rawActive].sort((a, b) => {
+    const aFlag = !a.emergencyContactName || a.visaCheck?.status === "ACTION" ? 1 : 0;
+    const bFlag = !b.emergencyContactName || b.visaCheck?.status === "ACTION" ? 1 : 0;
+    const aStatus = a.tripStatus === "current" ? 0 : 1;
+    const bStatus = b.tripStatus === "current" ? 0 : 1;
+    if (aStatus !== bStatus) return aStatus - bStatus;
+    return bFlag - aFlag;
+  });
+
+  const visibleTrips = showAll ? sortedTrips : sortedTrips.slice(0, GANTT_MAX_ROWS);
+  const TOTAL_H = Math.max(80, visibleTrips.length * ROW_H + 40);
 
   return (
     <Card data-testid="card-deployment-timeline">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Calendar className="w-4 h-4" />
-          14-Day Deployment Overview
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">Active and upcoming trips — {format(ganttStart, "d MMM")} to {format(ganttEnd, "d MMM yyyy")}</p>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              14-Day Deployment Overview
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {format(ganttStart, "d MMM")} to {format(ganttEnd, "d MMM yyyy")} · Welfare-flagged trips shown first
+            </p>
+          </div>
+          {rawActive.length > GANTT_MAX_ROWS && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAll(v => !v)}
+              data-testid="button-gantt-show-all"
+            >
+              {showAll ? "Show fewer" : `Show all ${rawActive.length} trips`}
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="p-0 overflow-x-auto">
-        {activeTrips.length === 0 ? (
+      <CardContent className="p-0">
+        {rawActive.length === 0 ? (
           <p className="p-4 text-muted-foreground text-sm text-center">No active or upcoming trips in the next 14 days.</p>
         ) : (
+          <div className="overflow-x-auto" style={{ maxHeight: showAll ? "none" : "400px", overflowY: "auto" }}>
           <svg
             width="100%"
             viewBox={`0 0 ${LABEL_W + CHART_W + 20} ${TOTAL_H}`}
@@ -515,7 +586,7 @@ function DeploymentTimeline({ trips }: { trips: Trip[] }) {
             ))}
 
             {/* Rows */}
-            {activeTrips.map((trip, idx) => {
+            {visibleTrips.map((trip, idx) => {
               const y = 24 + idx * ROW_H;
               const tripStart = new Date(trip.startDate);
               const tripEnd = new Date(trip.endDate);
@@ -571,6 +642,7 @@ function DeploymentTimeline({ trips }: { trips: Trip[] }) {
               stroke="hsl(0 80% 55%)" strokeWidth={1.5} strokeDasharray="4 2" />
             <text x={todayX + 3} y={TOTAL_H - 4} fontSize={8} fill="hsl(0 80% 55%)">Today</text>
           </svg>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -680,8 +752,13 @@ export default function TravelWatch() {
   const now = new Date();
 
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [mapTooltip, setMapTooltip] = useState<{ x: number; y: number; content: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"current" | "departing">("current");
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [cardSearch, setCardSearch] = useState("");
+  const [cardSort, setCardSort] = useState<"flags" | "soonest" | "alpha">("flags");
+
+  const dismissAlert = (key: string) =>
+    setDismissedAlerts(prev => new Set([...prev, key]));
 
   // ── Data fetches ──────────────────────────────────────────────────────
   const {
@@ -708,6 +785,15 @@ export default function TravelWatch() {
   const returningThisWeek = useMemo(() =>
     current.filter(t => differenceInDays(new Date(t.endDate), now) <= 7),
   [current]);
+
+  const departingCountries = useMemo(() =>
+    Array.from(new Set(departingIn48h.map(t => t.destination.country))).length,
+  [departingIn48h]);
+
+  const earliestReturn = useMemo(() => {
+    if (returningThisWeek.length === 0) return null;
+    return new Date(Math.min(...returningThisWeek.map(t => new Date(t.endDate).getTime())));
+  }, [returningThisWeek]);
 
   const missingContacts = useMemo(() =>
     activeTrips.filter(t => !t.emergencyContactName),
@@ -740,21 +826,71 @@ export default function TravelWatch() {
     new Set(activeTrips.map(t => t.destination.country.toLowerCase())),
   [activeTrips]);
 
-  // ── Map state ─────────────────────────────────────────────────────────
+  // ── Map state — grouped by country (one marker per country) ──────────
   const travelerDestinations = useMemo(() => {
-    const map = new Map<string, { city: string; country: string; current: Trip[]; upcoming: Trip[] }>();
+    const map = new Map<string, { country: string; current: Trip[]; upcoming: Trip[] }>();
     current.forEach(t => {
-      const key = t.destination.city;
-      if (!map.has(key)) map.set(key, { city: t.destination.city, country: t.destination.country, current: [], upcoming: [] });
+      const key = t.destination.country;
+      if (!map.has(key)) map.set(key, { country: t.destination.country, current: [], upcoming: [] });
       map.get(key)!.current.push(t);
     });
     upcoming.forEach(t => {
-      const key = t.destination.city;
-      if (!map.has(key)) map.set(key, { city: t.destination.city, country: t.destination.country, current: [], upcoming: [] });
+      const key = t.destination.country;
+      if (!map.has(key)) map.set(key, { country: t.destination.country, current: [], upcoming: [] });
       map.get(key)!.upcoming.push(t);
     });
     return Array.from(map.values());
   }, [current, upcoming]);
+
+  // ── Destination roster — sorted: flagged first, then by count, then alpha
+  const sortedDestinations = useMemo(() => {
+    return [...travelerDestinations].sort((a, b) => {
+      const aFlagged = [...a.current, ...a.upcoming].some(
+        t => !t.emergencyContactName || t.visaCheck?.status === "ACTION"
+      );
+      const bFlagged = [...b.current, ...b.upcoming].some(
+        t => !t.emergencyContactName || t.visaCheck?.status === "ACTION"
+      );
+      if (aFlagged !== bFlagged) return aFlagged ? -1 : 1;
+      const aTotal = a.current.length + a.upcoming.length;
+      const bTotal = b.current.length + b.upcoming.length;
+      if (aTotal !== bTotal) return bTotal - aTotal;
+      return a.country.localeCompare(b.country);
+    });
+  }, [travelerDestinations]);
+
+  // ── Traveler card filter + sort ───────────────────────────────────────
+  const tripHasFlag = useCallback((t: Trip) =>
+    !t.emergencyContactName ||
+    t.visaCheck?.status === "ACTION" ||
+    gdacsEvents.some(e =>
+      e.country.toLowerCase() === t.destination.country.toLowerCase() &&
+      e.alertLevel !== "Green"
+    ),
+  [gdacsEvents]);
+
+  const filterAndSort = useCallback((trips: Trip[]) => {
+    let filtered = trips;
+    if (cardSearch.trim()) {
+      const q = cardSearch.toLowerCase();
+      filtered = trips.filter(t =>
+        t.employeeName.toLowerCase().includes(q) ||
+        t.destination.city.toLowerCase().includes(q) ||
+        t.destination.country.toLowerCase().includes(q) ||
+        (t.department ?? "").toLowerCase().includes(q)
+      );
+    }
+    if (cardSort === "flags") {
+      return [...filtered].sort((a, b) => Number(tripHasFlag(b)) - Number(tripHasFlag(a)));
+    } else if (cardSort === "soonest") {
+      return [...filtered].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
+    } else {
+      return [...filtered].sort((a, b) => a.employeeName.localeCompare(b.employeeName));
+    }
+  }, [cardSearch, cardSort, tripHasFlag]);
+
+  const filteredCurrent = useMemo(() => filterAndSort(current), [filterAndSort, current]);
+  const filteredUpcoming = useMemo(() => filterAndSort(upcoming), [filterAndSort, upcoming]);
 
   // Destination for the drawer
   const drawerTrips = useMemo(() => {
@@ -770,9 +906,30 @@ export default function TravelWatch() {
     const data = activeTrips.map(t => ({
       "TTR #": t.ttrNumber ?? t.id,
       "Employee": t.employeeName,
+      "Emergency Contact": t.emergencyContactName || "NOT ON FILE",
+      "Emergency Phone": t.emergencyContactPhone || "NOT ON FILE",
+      "Destination": `${t.destination.city}, ${t.destination.country}`,
+      "Status": t.tripStatus === "current" ? "In Field" : "Upcoming",
+      "Departure": format(new Date(t.startDate), "dd/MM/yyyy"),
+      "Return": format(new Date(t.endDate), "dd/MM/yyyy"),
+    }));
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `emergency-contacts_${format(now, "yyyy-MM-dd")}.csv`;
+    link.click();
+  };
+
+  // ── Export full roster CSV ────────────────────────────────────────────
+  const exportFullRoster = () => {
+    const data = activeTrips.map(t => ({
+      "TTR #": t.ttrNumber ?? t.id,
+      "Employee": t.employeeName,
       "Position": t.position,
       "Department": t.department,
-      "Destination": `${t.destination.city}, ${t.destination.country}`,
+      "Destination City": t.destination.city,
+      "Destination Country": t.destination.country,
       "Departure": format(new Date(t.startDate), "dd/MM/yyyy"),
       "Return": format(new Date(t.endDate), "dd/MM/yyyy"),
       "Status": t.tripStatus === "current" ? "In Field" : "Upcoming",
@@ -788,7 +945,7 @@ export default function TravelWatch() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `emergency-contacts_${format(now, "yyyy-MM-dd")}.csv`;
+    link.download = `full-roster_${format(now, "yyyy-MM-dd")}.csv`;
     link.click();
   };
 
@@ -833,9 +990,9 @@ export default function TravelWatch() {
               <Phone className="w-4 h-4 mr-2" />
               Emergency Contacts
             </Button>
-            <Button variant="outline" onClick={exportEmergencyContacts} data-testid="button-export-csv">
+            <Button variant="outline" onClick={exportFullRoster} data-testid="button-export-csv">
               <FileDown className="w-4 h-4 mr-2" />
-              Export CSV
+              Full Roster CSV
             </Button>
           </div>
         </div>
@@ -855,7 +1012,9 @@ export default function TravelWatch() {
             {
               label: "Departing 48 hrs",
               value: departingIn48h.length,
-              sub: departingIn48h.length ? departingIn48h.map(t => t.employeeName.split(" ")[0]).join(", ") : "No imminent departures",
+              sub: departingIn48h.length
+                ? `across ${departingCountries} countr${departingCountries !== 1 ? "ies" : "y"}`
+                : "No imminent departures",
               Icon: PlaneTakeoff,
               accent: "bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
               pulse: departingIn48h.length > 0,
@@ -864,7 +1023,9 @@ export default function TravelWatch() {
             {
               label: "Returning This Week",
               value: returningThisWeek.length,
-              sub: returningThisWeek.length ? returningThisWeek.map(t => t.employeeName.split(" ")[0]).join(", ") : "No returns this week",
+              sub: earliestReturn
+                ? `earliest: ${format(earliestReturn, "d MMM")}`
+                : "No returns this week",
               Icon: PlaneLanding,
               accent: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
               pulse: false,
@@ -901,62 +1062,102 @@ export default function TravelWatch() {
 
         {/* ── Welfare Alerts ─────────────────────────────────────────────── */}
         <div className="space-y-2">
-          {missingContacts.length > 0 && (
-            <Alert className="border-red-400 bg-red-50 dark:bg-red-950/20" data-testid="alert-missing-contact">
+          {missingContacts.length > 0 && !dismissedAlerts.has("missing-contact") && (
+            <Alert className="border-red-400 bg-red-50 dark:bg-red-950/20 pr-10 relative" data-testid="alert-missing-contact">
               <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
               <AlertDescription className="text-red-900 dark:text-red-200">
-                <strong>No emergency contact:</strong>{" "}
-                {missingContacts.map((t, i) => (
+                <strong>{missingContacts.length} traveler{missingContacts.length > 1 ? "s" : ""} with no emergency contact:</strong>{" "}
+                {missingContacts.slice(0, 2).map((t, i) => (
                   <span key={t.id}>{i > 0 && ", "}{t.employeeName} ({t.destination.city})</span>
                 ))}
-                {" "}— Please update records before or during travel.
+                {missingContacts.length > 2 && ` and ${missingContacts.length - 2} more`}
+                {" "}— Please update records.
               </AlertDescription>
+              <button
+                onClick={() => dismissAlert("missing-contact")}
+                className="absolute top-3 right-3 text-red-400 hover:text-red-600"
+                data-testid="dismiss-alert-missing-contact"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </Alert>
           )}
-          {gdacsAtDestinations.length > 0 && (
-            <Alert className="border-orange-400 bg-orange-50 dark:bg-orange-950/20" data-testid="alert-gdacs-dest">
+          {gdacsAtDestinations.length > 0 && !dismissedAlerts.has("gdacs-dest") && (
+            <Alert className="border-orange-400 bg-orange-50 dark:bg-orange-950/20 pr-10 relative" data-testid="alert-gdacs-dest">
               <Activity className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               <AlertDescription className="text-orange-900 dark:text-orange-200">
-                <strong>Active GDACS alert</strong> in a traveler destination:{" "}
-                {gdacsAtDestinations.slice(0, 3).map((e, i) => (
-                  <span key={e.id}>{i > 0 && " | "}{e.alertLevel} {EVENT_TYPE_LABEL[e.eventType] || e.eventType} — {e.country}</span>
+                <strong>Active GDACS alert</strong> at {gdacsAtDestinations.length === 1 ? "a traveler destination" : `${gdacsAtDestinations.length} traveler destinations`}:{" "}
+                {gdacsAtDestinations.slice(0, 2).map((e, i) => (
+                  <span key={e.id}>{i > 0 && " · "}{e.alertLevel} {EVENT_TYPE_LABEL[e.eventType] || e.eventType} — {e.country}</span>
                 ))}
+                {gdacsAtDestinations.length > 2 && ` and ${gdacsAtDestinations.length - 2} more`}
               </AlertDescription>
+              <button
+                onClick={() => dismissAlert("gdacs-dest")}
+                className="absolute top-3 right-3 text-orange-400 hover:text-orange-600"
+                data-testid="dismiss-alert-gdacs"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </Alert>
           )}
-          {returningVSoon.length > 0 && (
-            <Alert className="border-amber-400 bg-amber-50 dark:bg-amber-950/20" data-testid="alert-returning-soon">
+          {returningVSoon.length > 0 && !dismissedAlerts.has("returning-soon") && (
+            <Alert className="border-amber-400 bg-amber-50 dark:bg-amber-950/20 pr-10 relative" data-testid="alert-returning-soon">
               <PlaneLanding className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <AlertDescription className="text-amber-900 dark:text-amber-200">
                 <strong>{returningVSoon.length} traveler{returningVSoon.length > 1 ? "s" : ""} returning within 3 days:</strong>{" "}
-                {returningVSoon.map((t, i) => (
-                  <span key={t.id}>{i > 0 && ", "}{t.employeeName} (returns {format(new Date(t.endDate), "d MMM")})</span>
+                {returningVSoon.slice(0, 2).map((t, i) => (
+                  <span key={t.id}>{i > 0 && ", "}{t.employeeName} ({format(new Date(t.endDate), "d MMM")})</span>
                 ))}
+                {returningVSoon.length > 2 && ` and ${returningVSoon.length - 2} more`}
               </AlertDescription>
+              <button
+                onClick={() => dismissAlert("returning-soon")}
+                className="absolute top-3 right-3 text-amber-400 hover:text-amber-600"
+                data-testid="dismiss-alert-returning"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </Alert>
           )}
-          {longTrips.length > 0 && (
-            <Alert className="border-blue-400 bg-blue-50 dark:bg-blue-950/20" data-testid="alert-long-trips">
+          {longTrips.length > 0 && !dismissedAlerts.has("long-trips") && (
+            <Alert className="border-blue-400 bg-blue-50 dark:bg-blue-950/20 pr-10 relative" data-testid="alert-long-trips">
               <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <AlertDescription className="text-blue-900 dark:text-blue-200">
-                <strong>Extended deployment ({">"}14 days):</strong>{" "}
-                {longTrips.map((t, i) => (
-                  <span key={t.id}>{i > 0 && ", "}{t.employeeName} — {differenceInDays(new Date(t.endDate), new Date(t.startDate)) + 1} days to {t.destination.city}</span>
+                <strong>{longTrips.length} extended deployment{longTrips.length > 1 ? "s" : ""} (&gt;14 days):</strong>{" "}
+                {longTrips.slice(0, 2).map((t, i) => (
+                  <span key={t.id}>{i > 0 && ", "}{t.employeeName} ({differenceInDays(new Date(t.endDate), new Date(t.startDate)) + 1}d → {t.destination.country})</span>
                 ))}
+                {longTrips.length > 2 && ` and ${longTrips.length - 2} more`}
                 {" "}— Welfare check-in recommended.
               </AlertDescription>
+              <button
+                onClick={() => dismissAlert("long-trips")}
+                className="absolute top-3 right-3 text-blue-400 hover:text-blue-600"
+                data-testid="dismiss-alert-long-trips"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </Alert>
           )}
-          {departingIn48h.length > 0 && (
-            <Alert className="border-purple-400 bg-purple-50 dark:bg-purple-950/20" data-testid="alert-departing-48h">
+          {departingIn48h.length > 0 && !dismissedAlerts.has("departing-48h") && (
+            <Alert className="border-purple-400 bg-purple-50 dark:bg-purple-950/20 pr-10 relative" data-testid="alert-departing-48h">
               <PlaneTakeoff className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               <AlertDescription className="text-purple-900 dark:text-purple-200">
-                <strong>Departing within 48 hours:</strong>{" "}
-                {departingIn48h.map((t, i) => (
-                  <span key={t.id}>{i > 0 && ", "}{t.employeeName} → {t.destination.city} ({format(new Date(t.startDate), "d MMM")})</span>
+                <strong>{departingIn48h.length} traveler{departingIn48h.length > 1 ? "s" : ""} departing within 48 hours:</strong>{" "}
+                {departingIn48h.slice(0, 2).map((t, i) => (
+                  <span key={t.id}>{i > 0 && ", "}{t.employeeName} → {t.destination.country} ({format(new Date(t.startDate), "d MMM")})</span>
                 ))}
-                {" "}— Confirm welfare readiness before departure.
+                {departingIn48h.length > 2 && ` and ${departingIn48h.length - 2} more`}
+                {" "}— Confirm welfare readiness.
               </AlertDescription>
+              <button
+                onClick={() => dismissAlert("departing-48h")}
+                className="absolute top-3 right-3 text-purple-400 hover:text-purple-600"
+                data-testid="dismiss-alert-departing"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </Alert>
           )}
         </div>
@@ -1004,17 +1205,18 @@ export default function TravelWatch() {
                     }
                   </Geographies>
 
-                  {/* Traveler destination pulse markers */}
+                  {/* Traveler destination pulse markers — one per country */}
                   {travelerDestinations.map(dest => {
-                    const coords = DEST_COORDS[dest.city];
+                    const coords = COUNTRY_CAPITAL_COORDS[dest.country];
                     if (!coords) return null;
                     const hasFlag = dest.current.some(t => !t.emergencyContactName || t.visaCheck?.status === "ACTION")
                       || dest.upcoming.some(t => !t.emergencyContactName);
                     const totalCount = dest.current.length + dest.upcoming.length;
                     const markerColor = hasFlag ? "#ef4444" : dest.current.length > 0 ? "#22c55e" : "#3b82f6";
+                    const label = COUNTRY_SHORT[dest.country] ?? dest.country;
                     return (
                       <Marker
-                        key={dest.city}
+                        key={dest.country}
                         coordinates={[coords.lng, coords.lat]}
                         onClick={() => setSelectedCountry(dest.country)}
                       >
@@ -1039,7 +1241,7 @@ export default function TravelWatch() {
                         >
                           {totalCount}
                         </text>
-                        {/* City name below, small and readable */}
+                        {/* Country label below, small and readable */}
                         <text
                           textAnchor="middle"
                           y={18}
@@ -1051,7 +1253,7 @@ export default function TravelWatch() {
                             textShadow: "0 1px 3px white, 0 -1px 3px white",
                           }}
                         >
-                          {dest.city}
+                          {label}
                         </text>
                       </Marker>
                     );
@@ -1093,29 +1295,73 @@ export default function TravelWatch() {
               </div>
             </div>
 
-            {/* DFAT source */}
-            <p className="text-xs text-muted-foreground mt-1.5 px-1">
-              Advisory overlay: Australian DFAT Smartraveller (curated, last reviewed {advisoryData?.lastReviewed}).
-              Disaster markers: GDACS real-time feed.
-            </p>
+            {/* Map controls hint + DFAT source */}
+            <div className="flex items-center justify-between flex-wrap gap-2 mt-1.5 px-1">
+              <p className="text-xs text-muted-foreground">
+                Advisory overlay: Australian DFAT Smartraveller (curated, last reviewed {advisoryData?.lastReviewed}).
+                Disaster markers: GDACS real-time feed.
+              </p>
+              <p className="text-xs text-muted-foreground opacity-70">
+                Scroll to zoom · Drag to pan · Click a country for details
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         {/* ── Two-column: Traveler Cards + Threat Feed ───────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* Left: Traveler cards */}
-          <div className="lg:col-span-3 space-y-4">
-            <Tabs value={activeTab} onValueChange={v => setActiveTab(v as any)}>
-              <div className="flex items-center justify-between">
-                <TabsList>
-                  <TabsTrigger value="current" data-testid="tab-current-travelers">
-                    Currently Away ({current.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="departing" data-testid="tab-departing-soon">
-                    Departing Soon ({upcoming.length})
-                  </TabsTrigger>
-                </TabsList>
+          <div className="lg:col-span-3 space-y-3">
+            {/* Search + Sort controls */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, destination, department…"
+                  value={cardSearch}
+                  onChange={e => setCardSearch(e.target.value)}
+                  className="pl-9 h-9"
+                  data-testid="input-card-search"
+                />
+                {cardSearch && (
+                  <button
+                    onClick={() => setCardSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <SortAsc className="w-3.5 h-3.5 text-muted-foreground" />
+                {(["flags", "soonest", "alpha"] as const).map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setCardSort(opt)}
+                    className={`text-xs px-2.5 py-1.5 rounded-md transition-colors ${
+                      cardSort === opt
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                    data-testid={`sort-${opt}`}
+                  >
+                    {opt === "flags" ? "Flags first" : opt === "soonest" ? "Returns soonest" : "A–Z"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={v => setActiveTab(v as any)}>
+              <TabsList>
+                <TabsTrigger value="current" data-testid="tab-current-travelers">
+                  Currently Away ({current.length}
+                  {cardSearch && filteredCurrent.length !== current.length ? ` → ${filteredCurrent.length}` : ""})
+                </TabsTrigger>
+                <TabsTrigger value="departing" data-testid="tab-departing-soon">
+                  Departing Soon ({upcoming.length}
+                  {cardSearch && filteredUpcoming.length !== upcoming.length ? ` → ${filteredUpcoming.length}` : ""})
+                </TabsTrigger>
+              </TabsList>
 
               <TabsContent value="current" className="mt-4">
                 {current.length === 0 ? (
@@ -1125,17 +1371,26 @@ export default function TravelWatch() {
                       <p className="font-medium">No travelers currently in the field</p>
                     </CardContent>
                   </Card>
+                ) : filteredCurrent.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                      <Search className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                      <p className="font-medium">No travelers match "{cardSearch}"</p>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                    {current.map(trip => (
-                      <TravelerCard
-                        key={trip.id}
-                        trip={trip}
-                        advisories={advisories}
-                        gdacsEvents={gdacsEvents}
-                        onClick={() => setSelectedCountry(trip.destination.country)}
-                      />
-                    ))}
+                  <div className="overflow-y-auto" style={{ maxHeight: "600px" }}>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 pr-1">
+                      {filteredCurrent.map(trip => (
+                        <TravelerCard
+                          key={trip.id}
+                          trip={trip}
+                          advisories={advisories}
+                          gdacsEvents={gdacsEvents}
+                          onClick={() => setSelectedCountry(trip.destination.country)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -1148,9 +1403,17 @@ export default function TravelWatch() {
                       <p className="font-medium">No upcoming departures in the next 30 days</p>
                     </CardContent>
                   </Card>
+                ) : filteredUpcoming.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                      <Search className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                      <p className="font-medium">No departures match "{cardSearch}"</p>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  <div className="space-y-2">
-                    {upcoming.map(trip => {
+                  <div className="overflow-y-auto" style={{ maxHeight: "600px" }}>
+                  <div className="space-y-2 pr-1">
+                    {filteredUpcoming.map(trip => {
                       const daysUntil = differenceInDays(new Date(trip.startDate), now);
                       const missingContact = !trip.emergencyContactName;
                       const visaIssue = trip.visaCheck?.status === "ACTION";
@@ -1185,6 +1448,7 @@ export default function TravelWatch() {
                       );
                     })}
                   </div>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
@@ -1208,12 +1472,13 @@ export default function TravelWatch() {
         <DeploymentTimeline trips={[...current, ...upcoming]} />
 
         {/* ── Destination Roster ─────────────────────────────────────────── */}
-        {travelerDestinations.length > 0 && (
+        {sortedDestinations.length > 0 && (
           <Card data-testid="card-destination-roster">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 Destination Roster
+                <span className="text-xs font-normal text-muted-foreground ml-1">Welfare issues shown first</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -1221,7 +1486,7 @@ export default function TravelWatch() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/30 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      <th className="px-4 py-3">Destination</th>
+                      <th className="px-4 py-3">Country / Cities</th>
                       <th className="px-4 py-3 text-center">In Field</th>
                       <th className="px-4 py-3 text-center">Departing</th>
                       <th className="px-4 py-3">Last Return</th>
@@ -1231,27 +1496,32 @@ export default function TravelWatch() {
                     </tr>
                   </thead>
                   <tbody>
-                    {travelerDestinations.map((dest, idx) => {
+                    {sortedDestinations.map((dest, idx) => {
                       const advisory = advisories[dest.country];
                       const destGdacs = gdacsEvents.filter(
                         e => e.country.toLowerCase() === dest.country.toLowerCase() && e.alertLevel !== "Green"
                       );
-                      const hasWelfareIssue = [
-                        ...dest.current, ...dest.upcoming
-                      ].some(t => !t.emergencyContactName || t.visaCheck?.status === "ACTION");
+                      const allTripsHere = [...dest.current, ...dest.upcoming];
+                      const hasWelfareIssue = allTripsHere.some(
+                        t => !t.emergencyContactName || t.visaCheck?.status === "ACTION"
+                      );
                       const latestReturn = dest.current.length > 0
                         ? new Date(Math.max(...dest.current.map(t => new Date(t.endDate).getTime())))
                         : null;
+                      const cities = Array.from(new Set(allTripsHere.map(t => t.destination.city))).join(", ");
                       return (
                         <tr
-                          key={idx}
-                          className="border-b last:border-0 hover-elevate cursor-pointer"
+                          key={dest.country}
+                          className={`border-b last:border-0 cursor-pointer hover-elevate ${hasWelfareIssue ? "bg-red-50/40 dark:bg-red-950/10" : ""}`}
                           onClick={() => setSelectedCountry(dest.country)}
                           data-testid={`row-destination-${idx}`}
                         >
                           <td className="px-4 py-3">
-                            <p className="font-medium">{dest.city}</p>
-                            <p className="text-xs text-muted-foreground">{dest.country}</p>
+                            <div className="flex items-center gap-1.5">
+                              {hasWelfareIssue && <Flag className="w-3 h-3 text-red-500 shrink-0" />}
+                              <p className="font-medium">{dest.country}</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">{cities}</p>
                           </td>
                           <td className="px-4 py-3 text-center">
                             {dest.current.length > 0
@@ -1282,7 +1552,7 @@ export default function TravelWatch() {
                           </td>
                           <td className="px-4 py-3">
                             {hasWelfareIssue
-                              ? <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                              ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400">
                                   <AlertCircle className="w-3 h-3" /> Action
                                 </span>
                               : <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
