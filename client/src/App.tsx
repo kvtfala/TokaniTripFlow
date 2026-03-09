@@ -52,6 +52,8 @@ import TokenApproval from "@/pages/TokenApproval";
 import ExpenseClaims from "@/pages/ExpenseClaims";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthSplash } from "@/components/layout/AuthSplash";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { UserAvatarMenu } from "@/components/layout/UserAvatarMenu";
 import { useState, useEffect } from "react";
 
 const menuItems: { title: string; subtitle?: string; url: string; icon: React.FC<TokaniIconProps> }[] = [
@@ -210,13 +212,10 @@ function Router() {
                 <span className="text-xs opacity-90 whitespace-nowrap hidden sm:block">Your Trusted Partner for Travel Approvals</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <a href="/api/logout">
-                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-white/10" data-testid="button-logout">
-                  Sign Out
-                </Button>
-              </a>
+            <div className="flex items-center gap-2">
               <ThemeToggle />
+              <NotificationBell />
+              <UserAvatarMenu />
             </div>
           </header>
           <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background">
