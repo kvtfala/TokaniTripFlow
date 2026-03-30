@@ -1359,6 +1359,8 @@ export class MemStorage implements IStorage {
         role: userData.role || "employee",
         companyCode: userData.companyCode || null,
         passwordHash: userData.passwordHash || null,
+        isActive: userData.isActive ?? true,
+        lastLogin: userData.lastLogin ?? null,
         createdAt: now,
         updatedAt: now,
       };
