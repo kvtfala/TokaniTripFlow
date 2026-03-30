@@ -1953,13 +1953,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/settings", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
     const cc = req.currentUser.companyCode;
     if (!cc) return res.status(400).json({ error: "No company code associated with this account" });
+    // Load existing settings first so we only overwrite provided fields
+    const existing = await storage.getCompanySettings(cc);
     const { displayName, contactEmail, timezone, logoUrl } = req.body;
     const updated = await storage.upsertCompanySettings({
       companyCode: cc,
-      displayName: displayName ?? "",
-      contactEmail: contactEmail ?? null,
-      timezone: timezone ?? "Pacific/Fiji",
-      logoUrl: logoUrl ?? null,
+      displayName: displayName !== undefined ? String(displayName) : (existing?.displayName ?? ""),
+      contactEmail: contactEmail !== undefined ? (contactEmail || null) : (existing?.contactEmail ?? null),
+      timezone: timezone !== undefined ? String(timezone) : (existing?.timezone ?? "Pacific/Fiji"),
+      logoUrl: logoUrl !== undefined ? (logoUrl || null) : (existing?.logoUrl ?? null),
     });
     await logAudit({
       userId: req.currentUser.id,

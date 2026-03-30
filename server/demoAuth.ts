@@ -65,6 +65,16 @@ export function setupDemoAuth(app: Express) {
       });
     }
 
+    // Block deactivated accounts
+    if (user.isActive === false) {
+      return res.status(403).json({
+        message: "Your account has been deactivated. Please contact your administrator.",
+      });
+    }
+
+    // Update lastLogin timestamp
+    await storage.updateUser(user.id, { lastLogin: new Date() });
+
     const demoSession = {
       isDemo: true,
       claims: {

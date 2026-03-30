@@ -89,7 +89,13 @@ function CompanyProfileSection() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate(form);
+    // Always send the full merged profile to avoid partial-update ambiguity
+    saveMutation.mutate({
+      displayName: current.displayName ?? "",
+      contactEmail: current.contactEmail ?? null,
+      timezone: current.timezone ?? "Pacific/Fiji",
+      logoUrl: current.logoUrl ?? null,
+    });
   };
 
   if (isLoading) {
