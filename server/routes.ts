@@ -208,6 +208,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
     }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     res.json(request);
   }));
 
@@ -241,12 +244,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return null;
   };
 
+  /**
+   * Tenant access guard — call after fetching any TravelRequest by ID.
+   * Returns true when the session user is permitted to access that request.
+   * Super-admins with no companyCode (Replit Auth / legacy) bypass the check.
+   * ITT users (companyCode "itt001") may access legacy records that have no companyCode.
+   */
+  const assertTenantAccess = async (req: any, request: { companyCode?: string }): Promise<boolean> => {
+    try {
+      let userId: string | null = null;
+      if (req.user?.claims?.sub) userId = req.user.claims.sub;
+      else if (req.session?.user?.id) userId = req.session.user.id;
+      if (!userId) return true; // anonymous / non-demo — let isLoggedIn handle auth
+      const user = await storage.getUser(userId);
+      if (!user?.companyCode) return true; // Replit Auth users have no companyCode — full access
+      const userCode = user.companyCode;
+      const reqCode = request.companyCode;
+      return reqCode === userCode || (userCode === "itt001" && !reqCode);
+    } catch (_) { return true; } // fail open only if storage is unavailable
+  };
+
   app.post("/api/requests/:id/approve", asyncHandler(async (req: any, res) => {
     const { comment, auditFlag, auditNote, approvalType } = req.body;
     const request = await storage.getTravelRequest(req.params.id);
     
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
+    }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
     }
 
     const actor = await resolveActingUser(req);
@@ -434,6 +460,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
     }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     // Validate request status — can reject at any active approval stage
     const rejectableStatuses = ["submitted", "in_review", "awaiting_quotes", "quotes_submitted"];
@@ -486,6 +515,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/requests/:id/cancel", asyncHandler(async (req: any, res) => {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) return res.status(404).json({ error: "Request not found" });
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     if (request.status !== "draft" && request.status !== "submitted") {
       return res.status(400).json({
@@ -523,6 +555,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
+    }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
     }
 
     // Validate request is in awaiting_quotes status
@@ -582,6 +617,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
     }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     if (request.status !== "awaiting_quotes") {
       return res.status(400).json({ 
@@ -626,6 +664,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
+    }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
     }
 
     if (request.status !== "awaiting_quotes") {
@@ -1364,6 +1405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/requests/:id/generate-approval-token", isAuthenticated, asyncHandler(async (req: any, res) => {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) return res.status(404).json({ error: "Request not found" });
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     const approverId = request.approverFlow[request.approverIndex] || "manager";
     const token = generateApprovalToken(req.params.id, approverId);
@@ -1479,6 +1523,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // List claims for a specific travel request
   app.get("/api/requests/:id/expense-claims", isLoggedIn, asyncHandler(async (req, res) => {
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: "Travel request not found" });
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const claims = await storage.getExpenseClaims(req.params.id);
     res.json(claims);
   }));
@@ -1494,6 +1543,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/requests/:id/expense-claims", isLoggedIn, asyncHandler(async (req, res) => {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) return res.status(404).json({ error: "Travel request not found" });
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     const allUsers = await storage.getAllUsers();
     const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
