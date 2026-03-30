@@ -131,15 +131,15 @@ async function logAudit(params: {
 /**
  * Synchronous tenant guard for admin entity operations.
  * Returns true if the current user may read/modify the given record.
- * - Users with no companyCode (platform-level super_admin via Replit Auth) bypass the check.
- * - ITT users may access legacy records that have no companyCode stamp.
- * - All other users must match the record's companyCode exactly.
+ * - Users with no companyCode (platform-level super_admin via Replit Auth) bypass the check — full access.
+ * - All other users must match the record's companyCode exactly — 403 on mismatch (including null).
+ * NOTE: All seeded and API-created records always carry a companyCode, so null-record matches
+ * should never occur in normal operation.
  */
 function assertAdminTenantRecord(req: any, record: { companyCode?: string | null }): boolean {
   const userCode: string | null | undefined = req.currentUser?.companyCode;
-  if (!userCode) return true; // platform super_admin — full access
-  const recCode = record.companyCode;
-  return recCode === userCode || (userCode === "itt001" && !recCode);
+  if (!userCode) return true; // platform super_admin (no companyCode) — full access
+  return record.companyCode === userCode; // strict exact match; no legacy exception
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
