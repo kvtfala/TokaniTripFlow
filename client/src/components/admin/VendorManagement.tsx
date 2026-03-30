@@ -401,7 +401,7 @@ export function VendorManagement() {
             </>
           )}
           <Button size="sm" variant="destructive" onClick={handleBulkDelete} data-testid="button-bulk-delete">Delete</Button>
-          <Button size="icon" variant="ghost" onClick={() => setSelectedIds(new Set())}><X className="w-4 h-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} data-testid="button-bulk-clear" className="gap-1"><X className="w-3.5 h-3.5" />Clear</Button>
         </div>
       )}
 
@@ -572,7 +572,7 @@ function VendorEditForm({
       };
       const existingReviews: VendorReview[] = vendor.performanceReviews ?? [];
       const allReviews = [...existingReviews, newReview];
-      const avgRating = Math.round(allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length);
+      const avgRating = Math.round((allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length) * 10) / 10;
       payload.performanceReviews = allReviews;
       payload.performanceRating = avgRating;
     }
@@ -722,7 +722,7 @@ function VendorEditForm({
             {reviewRating > 0 && (() => {
               const existingReviews = vendor.performanceReviews ?? [];
               const allReviews = [...existingReviews, { rating: reviewRating, comment: reviewComment, date: reviewDate }];
-              const newAvg = Math.round(allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length);
+              const newAvg = Math.round((allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length) * 10) / 10;
               return (
                 <p className="text-xs text-muted-foreground">
                   New performance rating will be set to{" "}

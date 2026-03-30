@@ -80,6 +80,7 @@ const CONDITION_FIELDS = [
   { value: "department", label: "Department" },
   { value: "duration_days", label: "Duration (Days)" },
   { value: "trip_type", label: "Trip Type" },
+  { value: "is_international", label: "Is International" },
 ];
 
 const CONDITION_OPERATORS = [
@@ -93,7 +94,7 @@ const CONDITION_OPERATORS = [
 
 const ACTION_TYPES = [
   { value: "require_approval", label: "Require Approval" },
-  { value: "block", label: "Block Travel Request" },
+  { value: "block_submission", label: "Block Submission" },
   { value: "notify", label: "Send Notification" },
   { value: "flag_for_review", label: "Flag for Review" },
   { value: "require_documentation", label: "Require Documentation" },
