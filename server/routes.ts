@@ -261,7 +261,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userCode = user.companyCode;
       const reqCode = request.companyCode;
       return reqCode === userCode || (userCode === "itt001" && !reqCode);
-    } catch (_) { return true; } // fail open only if storage is unavailable
+    } catch (err) {
+      console.error("[assertTenantAccess] Error during tenant check:", err);
+      return false; // fail closed — deny access when user lookup fails
+    }
   };
 
   app.post("/api/requests/:id/approve", asyncHandler(async (req: any, res) => {
