@@ -880,9 +880,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Admin Portal - Vendors
-  app.get("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
+  app.get("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
     const status = req.query.status as string | undefined;
-    const vendors = await storage.getVendors(status);
+    const cc = req.currentUser.companyCode;
+    const vendors = await storage.getVendors(status, cc);
     res.json(vendors);
   }));
 
@@ -903,6 +904,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const vendor = await storage.createVendor({
       ...validation.data,
+      companyCode: req.currentUser.companyCode,
       proposedBy: req.currentUser.id,
     });
     
@@ -976,9 +978,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Admin Portal - Email Templates
-  app.get("/api/admin/templates", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
+  app.get("/api/admin/templates", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
     const category = req.query.category as string | undefined;
-    const templates = await storage.getEmailTemplates(category);
+    const templates = await storage.getEmailTemplates(category, req.currentUser.companyCode);
     res.json(templates);
   }));
 
@@ -999,6 +1001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const template = await storage.createEmailTemplate({
       ...validation.data,
+      companyCode: req.currentUser.companyCode,
       createdBy: req.currentUser.id,
     });
     
@@ -1072,8 +1075,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Admin Portal - Per Diem Rates
-  app.get("/api/admin/rates", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
-    const rates = await storage.getPerDiemRates();
+  app.get("/api/admin/rates", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const rates = await storage.getPerDiemRates(req.currentUser.companyCode);
     res.json(rates);
   }));
 
@@ -1094,6 +1097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const rate = await storage.createPerDiemRate({
       ...validation.data,
+      companyCode: req.currentUser.companyCode,
       createdBy: req.currentUser.id,
     });
     
@@ -1167,8 +1171,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Admin Portal - Travel Policies
-  app.get("/api/admin/policies", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
-    const policies = await storage.getTravelPolicies();
+  app.get("/api/admin/policies", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const policies = await storage.getTravelPolicies(req.currentUser.companyCode);
     res.json(policies);
   }));
 
@@ -1181,6 +1185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const policy = await storage.createTravelPolicy({
       ...validation.data,
+      companyCode: req.currentUser.companyCode,
       createdBy: req.currentUser.id,
     });
     
@@ -1254,8 +1259,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Admin Portal - Workflow Rules
-  app.get("/api/admin/workflows", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
-    const workflows = await storage.getWorkflowRules();
+  app.get("/api/admin/workflows", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const workflows = await storage.getWorkflowRules(req.currentUser.companyCode);
     res.json(workflows);
   }));
 
@@ -1268,6 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const workflow = await storage.createWorkflowRule({
       ...validation.data,
+      companyCode: req.currentUser.companyCode,
       createdBy: req.currentUser.id,
     });
     
@@ -1341,9 +1347,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Admin Portal - System Notifications
-  app.get("/api/admin/notifications", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
+  app.get("/api/admin/notifications", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
     const published = req.query.published === "true" ? true : req.query.published === "false" ? false : undefined;
-    const notifications = await storage.getSystemNotifications(published);
+    const notifications = await storage.getSystemNotifications(published, req.currentUser.companyCode);
     res.json(notifications);
   }));
 
@@ -1356,6 +1362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const notification = await storage.createSystemNotification({
       ...validation.data,
+      companyCode: req.currentUser.companyCode,
       createdBy: req.currentUser.id,
     });
     

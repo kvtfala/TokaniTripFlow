@@ -287,7 +287,9 @@ export default function ExpenseClaims() {
             <IconExpense size={32} accentColor="#1FBED6" />
             <h1 className="text-2xl font-bold" data-testid="heading-expense-claims">Expense Claims</h1>
           </div>
-          <p className="text-muted-foreground text-sm">Submit and track your post-trip expense claims</p>
+          <p className="text-muted-foreground text-sm">
+            {isFinanceAdmin ? "All claims — pending review and approval" : "Submit and track your post-trip expense claims"}
+          </p>
         </div>
         <Button onClick={() => setWizardOpen(true)} data-testid="button-new-claim">
           <Plus className="w-4 h-4 mr-2" />

@@ -100,7 +100,7 @@ export function SystemNotificationsManagement() {
 
   // Fetch notifications
   const { data: notifications = [], isLoading } = useQuery<SystemNotification[]>({
-    queryKey: ["/api/admin/system-notifications"],
+    queryKey: ["/api/admin/notifications"],
   });
 
   // Create notification mutation
@@ -113,10 +113,10 @@ export function SystemNotificationsManagement() {
         createdBy: currentUser?.id || "system",
         publishedAt: data.isPublished ? new Date().toISOString() : null,
       };
-      return await apiRequest("POST", "/api/admin/system-notifications", payload);
+      return await apiRequest("POST", "/api/admin/notifications", payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/system-notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
       setIsCreateOpen(false);
       toast({
         title: "Notification created",
@@ -135,10 +135,10 @@ export function SystemNotificationsManagement() {
   // Update notification mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return await apiRequest("PATCH", `/api/admin/system-notifications/${id}`, data);
+      return await apiRequest("PATCH", `/api/admin/notifications/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/system-notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
       setEditingNotification(null);
       toast({
         title: "Notification updated",
@@ -157,10 +157,10 @@ export function SystemNotificationsManagement() {
   // Delete notification mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/system-notifications/${id}`);
+      return await apiRequest("DELETE", `/api/admin/notifications/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/system-notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
       setDeletingNotification(null);
       toast({
         title: "Notification deleted",

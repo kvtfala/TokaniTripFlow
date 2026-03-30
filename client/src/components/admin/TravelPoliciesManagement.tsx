@@ -96,7 +96,7 @@ export function TravelPoliciesManagement() {
 
   // Fetch policies
   const { data: policies = [], isLoading } = useQuery<TravelPolicy[]>({
-    queryKey: ["/api/admin/travel-policies"],
+    queryKey: ["/api/admin/policies"],
   });
 
   // Create policy mutation
@@ -120,10 +120,10 @@ export function TravelPoliciesManagement() {
       };
       
       // API errors will propagate naturally with their own messages
-      return await apiRequest("POST", "/api/admin/travel-policies", payload);
+      return await apiRequest("POST", "/api/admin/policies", payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/travel-policies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/policies"] });
       setIsCreateOpen(false);
       toast({
         title: "Policy created",
@@ -143,10 +143,10 @@ export function TravelPoliciesManagement() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       // JSON parsing happens in onSubmit, this just calls API
-      return await apiRequest("PATCH", `/api/admin/travel-policies/${id}`, data);
+      return await apiRequest("PATCH", `/api/admin/policies/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/travel-policies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/policies"] });
       setEditingPolicy(null);
       toast({
         title: "Policy updated",
@@ -165,10 +165,10 @@ export function TravelPoliciesManagement() {
   // Delete policy mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/travel-policies/${id}`);
+      return await apiRequest("DELETE", `/api/admin/policies/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/travel-policies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/policies"] });
       setDeletingPolicy(null);
       toast({
         title: "Policy deleted",

@@ -73,10 +73,20 @@ export default function Reports() {
     queryKey: ["/api/requests"],
   });
 
+  const reportsRole = roleUser?.role || "employee";
+
   const [costCentres, setCostCentres] = useState<CostCentre[]>([]);
   useEffect(() => {
     CostCentreAdapter.list().then(setCostCentres);
   }, []);
+
+  // For managers: pre-select their own department once requests load
+  useEffect(() => {
+    if (reportsRole === "manager" && allRequests.length > 0 && roleUser?.id) {
+      const myReq = allRequests.find(r => r.employeeId === roleUser.id);
+      if (myReq?.department) setDepartment(myReq.department);
+    }
+  }, [reportsRole, allRequests, roleUser?.id]);
 
   const [startDate, setStartDate] = useState<string>(
     format(subDays(new Date(), 90), "yyyy-MM-dd")
@@ -463,9 +473,15 @@ export default function Reports() {
   }
 
   if (roleLoading) return null;
-  const reportsRole = roleUser?.role || "employee";
   const reportsAllowed = ["manager", "finance_admin", "travel_admin", "super_admin"].includes(reportsRole);
   if (!reportsAllowed) return <Redirect to="/" />;
+
+
+  const reportsSubtitle =
+    reportsRole === "finance_admin" ? "Finance Overview — All Departments" :
+    reportsRole === "manager" ? `Department Overview${department !== "all" ? ` — ${department}` : ""}` :
+    reportsRole === "travel_admin" ? "Travel Desk — Trips & Trends" :
+    "Travel analytics, transaction detail, and accounting exports";
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
@@ -474,9 +490,7 @@ export default function Reports() {
           <IconReports size={36} accentColor="#1FBED6" />
           <h1 className="text-3xl font-bold" data-testid="heading-reports">Reports</h1>
         </div>
-        <p className="text-muted-foreground">
-          Travel analytics, transaction detail, and accounting exports
-        </p>
+        <p className="text-muted-foreground">{reportsSubtitle}</p>
       </div>
 
       {/* Shared Filter Bar */}
@@ -611,10 +625,12 @@ export default function Reports() {
             <Download className="w-4 h-4 mr-1.5" />
             Export
           </TabsTrigger>
-          <TabsTrigger value="expense-claims" data-testid="tab-expense-claims">
-            <Receipt className="w-4 h-4 mr-1.5" />
-            Claims
-          </TabsTrigger>
+          {reportsRole !== "travel_admin" && (
+            <TabsTrigger value="expense-claims" data-testid="tab-expense-claims">
+              <Receipt className="w-4 h-4 mr-1.5" />
+              Claims
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ============================================================

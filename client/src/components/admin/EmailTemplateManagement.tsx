@@ -111,7 +111,7 @@ export function EmailTemplateManagement() {
 
   // Fetch templates
   const { data: templates = [], isLoading } = useQuery<EmailTemplate[]>({
-    queryKey: ["/api/admin/email-templates"],
+    queryKey: ["/api/admin/templates"],
   });
 
   // Create template mutation
@@ -121,10 +121,10 @@ export function EmailTemplateManagement() {
         ...data,
         createdBy: currentUser?.id || "system",
       };
-      return await apiRequest("POST", "/api/admin/email-templates", payload);
+      return await apiRequest("POST", "/api/admin/templates", payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
       setIsCreateOpen(false);
       toast({
         title: "Template created",
@@ -143,10 +143,10 @@ export function EmailTemplateManagement() {
   // Update template mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<EmailTemplate> }) => {
-      return await apiRequest("PATCH", `/api/admin/email-templates/${id}`, data);
+      return await apiRequest("PATCH", `/api/admin/templates/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
       setEditingTemplate(null);
       toast({
         title: "Template updated",
@@ -165,10 +165,10 @@ export function EmailTemplateManagement() {
   // Delete template mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/email-templates/${id}`);
+      return await apiRequest("DELETE", `/api/admin/templates/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
       setDeletingTemplate(null);
       toast({
         title: "Template deleted",

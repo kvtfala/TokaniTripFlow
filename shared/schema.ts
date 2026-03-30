@@ -49,6 +49,7 @@ export type VendorCategory = z.infer<typeof vendorCategorySchema>;
 // Vendors table - Supplier directory with approval workflow
 export const vendors = pgTable("vendors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }), // Tenant isolation
   name: varchar("name", { length: 255 }).notNull(),
   category: varchar("category", { length: 50 }).notNull().default("Other"), // Airlines, Hotels, Events, etc.
   contactEmail: varchar("contact_email", { length: 255 }).notNull(),
@@ -82,6 +83,7 @@ export type TemplateCategory = z.infer<typeof templateCategorySchema>;
 // Email Templates table - Customizable email content
 export const emailTemplates = pgTable("email_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }), // Tenant isolation
   name: varchar("name", { length: 255 }).notNull(), // e.g., "approval_notification"
   description: text("description"),
   subject: text("subject").notNull(),
@@ -103,6 +105,7 @@ export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit
 // Per Diem Rates table - Location-based daily allowances
 export const perDiemRates = pgTable("per_diem_rates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }), // Tenant isolation
   location: varchar("location", { length: 255 }).notNull(), // Country or city
   locationCode: varchar("location_code", { length: 10 }), // ISO country code or city code
   dailyRate: decimal("daily_rate", { precision: 10, scale: 2 }).notNull(), // Decimal for currency
@@ -128,6 +131,7 @@ export type PolicyType = z.infer<typeof policyTypeSchema>;
 // Travel Policies table - Business rules and thresholds
 export const travelPolicies = pgTable("travel_policies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }), // Tenant isolation
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   policyType: text("policy_type").$type<PolicyType>().notNull(),
@@ -149,6 +153,7 @@ export const insertTravelPolicySchema = createInsertSchema(travelPolicies).omit(
 // Workflow Rules table - Approval flow configuration
 export const workflowRules = pgTable("workflow_rules", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }), // Tenant isolation
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   conditions: jsonb("conditions").notNull(), // When to apply: {costGreaterThan: 5000, isInternational: true}
@@ -177,6 +182,7 @@ export type NotificationSeverity = z.infer<typeof notificationSeveritySchema>;
 // System Notifications table - App-wide messages and alerts
 export const systemNotifications = pgTable("system_notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }), // Tenant isolation
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   type: text("type").$type<NotificationType>().notNull(),

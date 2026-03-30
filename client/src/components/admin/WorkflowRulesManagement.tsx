@@ -134,7 +134,7 @@ export function WorkflowRulesManagement() {
 
   // Fetch workflow rules
   const { data: workflows = [], isLoading } = useQuery<WorkflowRule[]>({
-    queryKey: ["/api/admin/workflow-rules"],
+    queryKey: ["/api/admin/workflows"],
   });
 
   // Create workflow mutation
@@ -159,10 +159,10 @@ export function WorkflowRulesManagement() {
       };
       
       // API errors will propagate naturally with their own messages
-      return await apiRequest("POST", "/api/admin/workflow-rules", payload);
+      return await apiRequest("POST", "/api/admin/workflows", payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/workflow-rules"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/workflows"] });
       setIsCreateOpen(false);
       toast({
         title: "Workflow created",
@@ -182,10 +182,10 @@ export function WorkflowRulesManagement() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       // JSON parsing happens in onSubmit, this just calls API
-      return await apiRequest("PATCH", `/api/admin/workflow-rules/${id}`, data);
+      return await apiRequest("PATCH", `/api/admin/workflows/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/workflow-rules"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/workflows"] });
       setEditingWorkflow(null);
       toast({
         title: "Workflow updated",
@@ -204,10 +204,10 @@ export function WorkflowRulesManagement() {
   // Delete workflow mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/workflow-rules/${id}`);
+      return await apiRequest("DELETE", `/api/admin/workflows/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/workflow-rules"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/workflows"] });
       setDeletingWorkflow(null);
       toast({
         title: "Workflow deleted",

@@ -95,7 +95,7 @@ export function PerDiemRatesManagement() {
 
   // Fetch per diem rates
   const { data: rates = [], isLoading } = useQuery<PerDiemRate[]>({
-    queryKey: ["/api/admin/per-diem-rates"],
+    queryKey: ["/api/admin/rates"],
   });
 
   // Create rate mutation
@@ -105,10 +105,10 @@ export function PerDiemRatesManagement() {
         ...data,
         createdBy: currentUser?.id || "system",
       };
-      return await apiRequest("POST", "/api/admin/per-diem-rates", payload);
+      return await apiRequest("POST", "/api/admin/rates", payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/per-diem-rates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/rates"] });
       setIsCreateOpen(false);
       toast({
         title: "Rate created",
@@ -127,10 +127,10 @@ export function PerDiemRatesManagement() {
   // Update rate mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PerDiemRate> }) => {
-      return await apiRequest("PATCH", `/api/admin/per-diem-rates/${id}`, data);
+      return await apiRequest("PATCH", `/api/admin/rates/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/per-diem-rates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/rates"] });
       setEditingRate(null);
       toast({
         title: "Rate updated",
@@ -149,10 +149,10 @@ export function PerDiemRatesManagement() {
   // Delete rate mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/per-diem-rates/${id}`);
+      return await apiRequest("DELETE", `/api/admin/rates/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/per-diem-rates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/rates"] });
       setDeletingRate(null);
       toast({
         title: "Rate deleted",

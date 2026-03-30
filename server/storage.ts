@@ -52,21 +52,21 @@ export interface IStorage {
   updateQuotePolicy(policy: Partial<QuotePolicy>): Promise<QuotePolicy>;
   
   // Admin Portal - Vendors
-  getVendors(status?: string): Promise<Vendor[]>;
+  getVendors(status?: string, companyCode?: string | null): Promise<Vendor[]>;
   getVendor(id: string): Promise<Vendor | undefined>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
   updateVendor(id: string, updates: Partial<Vendor>): Promise<Vendor | undefined>;
   deleteVendor(id: string): Promise<boolean>;
   
   // Admin Portal - Email Templates
-  getEmailTemplates(category?: string): Promise<EmailTemplate[]>;
+  getEmailTemplates(category?: string, companyCode?: string | null): Promise<EmailTemplate[]>;
   getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
   updateEmailTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | undefined>;
   deleteEmailTemplate(id: string): Promise<boolean>;
   
   // Admin Portal - Per Diem Rates
-  getPerDiemRates(): Promise<PerDiemRate[]>;
+  getPerDiemRates(companyCode?: string | null): Promise<PerDiemRate[]>;
   getPerDiemRate(id: string): Promise<PerDiemRate | undefined>;
   getActivePerDiemRate(location: string, date: Date): Promise<PerDiemRate | undefined>;
   createPerDiemRate(rate: InsertPerDiemRate): Promise<PerDiemRate>;
@@ -74,21 +74,21 @@ export interface IStorage {
   deletePerDiemRate(id: string): Promise<boolean>;
   
   // Admin Portal - Travel Policies
-  getTravelPolicies(): Promise<TravelPolicy[]>;
+  getTravelPolicies(companyCode?: string | null): Promise<TravelPolicy[]>;
   getTravelPolicy(id: string): Promise<TravelPolicy | undefined>;
   createTravelPolicy(policy: InsertTravelPolicy): Promise<TravelPolicy>;
   updateTravelPolicy(id: string, updates: Partial<TravelPolicy>): Promise<TravelPolicy | undefined>;
   deleteTravelPolicy(id: string): Promise<boolean>;
   
   // Admin Portal - Workflow Rules
-  getWorkflowRules(): Promise<WorkflowRule[]>;
+  getWorkflowRules(companyCode?: string | null): Promise<WorkflowRule[]>;
   getWorkflowRule(id: string): Promise<WorkflowRule | undefined>;
   createWorkflowRule(rule: InsertWorkflowRule): Promise<WorkflowRule>;
   updateWorkflowRule(id: string, updates: Partial<WorkflowRule>): Promise<WorkflowRule | undefined>;
   deleteWorkflowRule(id: string): Promise<boolean>;
   
   // Admin Portal - System Notifications
-  getSystemNotifications(published?: boolean): Promise<SystemNotification[]>;
+  getSystemNotifications(published?: boolean, companyCode?: string | null): Promise<SystemNotification[]>;
   getSystemNotification(id: string): Promise<SystemNotification | undefined>;
   createSystemNotification(notification: InsertSystemNotification): Promise<SystemNotification>;
   updateSystemNotification(id: string, updates: Partial<SystemNotification>): Promise<SystemNotification | undefined>;
@@ -1475,10 +1475,11 @@ export class MemStorage implements IStorage {
     const now = new Date("2025-01-01T00:00:00Z");
     const userId = "user-itt-manager-001";
 
-    // Sample Vendors (5 total: 3 approved, 2 pending)
+    // Sample Vendors (5 total: 3 approved, 2 pending) — all scoped to ITT
     const sampleVendors: Vendor[] = [
       {
         id: "vendor-001",
+        companyCode: "itt001",
         name: "Pacific Airways",
         category: "Airlines",
         contactEmail: "enquries@islandtravetech.com",
@@ -1498,6 +1499,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "vendor-002",
+        companyCode: "itt001",
         name: "Fiji Airways",
         category: "Airlines",
         contactEmail: "enquries@islandtravetech.com",
@@ -1517,6 +1519,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "vendor-003",
+        companyCode: "itt001",
         name: "Island Stays Hotels",
         category: "Hotels",
         contactEmail: "enquries@islandtravetech.com",
@@ -1536,6 +1539,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "vendor-006",
+        companyCode: "itt001",
         name: "Grand Pacific Events",
         category: "Events",
         contactEmail: "enquries@islandtravetech.com",
@@ -1555,6 +1559,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "vendor-004",
+        companyCode: "itt001",
         name: "QuickRide Car Rentals",
         category: "Car Rental",
         contactEmail: "enquries@islandtravetech.com",
@@ -1574,6 +1579,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "vendor-005",
+        companyCode: "itt001",
         name: "Travel Visa Express",
         category: "Visa Services",
         contactEmail: "enquries@islandtravetech.com",
@@ -1595,10 +1601,11 @@ export class MemStorage implements IStorage {
 
     sampleVendors.forEach(vendor => this.vendors.set(vendor.id, vendor));
 
-    // Sample Email Templates
+    // Sample Email Templates — all scoped to ITT
     const sampleTemplates: EmailTemplate[] = [
       {
         id: "template-001",
+        companyCode: "itt001",
         name: "approval_notification",
         description: "Sent when a travel request needs approval",
         subject: "Travel Request Approval Required: {{travelerName}} - {{destination}}",
@@ -1622,6 +1629,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "template-002",
+        companyCode: "itt001",
         name: "booking_confirmation",
         description: "Sent when travel is booked by Travel Desk",
         subject: "Travel Booking Confirmed: {{destination}}",
@@ -1645,6 +1653,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "template-003",
+        companyCode: "itt001",
         name: "booking_reminder",
         description: "Sent 48 hours before departure",
         subject: "Travel Reminder: Departure in 48 Hours",
@@ -1668,10 +1677,11 @@ export class MemStorage implements IStorage {
 
     sampleTemplates.forEach(template => this.emailTemplates.set(template.id, template));
 
-    // Sample Per Diem Rates
+    // Sample Per Diem Rates — all scoped to ITT
     const sampleRates: PerDiemRate[] = [
       {
         id: "rate-001",
+        companyCode: "itt001",
         location: "Fiji - Suva",
         locationCode: "SUV",
         dailyRate: "320.00",
@@ -1685,6 +1695,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-002",
+        companyCode: "itt001",
         location: "Fiji - Nadi",
         locationCode: "NAN",
         dailyRate: "320.00",
@@ -1698,6 +1709,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-003",
+        companyCode: "itt001",
         location: "Australia - Sydney",
         locationCode: "SYD",
         dailyRate: "495.00",
@@ -1711,6 +1723,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-004",
+        companyCode: "itt001",
         location: "New Zealand - Auckland",
         locationCode: "AKL",
         dailyRate: "470.00",
@@ -1724,6 +1737,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-005",
+        companyCode: "itt001",
         location: "Singapore",
         locationCode: "SIN",
         dailyRate: "395.00",
@@ -1735,9 +1749,9 @@ export class MemStorage implements IStorage {
         createdAt: now,
         updatedAt: now,
       },
-      // Fiji domestic locations for CDP Couriers inter-island operations
       {
         id: "rate-006",
+        companyCode: "itt001",
         location: "Fiji - Labasa",
         locationCode: "LBS",
         dailyRate: "300.00",
@@ -1751,6 +1765,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-007",
+        companyCode: "itt001",
         location: "Fiji - Savusavu",
         locationCode: "SVU",
         dailyRate: "290.00",
@@ -1764,6 +1779,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-008",
+        companyCode: "itt001",
         location: "Fiji - Taveuni",
         locationCode: "TVU",
         dailyRate: "290.00",
@@ -1777,6 +1793,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-009",
+        companyCode: "itt001",
         location: "Fiji - Lautoka",
         locationCode: "LTK",
         dailyRate: "300.00",
@@ -1790,6 +1807,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "rate-010",
+        companyCode: "itt001",
         location: "Fiji - Nausori",
         locationCode: "NAU",
         dailyRate: "280.00",
@@ -1805,10 +1823,11 @@ export class MemStorage implements IStorage {
 
     sampleRates.forEach(rate => this.perDiemRates.set(rate.id, rate));
 
-    // Sample Travel Policies
+    // Sample Travel Policies — all scoped to ITT
     const samplePolicies: TravelPolicy[] = [
       {
         id: "policy-tp-001",
+        companyCode: "itt001",
         name: "Advance Booking Requirement",
         description: "Minimum advance booking window for travel requests",
         policyType: "advance_booking",
@@ -1825,6 +1844,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "policy-tp-002",
+        companyCode: "itt001",
         name: "Finance Approval Threshold",
         description: "Cost thresholds that trigger finance review",
         policyType: "cost_threshold",
@@ -1843,6 +1863,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "policy-tp-003",
+        companyCode: "itt001",
         name: "Domestic Transport Mode Preference",
         description: "For Fiji domestic travel, land transport must be used where practical (under 150 km road distance). Air travel requires justification for routes served by road.",
         policyType: "transport_mode",
@@ -1861,6 +1882,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "policy-tp-004",
+        companyCode: "itt001",
         name: "Accommodation Budget Cap — Domestic Fiji",
         description: "Maximum nightly accommodation rates for domestic Fiji travel. Claims above these limits require Finance Admin written approval.",
         policyType: "accommodation_cap",
@@ -1884,10 +1906,11 @@ export class MemStorage implements IStorage {
 
     samplePolicies.forEach(policy => this.travelPolicies.set(policy.id, policy));
 
-    // Sample Workflow Rules
+    // Sample Workflow Rules — all scoped to ITT
     const sampleWorkflows: WorkflowRule[] = [
       {
         id: "workflow-001",
+        companyCode: "itt001",
         name: "High-Value Travel Approval",
         description: "Require finance review for trips over FJD 5,000",
         conditions: { costGreaterThan: 5000, currency: "FJD" },
@@ -1901,6 +1924,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "workflow-002",
+        companyCode: "itt001",
         name: "International Travel Workflow",
         description: "Multi-stage approval for international trips",
         conditions: { isInternational: true },
@@ -1916,10 +1940,11 @@ export class MemStorage implements IStorage {
 
     sampleWorkflows.forEach(workflow => this.workflowRules.set(workflow.id, workflow));
 
-    // Sample System Notifications
+    // Sample System Notifications — all scoped to ITT
     const sampleNotifications: SystemNotification[] = [
       {
         id: "notif-001",
+        companyCode: "itt001",
         title: "System Maintenance Scheduled",
         message: "Tokani TripFlow will undergo scheduled maintenance on Sunday, December 1st from 2:00 AM to 6:00 AM FJT. The system will be unavailable during this time.",
         type: "banner",
@@ -1990,8 +2015,9 @@ export class MemStorage implements IStorage {
   }
 
   // Admin Portal - Vendors
-  async getVendors(status?: string): Promise<Vendor[]> {
-    const allVendors = Array.from(this.vendors.values());
+  async getVendors(status?: string, companyCode?: string | null): Promise<Vendor[]> {
+    let allVendors = Array.from(this.vendors.values());
+    if (companyCode) allVendors = allVendors.filter(v => v.companyCode === companyCode);
     if (status) {
       return allVendors.filter(v => v.status === status).map(v => structuredClone(v));
     }
@@ -2008,6 +2034,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const newVendor: Vendor = {
       id,
+      companyCode: vendor.companyCode ?? null,
       name: vendor.name,
       category: vendor.category || "Other",
       contactEmail: vendor.contactEmail,
@@ -2048,8 +2075,9 @@ export class MemStorage implements IStorage {
   }
 
   // Admin Portal - Email Templates
-  async getEmailTemplates(category?: string): Promise<EmailTemplate[]> {
-    const allTemplates = Array.from(this.emailTemplates.values());
+  async getEmailTemplates(category?: string, companyCode?: string | null): Promise<EmailTemplate[]> {
+    let allTemplates = Array.from(this.emailTemplates.values());
+    if (companyCode) allTemplates = allTemplates.filter(t => t.companyCode === companyCode);
     if (category) {
       return allTemplates.filter(t => t.category === category).map(t => structuredClone(t));
     }
@@ -2066,6 +2094,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const newTemplate: EmailTemplate = {
       id,
+      companyCode: template.companyCode ?? null,
       name: template.name,
       description: template.description || null,
       subject: template.subject,
@@ -2100,8 +2129,10 @@ export class MemStorage implements IStorage {
   }
 
   // Admin Portal - Per Diem Rates
-  async getPerDiemRates(): Promise<PerDiemRate[]> {
-    return Array.from(this.perDiemRates.values()).map(r => structuredClone(r));
+  async getPerDiemRates(companyCode?: string | null): Promise<PerDiemRate[]> {
+    let all = Array.from(this.perDiemRates.values());
+    if (companyCode) all = all.filter(r => r.companyCode === companyCode);
+    return all.map(r => structuredClone(r));
   }
 
   async getPerDiemRate(id: string): Promise<PerDiemRate | undefined> {
@@ -2125,6 +2156,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const newRate: PerDiemRate = {
       id,
+      companyCode: rate.companyCode ?? null,
       location: rate.location,
       locationCode: rate.locationCode || null,
       dailyRate: rate.dailyRate,
@@ -2159,8 +2191,10 @@ export class MemStorage implements IStorage {
   }
 
   // Admin Portal - Travel Policies
-  async getTravelPolicies(): Promise<TravelPolicy[]> {
-    return Array.from(this.travelPolicies.values()).map(p => structuredClone(p));
+  async getTravelPolicies(companyCode?: string | null): Promise<TravelPolicy[]> {
+    let all = Array.from(this.travelPolicies.values());
+    if (companyCode) all = all.filter(p => p.companyCode === companyCode);
+    return all.map(p => structuredClone(p));
   }
 
   async getTravelPolicy(id: string): Promise<TravelPolicy | undefined> {
@@ -2173,6 +2207,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const newPolicy: TravelPolicy = {
       id,
+      companyCode: policy.companyCode ?? null,
       name: policy.name,
       description: policy.description || null,
       policyType: policy.policyType,
@@ -2206,8 +2241,10 @@ export class MemStorage implements IStorage {
   }
 
   // Admin Portal - Workflow Rules
-  async getWorkflowRules(): Promise<WorkflowRule[]> {
-    return Array.from(this.workflowRules.values()).map(w => structuredClone(w));
+  async getWorkflowRules(companyCode?: string | null): Promise<WorkflowRule[]> {
+    let all = Array.from(this.workflowRules.values());
+    if (companyCode) all = all.filter(w => w.companyCode === companyCode);
+    return all.map(w => structuredClone(w));
   }
 
   async getWorkflowRule(id: string): Promise<WorkflowRule | undefined> {
@@ -2220,6 +2257,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const newRule: WorkflowRule = {
       id,
+      companyCode: rule.companyCode ?? null,
       name: rule.name,
       description: rule.description || null,
       conditions: rule.conditions,
@@ -2254,8 +2292,9 @@ export class MemStorage implements IStorage {
   }
 
   // Admin Portal - System Notifications
-  async getSystemNotifications(published?: boolean): Promise<SystemNotification[]> {
-    const allNotifications = Array.from(this.systemNotifications.values());
+  async getSystemNotifications(published?: boolean, companyCode?: string | null): Promise<SystemNotification[]> {
+    let allNotifications = Array.from(this.systemNotifications.values());
+    if (companyCode) allNotifications = allNotifications.filter(n => n.companyCode === companyCode);
     if (published !== undefined) {
       return allNotifications.filter(n => n.isPublished === published).map(n => structuredClone(n));
     }
@@ -2272,6 +2311,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const newNotification: SystemNotification = {
       id,
+      companyCode: notification.companyCode ?? null,
       title: notification.title,
       message: notification.message,
       type: notification.type,
