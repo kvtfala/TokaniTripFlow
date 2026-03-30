@@ -64,7 +64,8 @@ export const vendors = pgTable("vendors", {
   approvedAt: timestamp("approved_at"),
   rejectionReason: text("rejection_reason"),
   suspensionReason: text("suspension_reason"),
-  performanceRating: integer("performance_rating"), // 1-5 stars
+  performanceRating: integer("performance_rating"), // 1-5 stars (computed average of all reviews)
+  performanceReviews: jsonb("performance_reviews").$type<Array<{ rating: number; comment: string; date: string }>>(), // review history
   notes: text("notes"), // Internal admin notes
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -72,10 +73,18 @@ export const vendors = pgTable("vendors", {
 
 export type Vendor = typeof vendors.$inferSelect;
 export type InsertVendor = typeof vendors.$inferInsert;
+export const vendorReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string(),
+  date: z.string(),
+});
+export type VendorReview = z.infer<typeof vendorReviewSchema>;
+
 export const insertVendorSchema = createInsertSchema(vendors).omit({ id: true, createdAt: true, updatedAt: true }).extend({
   status: vendorStatusSchema,
   category: vendorCategorySchema.optional().default("Other"),
   performanceRating: z.number().int().min(1).max(5).optional().nullable(),
+  performanceReviews: z.array(vendorReviewSchema).optional().nullable(),
 });
 
 // Email template category enum

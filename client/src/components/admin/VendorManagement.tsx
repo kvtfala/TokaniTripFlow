@@ -4,7 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useRole } from "@/contexts/RoleContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import type { Vendor, InsertVendor } from "@shared/schema";
+import type { Vendor, InsertVendor, VendorReview } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,7 +55,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, Clock, Ban, Star, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVendorSchema, vendorCategorySchema } from "@shared/schema";
 import { z } from "zod";
@@ -106,7 +106,7 @@ export function VendorManagement() {
   const [deletingVendor, setDeletingVendor] = useState<Vendor | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const isFinanceAdmin = currentUser.role === "finance_admin" || currentUser.role === "manager";
+  const isFinanceAdmin = ["finance_admin", "manager", "super_admin", "travel_admin"].includes(currentUser.role);
 
   const { data: vendors = [], isLoading } = useQuery<Vendor[]>({
     queryKey: ["/api/admin/vendors"],
@@ -218,6 +218,21 @@ export function VendorManagement() {
     toast({ title: `${pending.length} vendors approved` });
   };
 
+  const handleBulkReject = async () => {
+    const eligible = vendors.filter(v => selectedIds.has(v.id) && v.status === "pending_approval");
+    for (const v of eligible) {
+      await apiRequest("PATCH", `/api/admin/vendors/${v.id}`, {
+        status: "rejected",
+        approvedBy: currentUser.id,
+        approvedAt: new Date(),
+        rejectionReason: "Does not meet requirements",
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/vendors"] });
+    setSelectedIds(new Set());
+    toast({ title: `${eligible.length} vendors rejected` });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "approved": return <Badge className="gap-1"><CheckCircle className="w-3 h-3" />Approved</Badge>;
@@ -315,10 +330,15 @@ export function VendorManagement() {
                   <TableCell>{getStatusBadge(vendor.status)}</TableCell>
                   <TableCell>
                     {vendor.performanceRating ? (
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} className={`w-3.5 h-3.5 ${s <= vendor.performanceRating! ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
-                        ))}
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <Star key={s} className={`w-3.5 h-3.5 ${s <= vendor.performanceRating! ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                          ))}
+                        </div>
+                        {vendor.performanceReviews && vendor.performanceReviews.length > 0 && (
+                          <span className="text-xs text-muted-foreground">{vendor.performanceReviews.length} review{vendor.performanceReviews.length !== 1 ? "s" : ""}</span>
+                        )}
                       </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">No rating</span>
@@ -375,7 +395,10 @@ export function VendorManagement() {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-background border rounded-xl px-4 py-3 shadow-lg">
           <span className="text-sm font-medium">{selectedIds.size} selected</span>
           {isFinanceAdmin && (
-            <Button size="sm" variant="outline" onClick={handleBulkApprove} data-testid="button-bulk-approve">Approve Pending</Button>
+            <>
+              <Button size="sm" variant="outline" onClick={handleBulkApprove} data-testid="button-bulk-approve">Approve Pending</Button>
+              <Button size="sm" variant="destructive" onClick={handleBulkReject} data-testid="button-bulk-reject">Reject Pending</Button>
+            </>
           )}
           <Button size="sm" variant="destructive" onClick={handleBulkDelete} data-testid="button-bulk-delete">Delete</Button>
           <Button size="icon" variant="ghost" onClick={() => setSelectedIds(new Set())}><X className="w-4 h-4" /></Button>
@@ -402,14 +425,14 @@ export function VendorManagement() {
   );
 }
 
-function VendorFields({ form }: { form: any }) {
+function VendorFields({ form }: { form: UseFormReturn<VendorFormValues> }) {
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="name"
-          render={({ field }: any) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Vendor Name</FormLabel>
               <FormControl>
@@ -422,7 +445,7 @@ function VendorFields({ form }: { form: any }) {
         <FormField
           control={form.control}
           name="category"
-          render={({ field }: any) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Category</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -444,7 +467,7 @@ function VendorFields({ form }: { form: any }) {
         <FormField
           control={form.control}
           name="contactEmail"
-          render={({ field }: any) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Contact Email</FormLabel>
               <FormControl>
@@ -457,7 +480,7 @@ function VendorFields({ form }: { form: any }) {
         <FormField
           control={form.control}
           name="contactPhone"
-          render={({ field }: any) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Contact Phone</FormLabel>
               <FormControl>
@@ -471,7 +494,7 @@ function VendorFields({ form }: { form: any }) {
       <FormField
         control={form.control}
         name="services"
-        render={({ field }: any) => (
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Services Provided</FormLabel>
             <FormControl>
@@ -485,7 +508,7 @@ function VendorFields({ form }: { form: any }) {
       <FormField
         control={form.control}
         name="notes"
-        render={({ field }: any) => (
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Notes (Optional)</FormLabel>
             <FormControl>
@@ -542,12 +565,16 @@ function VendorEditForm({
     };
 
     if (reviewRating > 0) {
-      const currentRating = vendor.performanceRating || 0;
-      if (currentRating === 0) {
-        payload.performanceRating = reviewRating;
-      } else {
-        payload.performanceRating = Math.round((currentRating + reviewRating) / 2);
-      }
+      const newReview: VendorReview = {
+        rating: reviewRating,
+        comment: reviewComment,
+        date: reviewDate,
+      };
+      const existingReviews: VendorReview[] = vendor.performanceReviews ?? [];
+      const allReviews = [...existingReviews, newReview];
+      const avgRating = Math.round(allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length);
+      payload.performanceReviews = allReviews;
+      payload.performanceRating = avgRating;
     }
 
     onSubmit(payload);
@@ -692,18 +719,18 @@ function VendorEditForm({
               </div>
             </div>
 
-            {reviewRating > 0 && (
-              <p className="text-xs text-muted-foreground">
-                New performance rating will be set to{" "}
-                <strong>
-                  {vendor.performanceRating
-                    ? Math.round((vendor.performanceRating + reviewRating) / 2)
-                    : reviewRating}
-                  /5
-                </strong>{" "}
-                {vendor.performanceRating ? `(average of ${vendor.performanceRating} and ${reviewRating})` : "(first rating)"}
-              </p>
-            )}
+            {reviewRating > 0 && (() => {
+              const existingReviews = vendor.performanceReviews ?? [];
+              const allReviews = [...existingReviews, { rating: reviewRating, comment: reviewComment, date: reviewDate }];
+              const newAvg = Math.round(allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length);
+              return (
+                <p className="text-xs text-muted-foreground">
+                  New performance rating will be set to{" "}
+                  <strong>{newAvg}/5</strong>{" "}
+                  (average of {allReviews.length} review{allReviews.length !== 1 ? "s" : ""})
+                </p>
+              );
+            })()}
           </div>
         </div>
 

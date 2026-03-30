@@ -61,8 +61,8 @@ type TravelPolicy = {
   id: string;
   name: string;
   description: string;
-  conditions: any;
-  actions: any;
+  conditions: Record<string, unknown>;
+  actions: Record<string, unknown>;
   priority: number;
   isActive: boolean;
   effectiveFrom: Date;
@@ -144,26 +144,26 @@ export function TravelPoliciesManagement() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => apiRequest("POST", "/api/admin/policies", data),
+    mutationFn: async (data: Record<string, unknown>) => apiRequest("POST", "/api/admin/policies", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/policies"] });
       setIsCreateOpen(false);
       toast({ title: "Policy created", description: "Travel policy has been created successfully." });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message || "Failed to create travel policy.", variant: "destructive" });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) =>
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) =>
       apiRequest("PATCH", `/api/admin/policies/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/policies"] });
       setEditingPolicy(null);
       toast({ title: "Policy updated", description: "Travel policy has been updated successfully." });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message || "Failed to update travel policy.", variant: "destructive" });
     },
   });
@@ -396,14 +396,15 @@ export function TravelPoliciesManagement() {
   );
 }
 
-function parseConditions(raw: any): PolicyCondition[] {
+function parseConditions(raw: unknown): PolicyCondition[] {
   try {
-    if (!raw) return [{ field: "budget", operator: "greater_than", value: "5000" }];
-    if (raw.rules && Array.isArray(raw.rules)) {
-      return raw.rules.map((r: any) => ({
-        field: r.field || "budget",
-        operator: r.operator || "greater_than",
-        value: String(r.value || ""),
+    if (!raw || typeof raw !== "object") return [{ field: "budget", operator: "greater_than", value: "5000" }];
+    const r = raw as Record<string, unknown>;
+    if (r.rules && Array.isArray(r.rules)) {
+      return (r.rules as Record<string, unknown>[]).map((rule) => ({
+        field: typeof rule.field === "string" ? rule.field : "budget",
+        operator: typeof rule.operator === "string" ? rule.operator : "greater_than",
+        value: rule.value !== undefined ? String(rule.value) : "",
       }));
     }
     return [{ field: "budget", operator: "greater_than", value: "5000" }];
@@ -412,13 +413,14 @@ function parseConditions(raw: any): PolicyCondition[] {
   }
 }
 
-function parseAction(raw: any): PolicyAction {
+function parseAction(raw: unknown): PolicyAction {
   try {
-    if (!raw) return { type: "require_approval", approverRole: "manager" };
+    if (!raw || typeof raw !== "object") return { type: "require_approval", approverRole: "manager" };
+    const r = raw as Record<string, unknown>;
     return {
-      type: raw.type || "require_approval",
-      approverRole: raw.approver_role,
-      message: raw.message,
+      type: typeof r.type === "string" ? r.type : "require_approval",
+      approverRole: typeof r.approver_role === "string" ? r.approver_role : undefined,
+      message: typeof r.message === "string" ? r.message : undefined,
     };
   } catch {
     return { type: "require_approval", approverRole: "manager" };
@@ -431,7 +433,7 @@ function PolicyForm({
   isPending,
 }: {
   existingPolicy?: TravelPolicy;
-  onSubmit: (payload: any) => void;
+  onSubmit: (payload: Record<string, unknown>) => void;
   isPending: boolean;
 }) {
   const form = useForm<PolicyBaseValues>({
@@ -478,7 +480,7 @@ function PolicyForm({
       })),
     };
 
-    const actionsPayload: any = { type: action.type };
+    const actionsPayload: Record<string, unknown> = { type: action.type };
     if (action.approverRole) actionsPayload.approver_role = action.approverRole;
     if (action.message) actionsPayload.message = action.message;
 

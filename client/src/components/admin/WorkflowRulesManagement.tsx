@@ -57,19 +57,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Pencil, Trash2, Info, ArrowUp, ArrowDown, GripVertical, X } from "lucide-react";
 
-type WorkflowRule = {
-  id: string;
-  name: string;
-  description: string;
-  triggerConditions: any;
-  stages: any;
-  escalationPath: any | null;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
 const CANONICAL_ROLES = [
   { value: "employee", label: "Employee" },
   { value: "coordinator", label: "Coordinator" },
@@ -112,6 +99,19 @@ type EscalationState = {
   escalateTo: string;
 };
 
+type WorkflowRule = {
+  id: string;
+  name: string;
+  description: string;
+  triggerConditions: Record<string, unknown>;
+  stages: ApprovalStage[];
+  escalationPath: EscalationState | null;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 const workflowBaseSchema = z.object({
   name: z.string().min(1, "Name is required").max(255),
   description: z.string().min(1, "Description is required"),
@@ -134,26 +134,26 @@ export function WorkflowRulesManagement() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (payload: any) => apiRequest("POST", "/api/admin/workflows", payload),
+    mutationFn: async (payload: Record<string, unknown>) => apiRequest("POST", "/api/admin/workflows", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/workflows"] });
       setIsCreateOpen(false);
       toast({ title: "Workflow created", description: "Workflow rule has been created successfully." });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message || "Failed to create workflow rule.", variant: "destructive" });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) =>
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) =>
       apiRequest("PATCH", `/api/admin/workflows/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/workflows"] });
       setEditingWorkflow(null);
       toast({ title: "Workflow updated", description: "Workflow rule has been updated successfully." });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message || "Failed to update workflow rule.", variant: "destructive" });
     },
   });
@@ -420,7 +420,7 @@ function WorkflowForm({
   isPending,
 }: {
   existingWorkflow?: WorkflowRule;
-  onSubmit: (payload: any) => void;
+  onSubmit: (payload: Record<string, unknown>) => void;
   isPending: boolean;
 }) {
   const defaultStages: ApprovalStage[] = existingWorkflow?.stages && Array.isArray(existingWorkflow.stages)
@@ -466,7 +466,7 @@ function WorkflowForm({
     setStages(prev => prev.filter((_, i) => i !== idx).map((s, i) => ({ ...s, stage: i + 1 })));
   };
 
-  const updateStage = (idx: number, field: keyof ApprovalStage, value: any) => {
+  const updateStage = (idx: number, field: keyof ApprovalStage, value: string | number | boolean | undefined) => {
     setStages(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
   };
 
@@ -479,7 +479,7 @@ function WorkflowForm({
   };
 
   const handleFormSubmit = (values: WorkflowBaseValues) => {
-    const triggerConditions: any = { type: trigger.type };
+    const triggerConditions: Record<string, unknown> = { type: trigger.type };
     if (trigger.type !== "always" && trigger.type !== "international") {
       triggerConditions.operator = trigger.operator || "greater_than";
       triggerConditions.value = isNaN(Number(trigger.value)) ? trigger.value : Number(trigger.value);

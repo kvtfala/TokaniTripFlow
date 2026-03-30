@@ -36,9 +36,9 @@ type AuditLog = {
   entityId: string;
   action: "create" | "update" | "delete";
   userId: string;
-  previousValue: any | null;
-  newValue: any;
-  fieldChanges: any | null;
+  previousValue: Record<string, unknown> | null;
+  newValue: Record<string, unknown>;
+  fieldChanges: Record<string, unknown> | null;
   timestamp: Date;
   ipAddress: string | null;
   userAgent: string | null;
