@@ -869,7 +869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Admin Portal - User Management
-  app.get("/api/admin/users", requireRole(["super_admin", "finance_admin", "travel_admin"]), async (req: any, res) => {
+  app.get("/api/admin/users", requireRole(["super_admin"]), async (req: any, res) => {
     try {
       const allUsers = await storage.getAllUsers();
       // Tenant-scope: only return users in the same company (platform admins see all)

@@ -22,6 +22,8 @@ const DEFAULT_USER: User = {
   profileImageUrl: null,
   companyCode: null,
   passwordHash: null,
+  isActive: true,
+  lastLogin: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
