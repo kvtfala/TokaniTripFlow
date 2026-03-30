@@ -210,6 +210,7 @@ export type AuditAction = z.infer<typeof auditActionSchema>;
 // Audit Logs table - Track admin actions for compliance
 export const auditLogs = pgTable("audit_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }), // Tenant scoping
   userId: varchar("user_id").notNull(), // Who performed the action
   userName: varchar("user_name", { length: 255 }),
   action: text("action").$type<AuditAction>().notNull(),

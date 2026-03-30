@@ -95,7 +95,7 @@ export interface IStorage {
   deleteSystemNotification(id: string): Promise<boolean>;
   
   // Admin Portal - Audit Logs
-  getAuditLogs(entityType?: string, entityId?: string): Promise<AuditLog[]>;
+  getAuditLogs(companyCode?: string, entityType?: string, entityId?: string): Promise<AuditLog[]>;
   getAuditLog(id: string): Promise<AuditLog | undefined>;
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
 
@@ -1961,10 +1961,11 @@ export class MemStorage implements IStorage {
 
     sampleNotifications.forEach(notif => this.systemNotifications.set(notif.id, notif));
 
-    // Sample Audit Logs (history of admin actions)
+    // Sample Audit Logs (history of admin actions) — ITT tenant
     const sampleAuditLogs: AuditLog[] = [
       {
         id: "audit-001",
+        companyCode: "itt001",
         userId,
         userName: "Desmond Bale",
         action: "create",
@@ -1979,6 +1980,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "audit-002",
+        companyCode: "itt001",
         userId,
         userName: "Desmond Bale",
         action: "approve",
@@ -1994,6 +1996,267 @@ export class MemStorage implements IStorage {
     ];
 
     sampleAuditLogs.forEach(log => this.auditLogs.set(log.id, log));
+
+    // ── CDP Couriers seed records — all scoped to cdp001 ──────────────────
+    const cdpUserId = "user-cdp-md-001"; // Sashi Singh (super_admin MD)
+    const cdpNow = new Date("2025-03-01T00:00:00Z");
+
+    // CDP Vendors
+    const cdpVendors: Vendor[] = [
+      {
+        id: "vendor-cdp-001",
+        companyCode: "cdp001",
+        name: "Pacific Air Cargo",
+        category: "Airlines",
+        contactEmail: "cargo@pacificair.com.fj",
+        contactPhone: "+679-672-1234",
+        services: ["flights"],
+        status: "approved",
+        proposedBy: cdpUserId,
+        proposedAt: cdpNow,
+        approvedBy: cdpUserId,
+        approvedAt: cdpNow,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: 4,
+        notes: "Preferred carrier for courier staff travel",
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+      {
+        id: "vendor-cdp-002",
+        companyCode: "cdp001",
+        name: "Suva City Hotels",
+        category: "Hotels",
+        contactEmail: "bookings@suvacityhotels.com.fj",
+        contactPhone: "+679-330-5555",
+        services: ["hotels"],
+        status: "approved",
+        proposedBy: cdpUserId,
+        proposedAt: cdpNow,
+        approvedBy: cdpUserId,
+        approvedAt: cdpNow,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: 4,
+        notes: "Corporate rate negotiated for CDP staff",
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+      {
+        id: "vendor-cdp-003",
+        companyCode: "cdp001",
+        name: "Speedy Rentals Fiji",
+        category: "Car Rental",
+        contactEmail: "fleet@speedyrentals.com.fj",
+        contactPhone: "+679-338-9900",
+        services: ["car_rental"],
+        status: "pending_approval",
+        proposedBy: cdpUserId,
+        proposedAt: cdpNow,
+        approvedBy: null,
+        approvedAt: null,
+        rejectionReason: null,
+        suspensionReason: null,
+        performanceRating: null,
+        notes: "Under review for fleet contract",
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+    ];
+    cdpVendors.forEach(v => this.vendors.set(v.id, v));
+
+    // CDP Email Templates
+    const cdpTemplates: EmailTemplate[] = [
+      {
+        id: "template-cdp-001",
+        companyCode: "cdp001",
+        name: "approval_notification",
+        description: "CDP approval request notification",
+        subject: "CDP Couriers — Travel Approval Required: {{travelerName}} to {{destination}}",
+        body: `<p>Dear {{approverName}},</p><p>A CDP Couriers travel request requires your approval.</p><ul><li><strong>Traveler:</strong> {{travelerName}}</li><li><strong>Destination:</strong> {{destination}}</li><li><strong>Dates:</strong> {{startDate}} to {{endDate}}</li><li><strong>Cost:</strong> FJD {{totalCost}}</li></ul><p>Regards,<br>CDP TripFlow</p>`,
+        placeholders: ["approverName", "travelerName", "destination", "startDate", "endDate", "totalCost"],
+        category: "approval",
+        isActive: true,
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+      {
+        id: "template-cdp-002",
+        companyCode: "cdp001",
+        name: "booking_confirmation",
+        description: "CDP booking confirmation",
+        subject: "CDP Couriers — Booking Confirmed: {{destination}}",
+        body: `<p>Dear {{travelerName}},</p><p>Your travel booking is confirmed. Details: {{destination}}, {{startDate}} to {{endDate}}, Flight: {{flightDetails}}.</p><p>Safe travels,<br>CDP Admin</p>`,
+        placeholders: ["travelerName", "destination", "startDate", "endDate", "flightDetails"],
+        category: "booking",
+        isActive: true,
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+    ];
+    cdpTemplates.forEach(t => this.emailTemplates.set(t.id, t));
+
+    // CDP Per Diem Rates
+    const cdpRates: PerDiemRate[] = [
+      {
+        id: "rate-cdp-001",
+        companyCode: "cdp001",
+        location: "Fiji - Suva",
+        locationCode: "SUV",
+        dailyRate: "300.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "CDP domestic per diem — capital",
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+      {
+        id: "rate-cdp-002",
+        companyCode: "cdp001",
+        location: "Fiji - Nadi",
+        locationCode: "NAN",
+        dailyRate: "300.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "CDP domestic per diem — west",
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+      {
+        id: "rate-cdp-003",
+        companyCode: "cdp001",
+        location: "Australia - Brisbane",
+        locationCode: "BNE",
+        dailyRate: "460.00",
+        currency: "FJD",
+        effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+        effectiveTo: null,
+        notes: "CDP international per diem",
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+    ];
+    cdpRates.forEach(r => this.perDiemRates.set(r.id, r));
+
+    // CDP Travel Policies
+    const cdpPolicies: TravelPolicy[] = [
+      {
+        id: "policy-cdp-001",
+        companyCode: "cdp001",
+        name: "CDP Advance Booking Policy",
+        description: "Minimum booking window for CDP Couriers travel",
+        policyType: "advance_booking",
+        rules: {
+          domestic: { days: 5, description: "Book domestic travel 5 days in advance" },
+          international: { days: 10, description: "Book international travel 10 days in advance" },
+        },
+        isActive: true,
+        priority: 8,
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+      {
+        id: "policy-cdp-002",
+        companyCode: "cdp001",
+        name: "CDP Cost Approval Threshold",
+        description: "Finance review triggers for CDP travel spend",
+        policyType: "cost_threshold",
+        rules: {
+          thresholds: [
+            { amount: 2000, currency: "FJD", approvers: ["manager"] },
+            { amount: 4000, currency: "FJD", approvers: ["manager", "finance_admin"] },
+          ],
+        },
+        isActive: true,
+        priority: 9,
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+    ];
+    cdpPolicies.forEach(p => this.travelPolicies.set(p.id, p));
+
+    // CDP Workflow Rules
+    const cdpWorkflows: WorkflowRule[] = [
+      {
+        id: "workflow-cdp-001",
+        companyCode: "cdp001",
+        name: "CDP High-Value Approval",
+        description: "Finance sign-off on trips over FJD 4,000",
+        conditions: { costGreaterThan: 4000, currency: "FJD" },
+        actions: { addApprover: "finance_admin", requireQuotes: 2 },
+        stages: ["manager", "finance_admin"],
+        isActive: true,
+        priority: 9,
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+      {
+        id: "workflow-cdp-002",
+        companyCode: "cdp001",
+        name: "CDP International Travel",
+        description: "Multi-stage approval for overseas CDP trips",
+        conditions: { isInternational: true },
+        actions: { requireVisaCheck: true, requireQuotes: 2 },
+        stages: ["manager", "finance_admin"],
+        isActive: true,
+        priority: 7,
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+    ];
+    cdpWorkflows.forEach(w => this.workflowRules.set(w.id, w));
+
+    // CDP System Notifications
+    const cdpNotifications: SystemNotification[] = [
+      {
+        id: "notif-cdp-001",
+        companyCode: "cdp001",
+        title: "CDP Travel Portal Launch",
+        message: "Welcome to the CDP Couriers Travel Management Portal. Submit travel requests and expense claims here.",
+        type: "banner",
+        severity: "info",
+        isPublished: true,
+        publishedAt: cdpNow,
+        expiresAt: null,
+        targetRoles: null,
+        createdBy: cdpUserId,
+        createdAt: cdpNow,
+        updatedAt: cdpNow,
+      },
+    ];
+    cdpNotifications.forEach(n => this.systemNotifications.set(n.id, n));
+
+    // CDP Audit Logs
+    const cdpAuditLogs: AuditLog[] = [
+      {
+        id: "audit-cdp-001",
+        companyCode: "cdp001",
+        userId: cdpUserId,
+        userName: "Sashi Singh",
+        action: "create",
+        entityType: "vendor",
+        entityId: "vendor-cdp-001",
+        previousValue: null,
+        newValue: { name: "Pacific Air Cargo", status: "approved" },
+        changes: null,
+        metadata: { vendorName: "Pacific Air Cargo" },
+        ipAddress: null,
+        timestamp: cdpNow,
+      },
+    ];
+    cdpAuditLogs.forEach(log => this.auditLogs.set(log.id, log));
   }
 
   // Admin Portal - User Management
@@ -2347,8 +2610,12 @@ export class MemStorage implements IStorage {
   }
 
   // Admin Portal - Audit Logs
-  async getAuditLogs(entityType?: string, entityId?: string): Promise<AuditLog[]> {
+  async getAuditLogs(companyCode?: string, entityType?: string, entityId?: string): Promise<AuditLog[]> {
     let logs = Array.from(this.auditLogs.values());
+
+    if (companyCode) {
+      logs = logs.filter(l => l.companyCode === companyCode);
+    }
     
     if (entityType) {
       logs = logs.filter(l => l.entityType === entityType);
@@ -2373,11 +2640,14 @@ export class MemStorage implements IStorage {
     const id = `audit-${randomUUID().slice(0, 8)}`;
     const newLog: AuditLog = {
       id,
+      companyCode: log.companyCode || null,
       userId: log.userId,
       userName: log.userName || null,
       action: log.action,
       entityType: log.entityType,
       entityId: log.entityId,
+      previousValue: log.previousValue ?? null,
+      newValue: log.newValue ?? null,
       changes: log.changes || null,
       metadata: log.metadata || null,
       ipAddress: log.ipAddress || null,

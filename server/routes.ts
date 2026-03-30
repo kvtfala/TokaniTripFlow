@@ -75,6 +75,7 @@ function validateRequest<T>(schema: any, data: any): { success: true; data: T } 
 async function logAudit(params: {
   userId: string;
   userName: string;
+  companyCode?: string | null;
   action: string;
   entityType: string;
   entityId: string;
@@ -116,6 +117,7 @@ async function logAudit(params: {
   await storage.createAuditLog({
     userId: params.userId,
     userName: params.userName,
+    companyCode: params.companyCode ?? null,
     action: params.action as any,
     entityType: params.entityType,
     entityId: params.entityId,
@@ -124,6 +126,20 @@ async function logAudit(params: {
     changes,
     metadata: params.metadata ?? null,
   });
+}
+
+/**
+ * Synchronous tenant guard for admin entity operations.
+ * Returns true if the current user may read/modify the given record.
+ * - Users with no companyCode (platform-level super_admin via Replit Auth) bypass the check.
+ * - ITT users may access legacy records that have no companyCode stamp.
+ * - All other users must match the record's companyCode exactly.
+ */
+function assertAdminTenantRecord(req: any, record: { companyCode?: string | null }): boolean {
+  const userCode: string | null | undefined = req.currentUser?.companyCode;
+  if (!userCode) return true; // platform super_admin — full access
+  const recCode = record.companyCode;
+  return recCode === userCode || (userCode === "itt001" && !recCode);
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -851,9 +867,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Admin Portal - User Management
-  app.get("/api/admin/users", requireRole(["super_admin", "finance_admin", "travel_admin"]), async (req, res) => {
+  app.get("/api/admin/users", requireRole(["super_admin", "finance_admin", "travel_admin"]), async (req: any, res) => {
     try {
-      const users = await storage.getAllUsers();
+      const allUsers = await storage.getAllUsers();
+      // Tenant-scope: only return users in the same company (platform admins see all)
+      const userCode = req.currentUser?.companyCode;
+      const users = userCode ? allUsers.filter(u => u.companyCode === userCode) : allUsers;
       res.json(users);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
@@ -861,6 +880,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/admin/users/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const targetUser = await storage.getUser(req.params.id);
+    if (!targetUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (!assertAdminTenantRecord(req, targetUser)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const updated = await storage.updateUser(req.params.id, req.body);
     if (!updated) {
       return res.status(404).json({ error: "User not found" });
@@ -870,6 +896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.createAuditLog({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "update",
       entityType: "user",
       entityId: req.params.id,
@@ -887,10 +914,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(vendors);
   }));
 
-  app.get("/api/admin/vendors/:id", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
+  app.get("/api/admin/vendors/:id", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
     const vendor = await storage.getVendor(req.params.id);
     if (!vendor) {
       return res.status(404).json({ error: "Vendor not found" });
+    }
+    if (!assertAdminTenantRecord(req, vendor)) {
+      return res.status(403).json({ error: "Access denied" });
     }
     res.json(vendor);
   }));
@@ -912,6 +942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "create",
       entityType: "vendor",
       entityId: vendor.id,
@@ -934,6 +965,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!previousVendor) {
       return res.status(404).json({ error: "Vendor not found" });
     }
+    if (!assertAdminTenantRecord(req, previousVendor)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const previousSnapshot = structuredClone(previousVendor);
 
     await storage.updateVendor(req.params.id, validation.data);
@@ -948,6 +982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "update",
       entityType: "vendor",
       entityId: req.params.id,
@@ -960,15 +995,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.delete("/api/admin/vendors/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    const success = await storage.deleteVendor(req.params.id);
-    if (!success) {
+    const vendorToDelete = await storage.getVendor(req.params.id);
+    if (!vendorToDelete) {
       return res.status(404).json({ error: "Vendor not found" });
     }
+    if (!assertAdminTenantRecord(req, vendorToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteVendor(req.params.id);
     
     // Audit log
     await storage.createAuditLog({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "delete",
       entityType: "vendor",
       entityId: req.params.id,
@@ -984,10 +1024,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(templates);
   }));
 
-  app.get("/api/admin/templates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
+  app.get("/api/admin/templates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
     const template = await storage.getEmailTemplate(req.params.id);
     if (!template) {
       return res.status(404).json({ error: "Template not found" });
+    }
+    if (!assertAdminTenantRecord(req, template)) {
+      return res.status(403).json({ error: "Access denied" });
     }
     res.json(template);
   }));
@@ -1009,6 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "create",
       entityType: "email_template",
       entityId: template.id,
@@ -1031,6 +1075,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!previousTemplate) {
       return res.status(404).json({ error: "Template not found" });
     }
+    if (!assertAdminTenantRecord(req, previousTemplate)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const previousSnapshot = structuredClone(previousTemplate);
 
     await storage.updateEmailTemplate(req.params.id, validation.data);
@@ -1045,6 +1092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "update",
       entityType: "email_template",
       entityId: req.params.id,
@@ -1057,15 +1105,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.delete("/api/admin/templates/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    const success = await storage.deleteEmailTemplate(req.params.id);
-    if (!success) {
+    const templateToDelete = await storage.getEmailTemplate(req.params.id);
+    if (!templateToDelete) {
       return res.status(404).json({ error: "Template not found" });
     }
+    if (!assertAdminTenantRecord(req, templateToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteEmailTemplate(req.params.id);
     
     // Audit log
     await storage.createAuditLog({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "delete",
       entityType: "email_template",
       entityId: req.params.id,
@@ -1080,10 +1133,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(rates);
   }));
 
-  app.get("/api/admin/rates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req, res) => {
+  app.get("/api/admin/rates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
     const rate = await storage.getPerDiemRate(req.params.id);
     if (!rate) {
       return res.status(404).json({ error: "Rate not found" });
+    }
+    if (!assertAdminTenantRecord(req, rate)) {
+      return res.status(403).json({ error: "Access denied" });
     }
     res.json(rate);
   }));
@@ -1105,6 +1161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "create",
       entityType: "per_diem_rate",
       entityId: rate.id,
@@ -1127,6 +1184,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!previousRate) {
       return res.status(404).json({ error: "Rate not found" });
     }
+    if (!assertAdminTenantRecord(req, previousRate)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const previousSnapshot = structuredClone(previousRate);
 
     await storage.updatePerDiemRate(req.params.id, validation.data);
@@ -1141,6 +1201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "update",
       entityType: "per_diem_rate",
       entityId: req.params.id,
@@ -1153,15 +1214,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.delete("/api/admin/rates/:id", requireRole(["finance_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
-    const success = await storage.deletePerDiemRate(req.params.id);
-    if (!success) {
+    const rateToDelete = await storage.getPerDiemRate(req.params.id);
+    if (!rateToDelete) {
       return res.status(404).json({ error: "Rate not found" });
     }
+    if (!assertAdminTenantRecord(req, rateToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deletePerDiemRate(req.params.id);
     
     // Audit log
     await storage.createAuditLog({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "delete",
       entityType: "per_diem_rate",
       entityId: req.params.id,
@@ -1193,6 +1259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "create",
       entityType: "travel_policy",
       entityId: policy.id,
@@ -1215,6 +1282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!previousPolicy) {
       return res.status(404).json({ error: "Policy not found" });
     }
+    if (!assertAdminTenantRecord(req, previousPolicy)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const previousSnapshot = structuredClone(previousPolicy);
 
     await storage.updateTravelPolicy(req.params.id, validation.data);
@@ -1229,6 +1299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "update",
       entityType: "travel_policy",
       entityId: req.params.id,
@@ -1241,15 +1312,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.delete("/api/admin/policies/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    const success = await storage.deleteTravelPolicy(req.params.id);
-    if (!success) {
+    const policyToDelete = await storage.getTravelPolicy(req.params.id);
+    if (!policyToDelete) {
       return res.status(404).json({ error: "Policy not found" });
     }
+    if (!assertAdminTenantRecord(req, policyToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteTravelPolicy(req.params.id);
     
     // Audit log
     await storage.createAuditLog({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "delete",
       entityType: "travel_policy",
       entityId: req.params.id,
@@ -1281,6 +1357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "create",
       entityType: "workflow_rule",
       entityId: workflow.id,
@@ -1303,6 +1380,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!previousWorkflow) {
       return res.status(404).json({ error: "Workflow not found" });
     }
+    if (!assertAdminTenantRecord(req, previousWorkflow)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const previousSnapshot = structuredClone(previousWorkflow);
 
     await storage.updateWorkflowRule(req.params.id, validation.data);
@@ -1317,6 +1397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "update",
       entityType: "workflow_rule",
       entityId: req.params.id,
@@ -1329,15 +1410,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.delete("/api/admin/workflows/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    const success = await storage.deleteWorkflowRule(req.params.id);
-    if (!success) {
+    const workflowToDelete = await storage.getWorkflowRule(req.params.id);
+    if (!workflowToDelete) {
       return res.status(404).json({ error: "Workflow not found" });
     }
+    if (!assertAdminTenantRecord(req, workflowToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteWorkflowRule(req.params.id);
     
     // Audit log
     await storage.createAuditLog({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "delete",
       entityType: "workflow_rule",
       entityId: req.params.id,
@@ -1370,6 +1456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "create",
       entityType: "system_notification",
       entityId: notification.id,
@@ -1392,6 +1479,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!previousNotification) {
       return res.status(404).json({ error: "Notification not found" });
     }
+    if (!assertAdminTenantRecord(req, previousNotification)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
     const previousSnapshot = structuredClone(previousNotification);
 
     await storage.updateSystemNotification(req.params.id, validation.data);
@@ -1406,6 +1496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await logAudit({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "update",
       entityType: "system_notification",
       entityId: req.params.id,
@@ -1418,15 +1509,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.delete("/api/admin/notifications/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    const success = await storage.deleteSystemNotification(req.params.id);
-    if (!success) {
+    const notifToDelete = await storage.getSystemNotification(req.params.id);
+    if (!notifToDelete) {
       return res.status(404).json({ error: "Notification not found" });
     }
+    if (!assertAdminTenantRecord(req, notifToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteSystemNotification(req.params.id);
     
     // Audit log
     await storage.createAuditLog({
       userId: req.currentUser.id,
       userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
       action: "delete",
       entityType: "system_notification",
       entityId: req.params.id,
@@ -1436,10 +1532,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Admin Portal - Audit Logs
-  app.get("/api/admin/audit-logs", requireRole(["super_admin"]), asyncHandler(async (req, res) => {
+  app.get("/api/admin/audit-logs", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
     const entityType = req.query.entityType as string | undefined;
     const entityId = req.query.entityId as string | undefined;
-    const logs = await storage.getAuditLogs(entityType, entityId);
+    const logs = await storage.getAuditLogs(req.currentUser.companyCode, entityType, entityId);
     res.json(logs);
   }));
 
