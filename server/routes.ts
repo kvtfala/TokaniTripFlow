@@ -174,6 +174,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Travel Requests
   app.get("/api/requests", isLoggedIn, asyncHandler(async (req, res) => {
     let requests = await storage.getTravelRequests();
+
+    // Scope requests to the logged-in user's tenant (companyCode).
+    // Users with companyCode "cdp001" only see CDP requests.
+    // Users with companyCode "itt001" (or no code) see ITT / legacy requests only.
+    let sessionUserId: string | null = null;
+    if ((req as any).user?.claims?.sub) {
+      sessionUserId = (req as any).user.claims.sub;
+    } else if ((req as any).session?.user?.id) {
+      sessionUserId = (req as any).session.user.id;
+    }
+    if (sessionUserId) {
+      const sessionUser = await storage.getUser(sessionUserId);
+      if (sessionUser?.companyCode) {
+        const userCode = sessionUser.companyCode;
+        requests = requests.filter(r =>
+          r.companyCode === userCode ||
+          // Backward compat: legacy ITT seed records have no companyCode
+          (userCode === "itt001" && !r.companyCode)
+        );
+      }
+    }
+
     const ttr = (req.query.ttr as string | undefined)?.toLowerCase();
     if (ttr) {
       requests = requests.filter(r => r.ttrNumber?.toLowerCase().includes(ttr));

@@ -938,7 +938,7 @@ export class MemStorage implements IStorage {
         submittedAt: "2026-01-15T08:00:00Z",
         costCentre: { code: "CDP-OPS", name: "Operations" },
         fundingType: "advance",
-        approverFlow: ["manager", "finance_admin"],
+        approverFlow: ["manager", "finance_admin", "super_admin"],
         approverIndex: 2,
         history: [
           { ts: "2026-01-15T08:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — site operations Lautoka" },
@@ -978,7 +978,7 @@ export class MemStorage implements IStorage {
         submittedAt: "2026-01-24T09:00:00Z",
         costCentre: { code: "CDP-FIN", name: "Finance" },
         fundingType: "advance",
-        approverFlow: ["manager", "finance_admin"],
+        approverFlow: ["manager", "finance_admin", "super_admin"],
         approverIndex: 2,
         history: [
           { ts: "2026-01-24T09:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — bank meetings Nausori" },
