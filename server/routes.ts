@@ -154,6 +154,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   }));
 
+  // Tenant-scoped user directory — for traveller selection in the wizard
+  // Returns all users that belong to the same companyCode as the requester.
+  // Maps User records to the Traveller shape consumed by the frontend wizard.
+  app.get("/api/users", isLoggedIn, asyncHandler(async (req: any, res) => {
+    let userId: string | null = null;
+    if (req.user?.claims?.sub) userId = req.user.claims.sub;
+    else if (req.session?.user?.id) userId = req.session.user.id;
+
+    const currentUser = userId ? await storage.getUser(userId) : null;
+    const companyCode = currentUser?.companyCode ?? null;
+
+    const allUsers = await storage.getAllUsers();
+    const tenantUsers = companyCode
+      ? allUsers.filter(u => u.companyCode === companyCode)
+      : allUsers;
+
+    const roleToPosition: Record<string, string> = {
+      super_admin: "Managing Director",
+      manager: "Department Manager",
+      finance_admin: "Finance Administrator",
+      travel_admin: "Travel Administrator",
+      coordinator: "Travel Coordinator",
+      employee: "Staff",
+    };
+    const roleToMgr: Record<string, string> = {
+      super_admin: "Board",
+      manager: "Managing Director",
+      finance_admin: "Managing Director",
+      travel_admin: "Managing Director",
+      coordinator: "Department Manager",
+      employee: "Department Manager",
+    };
+
+    const travellers = tenantUsers.map((u, idx) => ({
+      id: u.id,
+      name: [u.firstName, u.lastName].filter(Boolean).join(" "),
+      employeeNumber: `EMP${String(idx + 1).padStart(3, "0")}`,
+      position: roleToPosition[u.role ?? "employee"] ?? "Staff",
+      department: u.companyCode === "cdp001" ? "CDP Couriers" : "Island Travel Tech",
+      manager: roleToMgr[u.role ?? "employee"] ?? "Manager",
+    }));
+
+    res.json(travellers);
+  }));
+
   // Logout Endpoint - Destroys session and redirects to landing page
   app.get("/api/logout", (req, res) => {
     req.logout((err) => {
@@ -267,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  app.post("/api/requests/:id/approve", asyncHandler(async (req: any, res) => {
+  app.post("/api/requests/:id/approve", isLoggedIn, asyncHandler(async (req: any, res) => {
     const { comment, auditFlag, auditNote, approvalType } = req.body;
     const request = await storage.getTravelRequest(req.params.id);
     
@@ -456,7 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }));
 
-  app.post("/api/requests/:id/reject", asyncHandler(async (req: any, res) => {
+  app.post("/api/requests/:id/reject", isLoggedIn, asyncHandler(async (req: any, res) => {
     const { comment } = req.body;
     const request = await storage.getTravelRequest(req.params.id);
     
@@ -515,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Cancel a request (self-service by requester — draft or submitted only)
-  app.post("/api/requests/:id/cancel", asyncHandler(async (req: any, res) => {
+  app.post("/api/requests/:id/cancel", isLoggedIn, asyncHandler(async (req: any, res) => {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) return res.status(404).json({ error: "Request not found" });
     if (!await assertTenantAccess(req, request)) {
@@ -548,13 +593,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // RFQ and Quotes Endpoints
   
   // Get all quotes for a request
-  app.get("/api/requests/:id/quotes", asyncHandler(async (req, res) => {
+  app.get("/api/requests/:id/quotes", isLoggedIn, asyncHandler(async (req, res) => {
     const quotes = await storage.getQuotes(req.params.id);
     res.json(quotes);
   }));
 
   // Create a new quote
-  app.post("/api/requests/:id/quotes", asyncHandler(async (req, res) => {
+  app.post("/api/requests/:id/quotes", isLoggedIn, asyncHandler(async (req, res) => {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
@@ -571,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // TODO: Get current user from session
-    const currentUserId = "coordinator"; // Mock for now
+    const rfqActor = await resolveActingUser(req); const currentUserId = rfqActor?.id ?? "coordinator";
 
     const quote = await storage.createQuote({
       requestId: req.params.id,
@@ -595,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Update a quote
-  app.put("/api/requests/:requestId/quotes/:quoteId", asyncHandler(async (req, res) => {
+  app.put("/api/requests/:requestId/quotes/:quoteId", isLoggedIn, asyncHandler(async (req, res) => {
     const quote = await storage.updateQuote(req.params.quoteId, req.body);
     if (!quote) {
       return res.status(404).json({ error: "Quote not found" });
@@ -604,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Delete a quote
-  app.delete("/api/requests/:requestId/quotes/:quoteId", asyncHandler(async (req, res) => {
+  app.delete("/api/requests/:requestId/quotes/:quoteId", isLoggedIn, asyncHandler(async (req, res) => {
     const success = await storage.deleteQuote(req.params.quoteId);
     if (!success) {
       return res.status(404).json({ error: "Quote not found" });
@@ -613,7 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Send RFQ to vendors
-  app.post("/api/requests/:id/send-rfq", asyncHandler(async (req, res) => {
+  app.post("/api/requests/:id/send-rfq", isLoggedIn, asyncHandler(async (req, res) => {
     const { vendors } = req.body; // Array of {vendorName, email}
     const request = await storage.getTravelRequest(req.params.id);
     
@@ -631,7 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // TODO: Get current user from session
-    const currentUserId = "coordinator"; // Mock for now
+    const rfqActor = await resolveActingUser(req); const currentUserId = rfqActor?.id ?? "coordinator";
 
     const now = new Date().toISOString();
     const rfqRecipients = vendors.map((v: any) => ({
@@ -661,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Submit request with quotes for final approval
-  app.post("/api/requests/:id/submit-with-quotes", asyncHandler(async (req, res) => {
+  app.post("/api/requests/:id/submit-with-quotes", isLoggedIn, asyncHandler(async (req, res) => {
     const { selectedQuoteId, quoteJustification } = req.body;
     const request = await storage.getTravelRequest(req.params.id);
     
@@ -707,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // TODO: Get current user from session
-    const currentUserId = "coordinator"; // Mock for now
+    const rfqActor = await resolveActingUser(req); const currentUserId = rfqActor?.id ?? "coordinator";
 
     // Update request status to quotes_submitted
     const historyEntry: HistoryEntry = {
@@ -734,17 +779,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Delegations
-  app.get("/api/delegations", asyncHandler(async (req, res) => {
+  app.get("/api/delegations", isLoggedIn, asyncHandler(async (req, res) => {
     const delegations = await storage.getDelegations();
     res.json(delegations);
   }));
 
-  app.post("/api/delegations", asyncHandler(async (req, res) => {
+  app.post("/api/delegations", isLoggedIn, asyncHandler(async (req, res) => {
     const delegation = await storage.createDelegation(req.body);
     res.json(delegation);
   }));
 
-  app.patch("/api/delegations/:id", asyncHandler(async (req, res) => {
+  app.patch("/api/delegations/:id", isLoggedIn, asyncHandler(async (req, res) => {
     const delegation = await storage.updateDelegation(req.params.id, req.body);
     if (!delegation) {
       return res.status(404).json({ error: "Delegation not found" });
@@ -752,7 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(delegation);
   }));
 
-  app.delete("/api/delegations/:id", asyncHandler(async (req, res) => {
+  app.delete("/api/delegations/:id", isLoggedIn, asyncHandler(async (req, res) => {
     const success = await storage.deleteDelegation(req.params.id);
     if (!success) {
       return res.status(404).json({ error: "Delegation not found" });

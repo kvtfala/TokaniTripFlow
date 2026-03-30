@@ -34,6 +34,7 @@ import {
   type TokaniIconProps,
 } from "@/components/icons/TokaniIcons";
 import { TokaniLogo } from "@/components/brand/TokaniLogo";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Home from "@/pages/Home";
@@ -263,13 +264,37 @@ function Router() {
               <Route path="/dashboard/travel-desk" component={TravelDeskDashboard} />
               <Route path="/request/new" component={NewRequest} />
               <Route path="/requests/:id" component={RequestDetail} />
-              <Route path="/approvals" component={Approvals} />
+              <Route path="/approvals">
+                <ProtectedRoute allowedRoles={["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]}>
+                  <Approvals />
+                </ProtectedRoute>
+              </Route>
               <Route path="/my-trips" component={MyTrips} />
-              <Route path="/expenses" component={ExpenseClaims} />
-              <Route path="/reports" component={Reports} />
-              <Route path="/travel-watch" component={TravelWatch} />
-              <Route path="/delegations" component={DelegateSettings} />
-              <Route path="/admin" component={AdminPortal} />
+              <Route path="/expenses">
+                <ProtectedRoute allowedRoles={["employee", "manager", "finance_admin", "super_admin"]}>
+                  <ExpenseClaims />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/reports">
+                <ProtectedRoute allowedRoles={["manager", "finance_admin", "travel_admin", "super_admin"]}>
+                  <Reports />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/travel-watch">
+                <ProtectedRoute allowedRoles={["coordinator", "manager", "travel_admin", "super_admin"]}>
+                  <TravelWatch />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/delegations">
+                <ProtectedRoute allowedRoles={["manager", "coordinator", "super_admin"]}>
+                  <DelegateSettings />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin">
+                <ProtectedRoute allowedRoles={["finance_admin", "travel_admin", "super_admin"]}>
+                  <AdminPortal />
+                </ProtectedRoute>
+              </Route>
               <Route path="/approve/:token" component={TokenApproval} />
               <Route component={NotFound} />
             </Switch>

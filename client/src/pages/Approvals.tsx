@@ -78,11 +78,8 @@ export default function Approvals() {
   const [rejectTarget, setRejectTarget] = useState<TravelRequest | null>(null);
   const [rejectComment, setRejectComment] = useState("");
 
-  const { data: currentUser } = useQuery<{ id: string; role: string }>({
-    queryKey: ["/api/auth/user"],
-  });
-  const currentUserId = currentUser?.id ?? "manager";
-  const isSuperAdmin = currentUser?.role === "super_admin";
+  const currentUserId = roleUser?.id ?? "";
+  const isSuperAdmin = roleUser?.role === "super_admin";
 
   const { data: requests = [], isLoading } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],

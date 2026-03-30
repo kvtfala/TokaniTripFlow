@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { X, Plus, Users, User, Briefcase, Building2 } from "lucide-react";
-import { searchTravellers, RECENT_TRAVELLERS } from "@/data/travellerDirectory";
 import type { WizardFormData, Traveller } from "@shared/types";
 
 interface TravellerSelectionStepProps {
@@ -19,62 +19,58 @@ interface TravellerSelectionStepProps {
 
 export function TravellerSelectionStep({ formData, updateFormData }: TravellerSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Traveller[]>([]);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      const results = searchTravellers(query);
-      setSearchResults(results);
-    } else {
-      setSearchResults([]);
-    }
-  };
+  const { data: directory = [], isLoading: dirLoading } = useQuery<Traveller[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return directory.filter(
+      t =>
+        t.name.toLowerCase().includes(q) ||
+        t.employeeNumber.toLowerCase().includes(q) ||
+        t.department.toLowerCase().includes(q) ||
+        t.position.toLowerCase().includes(q),
+    );
+  }, [searchQuery, directory]);
+
+  const recentTravellers = directory.slice(0, 3);
 
   const addTraveller = (traveller: Traveller) => {
-    // Check if traveller already added
-    if (formData.travellers.some((t) => t.id === traveller.id)) {
-      return;
-    }
+    if (formData.travellers.some(t => t.id === traveller.id)) return;
 
     const updatedTravellers = [...formData.travellers, traveller];
-    
-    // If first traveller, auto-fill primary approver with their manager
     const updates: Partial<WizardFormData> = {
       travellers: updatedTravellers,
       isGroupRequest: updatedTravellers.length > 1,
     };
-
     if (updatedTravellers.length === 1 && traveller.managerId) {
       updates.primaryApproverId = traveller.managerId;
     }
-
     updateFormData(updates);
     setSearchQuery("");
-    setSearchResults([]);
     setPopoverOpen(false);
   };
 
   const removeTraveller = (travellerId: string) => {
-    const updatedTravellers = formData.travellers.filter((t) => t.id !== travellerId);
-    updateFormData({
-      travellers: updatedTravellers,
-      isGroupRequest: updatedTravellers.length > 1,
-    });
+    const updatedTravellers = formData.travellers.filter(t => t.id !== travellerId);
+    updateFormData({ travellers: updatedTravellers, isGroupRequest: updatedTravellers.length > 1 });
   };
 
-  // Get common department if all travellers are from same department
-  const commonDepartment = formData.travellers.length > 0 && 
-    formData.travellers.every((t) => t.department === formData.travellers[0].department)
-    ? formData.travellers[0].department
-    : "Multiple";
+  const commonDepartment =
+    formData.travellers.length > 0 &&
+    formData.travellers.every(t => t.department === formData.travellers[0].department)
+      ? formData.travellers[0].department
+      : "Multiple";
 
-  // Get common manager if all travellers have same manager
-  const commonManager = formData.travellers.length > 0 &&
-    formData.travellers.every((t) => t.manager === formData.travellers[0].manager)
-    ? formData.travellers[0].manager
-    : "Multiple";
+  const commonManager =
+    formData.travellers.length > 0 &&
+    formData.travellers.every(t => t.manager === formData.travellers[0].manager)
+      ? formData.travellers[0].manager
+      : "Multiple";
 
   return (
     <div className="space-y-6">
@@ -96,18 +92,23 @@ export function TravellerSelectionStep({ formData, updateFormData }: TravellerSe
           <PopoverContent className="w-full p-0" align="start">
             <Command>
               <CommandInput
-                placeholder="Search by name or employee number..."
+                placeholder="Search by name, position or department..."
                 value={searchQuery}
-                onValueChange={handleSearch}
+                onValueChange={setSearchQuery}
                 data-testid="input-search-traveller"
               />
               <CommandList>
+                {dirLoading && (
+                  <div className="p-3 space-y-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                )}
                 <CommandEmpty>No travellers found.</CommandEmpty>
-                
-                {/* Recent travellers */}
-                {!searchQuery && (
-                  <CommandGroup heading="Recent">
-                    {RECENT_TRAVELLERS.map((traveller) => (
+
+                {!searchQuery && recentTravellers.length > 0 && (
+                  <CommandGroup heading="Staff Directory">
+                    {recentTravellers.map(traveller => (
                       <CommandItem
                         key={traveller.id}
                         onSelect={() => addTraveller(traveller)}
@@ -125,10 +126,9 @@ export function TravellerSelectionStep({ formData, updateFormData }: TravellerSe
                   </CommandGroup>
                 )}
 
-                {/* Search results */}
                 {searchQuery && searchResults.length > 0 && (
                   <CommandGroup heading="Search Results">
-                    {searchResults.map((traveller) => (
+                    {searchResults.map(traveller => (
                       <CommandItem
                         key={traveller.id}
                         onSelect={() => addTraveller(traveller)}
@@ -167,7 +167,7 @@ export function TravellerSelectionStep({ formData, updateFormData }: TravellerSe
               )}
             </div>
 
-            {formData.travellers.map((traveller) => (
+            {formData.travellers.map(traveller => (
               <div
                 key={traveller.id}
                 className="flex items-start justify-between gap-3 p-3 rounded-md bg-background border"
@@ -177,9 +177,7 @@ export function TravellerSelectionStep({ formData, updateFormData }: TravellerSe
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground" />
                     <span className="font-semibold">{traveller.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {traveller.employeeNumber}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{traveller.employeeNumber}</span>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground ml-6">
                     <div className="flex items-center gap-1">
@@ -226,23 +224,19 @@ export function TravellerSelectionStep({ formData, updateFormData }: TravellerSe
               className="bg-muted"
               data-testid="input-manager"
             />
-            <p className="text-xs text-muted-foreground">
-              Will be set as primary approver
-            </p>
+            <p className="text-xs text-muted-foreground">Will be set as primary approver</p>
           </div>
         </div>
       )}
 
       {/* Purpose field */}
       <div className="space-y-2">
-        <Label htmlFor="purpose">
-          Purpose of Travel *
-        </Label>
+        <Label htmlFor="purpose">Purpose of Travel *</Label>
         <Textarea
           id="purpose"
           placeholder="e.g., Attend annual conference, Client meeting, Training workshop..."
           value={formData.purpose}
-          onChange={(e) => updateFormData({ purpose: e.target.value })}
+          onChange={e => updateFormData({ purpose: e.target.value })}
           rows={3}
           className="resize-none"
           data-testid="textarea-purpose"

@@ -19,8 +19,10 @@ export function useTripsNowAndUpcoming(): TripsData {
   const now = new Date();
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  // Filter only approved trips
-  const approvedTrips = requests.filter(req => req.status === "approved");
+  // Filter approved + ticketed trips (ticketed = confirmed, person is/will travel)
+  const approvedTrips = requests.filter(req =>
+    req.status === "approved" || req.status === "ticketed"
+  );
 
   const categorizedTrips = approvedTrips.map((req): Trip => {
     const startDate = new Date(req.startDate);

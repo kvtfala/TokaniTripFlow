@@ -1035,7 +1035,7 @@ export class MemStorage implements IStorage {
         costBreakdown: { flights: 0, accommodation: 130, groundTransfers: 0, perDiem: 90, totalCost: 220 },
       },
       {
-        // #8 — Rajnil Singh: Suva → Taveuni (Air) | FJD 560 | Approved
+        // #8 — Rajnil Singh: Suva → Taveuni (Air) | FJD 560 | Approved (currently travelling)
         id: "cdp-req-008",
         ttrNumber: "CDP-2026-00008",
         companyCode: "cdp001",
@@ -1048,8 +1048,8 @@ export class MemStorage implements IStorage {
         preferredRoute: "Suva → Taveuni",
         travelMode: "Air",
         suggestedModes: ["Air", "Sea"],
-        startDate: "2026-03-10",
-        endDate: "2026-03-12",
+        startDate: "2026-03-28",
+        endDate: "2026-04-02",
         emergencyContactName: "CDP Couriers HQ",
         emergencyContactPhone: "+679 000 0000",
         countryRiskLevel: "low",
