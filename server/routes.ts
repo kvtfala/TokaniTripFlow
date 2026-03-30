@@ -2001,7 +2001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ──────────────────────────────────────────────────────────────────────
   // ADMIN PORTAL - COST CENTRES
   // ──────────────────────────────────────────────────────────────────────
-  app.get("/api/admin/cost-centres", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+  app.get("/api/admin/cost-centres", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
     const cc = req.currentUser.companyCode;
     if (!cc) return res.status(400).json({ error: "No company code associated with this account" });
     const centres = await storage.getCostCentreRecords(cc);
