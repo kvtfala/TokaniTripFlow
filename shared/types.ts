@@ -115,6 +115,13 @@ export interface TravelRequest {
   emergencyContactName?: string;    // Name of emergency contact
   emergencyContactPhone?: string;   // Phone number of emergency contact
   countryRiskLevel?: "low" | "medium" | "high"; // DFAT advisory level for destination
+
+  // Transport / travel mode (domestic Fiji routing)
+  travelMode?: "Air" | "Land" | "Sea"; // Selected transport mode for this trip
+  suggestedModes?: Array<"Air" | "Land" | "Sea">; // Route-intelligence suggestions
+
+  // Tenant scoping
+  companyCode?: string; // Company/tenant the request belongs to (e.g. "cdp001")
 }
 
 export interface TravelQuote {

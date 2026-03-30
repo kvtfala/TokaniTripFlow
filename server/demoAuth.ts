@@ -7,11 +7,18 @@ import bcrypt from "bcryptjs";
 import type { Express } from "express";
 import { storage } from "./storage";
 
-const DEMO_COMPANY_CODE = process.env.DEMO_COMPANY_CODE ?? "itt001";
+// Hardcoded baseline tenant codes — always valid regardless of env vars
+const BASELINE_CODES = ["itt001", "cdp001"];
+
+// DEMO_COMPANY_CODE env var can add extra codes; baseline codes are always included
+const VALID_COMPANY_CODES = new Set([
+  ...BASELINE_CODES,
+  ...(process.env.DEMO_COMPANY_CODE ?? "").split(",").map(c => c.trim()).filter(Boolean),
+]);
 
 /**
- * Demo login endpoint - validates company code, email, and password
- * Supports all demo users seeded in storage — no env-var email restriction.
+ * Demo login endpoint - validates company code, email, and password.
+ * Supports all demo users seeded in storage — any registered tenant code is accepted.
  * Each user must have a matching companyCode and passwordHash.
  */
 export function setupDemoAuth(app: Express) {
@@ -24,7 +31,7 @@ export function setupDemoAuth(app: Express) {
       });
     }
 
-    if (companyCode !== DEMO_COMPANY_CODE) {
+    if (!VALID_COMPANY_CODES.has(companyCode)) {
       return res.status(401).json({
         message: "Invalid company code",
       });
