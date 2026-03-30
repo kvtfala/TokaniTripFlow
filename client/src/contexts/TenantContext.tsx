@@ -6,11 +6,19 @@ export interface TenantConfig {
   companyName: string;
   tagline: string;
   logoPath: string | null;
+  /** CSS HSL value for primary CTA buttons / header background */
   primaryHSL: string;
+  /** Text colour on top of primaryHSL — dark for yellow, white for blue */
   primaryForegroundHSL: string;
+  /** CSS HSL value for secondary/accent highlights (badges, tags, accents) */
   accentHSL: string;
+  /** Text colour on top of accentHSL — must have sufficient contrast */
+  accentForegroundHSL: string;
+  /** Hex colour used for icon accent strokes (TokaniIcons accentColor prop) */
   accentColor: string;
+  /** CSS HSL for active sidebar item background */
   sidebarPrimaryHSL: string;
+  /** Text colour on top of the active sidebar item background */
   sidebarPrimaryForegroundHSL: string;
 }
 
@@ -35,6 +43,7 @@ const TENANT_CONFIGS: Record<string, TenantConfig> = {
     primaryHSL: "211 72% 48%",
     primaryForegroundHSL: "0 0% 100%",
     accentHSL: "189 75% 48%",
+    accentForegroundHSL: "0 0% 100%",
     accentColor: "#1FBED6",
     sidebarPrimaryHSL: "211 72% 48%",
     sidebarPrimaryForegroundHSL: "0 0% 100%",
@@ -47,8 +56,11 @@ const TENANT_CONFIGS: Record<string, TenantConfig> = {
     primaryHSL: "49 92% 48%",
     primaryForegroundHSL: "22 68% 16%",
     accentHSL: "22 68% 21%",
+    // White on dark brown — ensures text is readable on secondary/accent badges
+    accentForegroundHSL: "0 0% 100%",
     accentColor: "#F5C800",
     sidebarPrimaryHSL: "49 92% 48%",
+    // Dark brown on yellow active sidebar item — readable
     sidebarPrimaryForegroundHSL: "22 68% 16%",
   },
 };
@@ -67,9 +79,9 @@ function applyTenantLight(tenant: TenantConfig) {
   root.style.setProperty("--primary", tenant.primaryHSL);
   root.style.setProperty("--primary-foreground", tenant.primaryForegroundHSL);
   root.style.setProperty("--accent", tenant.accentHSL);
-  root.style.setProperty("--accent-foreground", tenant.primaryForegroundHSL);
+  root.style.setProperty("--accent-foreground", tenant.accentForegroundHSL);
   root.style.setProperty("--secondary", tenant.accentHSL);
-  root.style.setProperty("--secondary-foreground", tenant.primaryForegroundHSL);
+  root.style.setProperty("--secondary-foreground", tenant.accentForegroundHSL);
   root.style.setProperty("--sidebar-primary", tenant.sidebarPrimaryHSL);
   root.style.setProperty("--sidebar-primary-foreground", tenant.sidebarPrimaryForegroundHSL);
   root.style.setProperty("--ring", tenant.primaryHSL);
