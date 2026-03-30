@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RoleProvider } from "@/contexts/RoleContext";
+import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import {
   Sidebar,
   SidebarContent,
@@ -125,6 +126,7 @@ const menuItems: { title: string; subtitle?: string; url: string; icon: React.FC
 function AppSidebar() {
   const [location] = useLocation();
   const { currentUser } = useRole();
+  const tenant = useTenant();
   const userRole = currentUser?.role || "employee";
 
   const visibleItems = menuItems.filter(item => item.allowedRoles.includes(userRole));
@@ -147,7 +149,7 @@ function AppSidebar() {
                       <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "dashboard"}`}>
                         <item.icon
                           size={20}
-                          accentColor="#1FBED6"
+                          accentColor={tenant.accentColor}
                           className={isActive ? "" : "opacity-60"}
                         />
                         <div className="flex flex-col">
@@ -169,8 +171,50 @@ function AppSidebar() {
   );
 }
 
+function AppHeader() {
+  const tenant = useTenant();
+  const isCDP = tenant.companyCode === "cdp001";
+
+  return (
+    <header className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-50 bg-primary text-primary-foreground shadow-sm">
+      <div className="flex items-center gap-3">
+        <SidebarTrigger data-testid="button-sidebar-toggle" className="text-primary-foreground" />
+        {isCDP ? (
+          <img
+            src={tenant.logoPath!}
+            alt="CDP Couriers"
+            className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+            data-testid="img-logo-cdp"
+          />
+        ) : (
+          <TokaniLogo variant="icon" className="h-14 w-14 flex-shrink-0" />
+        )}
+        <Badge
+          variant="outline"
+          className="border-current/30 text-current bg-current/10 text-xs font-semibold px-2 py-0.5"
+          data-testid="badge-demo"
+        >
+          DEMO
+        </Badge>
+        <div className="flex flex-col min-w-0">
+          <h1 className="text-lg font-semibold whitespace-nowrap">
+            {isCDP ? "CDP Couriers" : "Bula! Tokani TripFlow"}
+          </h1>
+          <span className="text-xs opacity-80 whitespace-nowrap hidden sm:block">
+            {tenant.tagline}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <NotificationBell />
+        <UserAvatarMenu />
+      </div>
+    </header>
+  );
+}
+
 function Router() {
-  // Replit Auth Integration - Show Landing page for logged-out users
   const { isAuthenticated, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(false);
 
@@ -179,12 +223,10 @@ function Router() {
     "--sidebar-width-icon": "3rem",
   };
 
-  // Show splash after successful authentication
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       setShowSplash(true);
     } else if (!isAuthenticated) {
-      // Reset splash when logged out, so it shows again on next login
       setShowSplash(false);
     }
   }, [isLoading, isAuthenticated]);
@@ -193,8 +235,6 @@ function Router() {
     setShowSplash(false);
   };
 
-  // Show landing page if not authenticated or still loading auth
-  // (Token approval page is always public — no login required)
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
@@ -205,35 +245,16 @@ function Router() {
     );
   }
 
-  // Show splash screen after successful auth
   if (showSplash) {
     return <AuthSplash onComplete={handleSplashComplete} />;
   }
 
-  // Show authenticated app
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-50 bg-primary text-primary-foreground shadow-sm">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger data-testid="button-sidebar-toggle" className="text-primary-foreground" />
-              <TokaniLogo variant="icon" className="h-14 w-14 flex-shrink-0" />
-              <Badge variant="outline" className="border-white/50 text-white bg-white/10 text-xs font-semibold px-2 py-0.5" data-testid="badge-demo">
-                DEMO
-              </Badge>
-              <div className="flex flex-col min-w-0">
-                <h1 className="text-lg font-semibold whitespace-nowrap">Bula! Tokani TripFlow</h1>
-                <span className="text-xs opacity-90 whitespace-nowrap hidden sm:block">Your Trusted Partner for Travel Approvals</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <NotificationBell />
-              <UserAvatarMenu />
-            </div>
-          </header>
+          <AppHeader />
           <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background">
             <Switch>
               <Route path="/" component={Home} />
@@ -264,10 +285,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <RoleProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
+          <TenantProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </TenantProvider>
         </RoleProvider>
       </ThemeProvider>
     </QueryClientProvider>

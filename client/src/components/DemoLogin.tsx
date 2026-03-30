@@ -1,11 +1,8 @@
-// Demo Login Component
-// Provides email + password + company code authentication for demo purposes
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { Loader2, Lock, Mail, Building2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +10,69 @@ import { demoLoginSchema, type DemoLoginInput } from "@shared/demoSchema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+const ITT_ACCOUNTS = [
+  { role: "Super Admin", name: "Desmond Bale", email: "desmond.bale@islandtraveltech.com" },
+  { role: "Employee", name: "Jone Ratudina", email: "jone.ratudina@islandtraveltech.com" },
+  { role: "Coordinator", name: "Litia Vuniyayawa", email: "litia.vuniyayawa@islandtraveltech.com" },
+  { role: "Manager", name: "Tomasi Ravouvou", email: "tomasi.ravouvou@islandtraveltech.com" },
+  { role: "Finance Admin", name: "Mere Delana", email: "mere.delana@islandtraveltech.com" },
+  { role: "Travel Admin", name: "Nemani Tui", email: "nemani.tui@islandtraveltech.com" },
+];
+
+const CDP_ACCOUNTS = [
+  { role: "Super Admin (MD)", name: "Sashi Singh", email: "sashi.singh@cdpcouriers.demo" },
+  { role: "Super Admin (CEO)", name: "Rajnil Singh", email: "rajnil.singh@cdpcouriers.demo" },
+  { role: "Manager (GM Ops)", name: "George Singh", email: "george.singh@cdpcouriers.demo" },
+  { role: "Finance Admin", name: "Ashwin Ram", email: "ashwin.ram@cdpcouriers.demo" },
+  { role: "Coordinator", name: "Rajneelta", email: "rajneelta@cdpcouriers.demo" },
+];
+
+function AccountTable({
+  accounts,
+  companyCode,
+  password,
+  onFill,
+  accentClass,
+}: {
+  accounts: { role: string; name: string; email: string }[];
+  companyCode: string;
+  password: string;
+  onFill: (email: string, code: string, pw: string) => void;
+  accentClass: string;
+}) {
+  return (
+    <div className="rounded-md border border-border overflow-hidden">
+      <table className="w-full text-xs">
+        <thead className="bg-muted/50">
+          <tr>
+            <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Role</th>
+            <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Name</th>
+            <th className="px-2 py-1.5 text-right font-medium text-muted-foreground">Use</th>
+          </tr>
+        </thead>
+        <tbody>
+          {accounts.map((acct, i) => (
+            <tr key={acct.email} className={i % 2 === 0 ? "" : "bg-muted/20"}>
+              <td className="px-2 py-1.5 text-muted-foreground">{acct.role}</td>
+              <td className="px-2 py-1.5 font-medium">{acct.name}</td>
+              <td className="px-2 py-1.5 text-right">
+                <button
+                  type="button"
+                  onClick={() => onFill(acct.email, companyCode, password)}
+                  className={`${accentClass} underline underline-offset-2`}
+                  data-testid={`button-fill-${companyCode}-${acct.role.toLowerCase().replace(/[\s()\/]+/g, "-")}`}
+                >
+                  Fill
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export function DemoLogin() {
   const { toast } = useToast();
@@ -36,7 +96,6 @@ export function DemoLogin() {
         title: "Login Successful",
         description: "Redirecting to dashboard...",
       });
-      // Redirect to home after successful login
       window.location.href = "/";
     },
     onError: (error: any) => {
@@ -52,20 +111,10 @@ export function DemoLogin() {
     loginMutation.mutate(data);
   };
 
-  const DEMO_ACCOUNTS = [
-    { role: "Super Admin", name: "Desmond Bale", email: "desmond.bale@islandtraveltech.com" },
-    { role: "Employee", name: "Jone Ratudina", email: "jone.ratudina@islandtraveltech.com" },
-    { role: "Coordinator", name: "Litia Vuniyayawa", email: "litia.vuniyayawa@islandtraveltech.com" },
-    { role: "Manager", name: "Tomasi Ravouvou", email: "tomasi.ravouvou@islandtraveltech.com" },
-    { role: "Finance Admin", name: "Mere Delana", email: "mere.delana@islandtraveltech.com" },
-    { role: "Travel Admin", name: "Nemani Tui", email: "nemani.tui@islandtraveltech.com" },
-  ];
-
-  // Auto-fill demo credentials for a chosen account
-  const fillDemoCredentials = (email = "desmond.bale@islandtraveltech.com") => {
-    form.setValue("companyCode", "itt001");
+  const fillCredentials = (email: string, companyCode: string, password: string) => {
+    form.setValue("companyCode", companyCode);
     form.setValue("email", email);
-    form.setValue("password", "itt1235*");
+    form.setValue("password", password);
   };
 
   return (
@@ -89,7 +138,7 @@ export function DemoLogin() {
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input
-                        placeholder="Company Code (e.g., itt001)"
+                        placeholder="Company Code (e.g., itt001 or cdp001)"
                         className="pl-10"
                         data-testid="input-company-code"
                         {...field}
@@ -147,62 +196,56 @@ export function DemoLogin() {
               )}
             />
 
-            <div className="space-y-2">
-              <Button 
-                type="submit" 
-                variant="default"
-                className="w-full"
-                disabled={loginMutation.isPending}
-                data-testid="button-demo-login"
-              >
-                {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In to Demo
-              </Button>
-              
-              <Button 
-                type="button" 
-                variant="outline"
-                className="w-full"
-                onClick={() => fillDemoCredentials()}
-                disabled={loginMutation.isPending}
-                data-testid="button-fill-demo"
-              >
-                Fill Demo Credentials (Super Admin)
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              variant="default"
+              className="w-full"
+              disabled={loginMutation.isPending}
+              data-testid="button-demo-login"
+            >
+              {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In to Demo
+            </Button>
 
-            <div className="pt-2">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">
-                Demo accounts — all share password <code className="bg-muted px-1 rounded">itt1235*</code>, company <code className="bg-muted px-1 rounded">itt001</code>
-              </p>
-              <div className="rounded-md border border-border overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Role</th>
-                      <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Name</th>
-                      <th className="px-2 py-1.5 text-right font-medium text-muted-foreground">Use</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {DEMO_ACCOUNTS.map((acct, i) => (
-                      <tr key={acct.email} className={i % 2 === 0 ? "" : "bg-muted/20"}>
-                        <td className="px-2 py-1.5 text-muted-foreground">{acct.role}</td>
-                        <td className="px-2 py-1.5 font-medium">{acct.name}</td>
-                        <td className="px-2 py-1.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => fillDemoCredentials(acct.email)}
-                            className="text-primary underline underline-offset-2 hover:text-primary/80"
-                            data-testid={`button-fill-demo-${acct.role.toLowerCase().replace(/\s+/g, "-")}`}
-                          >
-                            Fill
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="space-y-4 pt-1">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-5 w-5 rounded-full bg-[#2274D1] flex-shrink-0" />
+                  <p className="text-xs font-semibold text-foreground">
+                    Island Travel Technologies
+                  </p>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    <code className="bg-muted px-1 rounded">itt001</code> · <code className="bg-muted px-1 rounded">itt1235*</code>
+                  </span>
+                </div>
+                <AccountTable
+                  accounts={ITT_ACCOUNTS}
+                  companyCode="itt001"
+                  password="itt1235*"
+                  onFill={fillCredentials}
+                  accentClass="text-[#2274D1] hover:text-[#2274D1]/80"
+                />
+              </div>
+
+              <Separator />
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-5 w-5 rounded-full bg-[#F5C800] flex-shrink-0" />
+                  <p className="text-xs font-semibold text-foreground">
+                    CDP Couriers
+                  </p>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    <code className="bg-muted px-1 rounded">cdp001</code> · <code className="bg-muted px-1 rounded">Demo@12345</code>
+                  </span>
+                </div>
+                <AccountTable
+                  accounts={CDP_ACCOUNTS}
+                  companyCode="cdp001"
+                  password="Demo@12345"
+                  onFill={fillCredentials}
+                  accentClass="text-[#b8960a] hover:text-[#b8960a]/80"
+                />
               </div>
             </div>
           </form>
