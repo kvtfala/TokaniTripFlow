@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Travel Requests
-  app.get("/api/requests", asyncHandler(async (req, res) => {
+  app.get("/api/requests", isLoggedIn, asyncHandler(async (req, res) => {
     let requests = await storage.getTravelRequests();
     const ttr = (req.query.ttr as string | undefined)?.toLowerCase();
     if (ttr) {
@@ -181,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(requests);
   }));
 
-  app.get("/api/requests/:id", asyncHandler(async (req, res) => {
+  app.get("/api/requests/:id", isLoggedIn, asyncHandler(async (req, res) => {
     const request = await storage.getTravelRequest(req.params.id);
     if (!request) {
       return res.status(404).json({ error: "Request not found" });
@@ -189,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(request);
   }));
 
-  app.post("/api/requests", asyncHandler(async (req, res) => {
+  app.post("/api/requests", isLoggedIn, asyncHandler(async (req, res) => {
     const request = await storage.createTravelRequest(req.body);
     res.json(request);
   }));
@@ -197,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper: resolve the currently logged-in user from session (OIDC or demo).
   // Returns { id, role, displayName } or falls back to the legacy "manager" mock
   // so unauthenticated API calls (e.g. test scripts) continue to work.
-  const resolveActingUser = async (req: any): Promise<{ id: string; role: string; displayName: string }> => {
+  const resolveActingUser = async (req: any): Promise<{ id: string; role: string; displayName: string } | null> => {
     try {
       let userId: string | null = null;
       if (req.user?.claims?.sub) {
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     } catch (_) { /* fall through */ }
-    return { id: "manager", role: "manager", displayName: "Manager" };
+    return null;
   };
 
   app.post("/api/requests/:id/approve", asyncHandler(async (req: any, res) => {
@@ -228,6 +228,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const actor = await resolveActingUser(req);
+    if (!actor) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const isSuperAdmin = actor.role === "super_admin";
     // Audit trail uses the actor's display name for readability
     const currentApproverId = isSuperAdmin ? `${actor.displayName} (Super Admin)` : actor.displayName;
@@ -424,6 +427,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const actor = await resolveActingUser(req);
+    if (!actor) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const isSuperAdmin = actor.role === "super_admin";
     const currentApproverId = isSuperAdmin ? `${actor.displayName} (Super Admin)` : actor.displayName;
     const expectedApproverId = request.approverFlow[request.approverIndex];

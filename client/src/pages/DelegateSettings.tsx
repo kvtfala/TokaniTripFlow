@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useRole } from "@/contexts/RoleContext";
+import { Redirect } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +19,8 @@ export default function DelegateSettings() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Mock current user - in production this would come from auth
-  const currentUserId = "manager";
+  const { currentUser, isLoading: roleLoading } = useRole();
+  const currentUserId = currentUser?.id ?? "";
 
   const { data: delegations = [] } = useQuery<DelegateAssignment[]>({
     queryKey: ["/api/delegations"],
@@ -68,6 +70,12 @@ export default function DelegateSettings() {
   const myDelegations = delegations.filter((d) => d.userId === currentUserId);
 
   const isFormValid = actingFor && startDate && endDate && new Date(endDate) >= new Date(startDate);
+
+  if (roleLoading) return null;
+  const delegationRole = currentUser?.role || "employee";
+  if (!["manager", "coordinator", "super_admin"].includes(delegationRole)) {
+    return <Redirect to="/" />;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">

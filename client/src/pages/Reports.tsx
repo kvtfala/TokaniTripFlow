@@ -1,4 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Redirect } from "wouter";
+import { useRole } from "@/contexts/RoleContext";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +67,7 @@ const CLAIM_STATUS_CONFIG = {
 };
 
 export default function Reports() {
+  const { currentUser: roleUser, isLoading: roleLoading } = useRole();
   const qc = useQueryClient();
   const { data: allRequests = [], isLoading } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],
@@ -458,6 +461,11 @@ export default function Reports() {
       </div>
     );
   }
+
+  if (roleLoading) return null;
+  const reportsRole = roleUser?.role || "employee";
+  const reportsAllowed = ["manager", "finance_admin", "travel_admin", "super_admin"].includes(reportsRole);
+  if (!reportsAllowed) return <Redirect to="/" />;
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">

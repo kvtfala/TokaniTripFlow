@@ -8,7 +8,7 @@ export type RequestStatus =
   | "rejected" 
   | "ticketed";           // Travel Desk processed
 export type VisaStatus = "OK" | "WARNING" | "ACTION";
-export type UserRole = "employee" | "coordinator" | "manager" | "finance" | "travel_desk" | "admin";
+export type UserRole = "employee" | "coordinator" | "manager" | "finance_admin" | "travel_admin" | "super_admin";
 export type FundingType = "advance" | "reimbursement";
 export type HistoryAction = "SUBMIT" | "APPROVE" | "REJECT" | "ESCALATE" | "COMMENT" | "TICKET" | "QUOTE";
 export type TripType = "one-way" | "return" | "multi-city";

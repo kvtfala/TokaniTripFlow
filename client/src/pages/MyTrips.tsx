@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useRole } from "@/contexts/RoleContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,9 +84,17 @@ export default function MyTrips() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [cancelTarget, setCancelTarget] = useState<TravelRequest | null>(null);
 
-  const { data: allRequests = [], isLoading } = useQuery<TravelRequest[]>({
+  const { currentUser } = useRole();
+  const role = currentUser?.role || "employee";
+  const isEmployee = role === "employee";
+
+  const { data: fetchedRequests = [], isLoading } = useQuery<TravelRequest[]>({
     queryKey: ["/api/requests"],
   });
+
+  const allRequests = isEmployee
+    ? fetchedRequests.filter(r => r.employeeId === currentUser?.id)
+    : fetchedRequests;
 
   const cancelMutation = useMutation({
     mutationFn: async (requestId: string) => {
@@ -168,9 +177,13 @@ export default function MyTrips() {
         <div>
           <div className="flex items-center gap-3">
             <IconTrips size={36} accentColor="#1FBED6" />
-            <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-my-trips">My Travel Requests</h1>
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-my-trips">
+              {isEmployee ? "My Requests" : "Travel Register"}
+            </h1>
           </div>
-          <p className="text-muted-foreground mt-1">Track, view, and manage all your travel requests</p>
+          <p className="text-muted-foreground mt-1">
+            {isEmployee ? "Track, view, and manage your own travel requests" : "All travel requests across the organisation"}
+          </p>
         </div>
         <Link href="/request/new">
           <Button data-testid="button-new-request">

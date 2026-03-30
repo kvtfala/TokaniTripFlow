@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useRole } from "@/contexts/RoleContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, Redirect } from "wouter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -244,9 +245,18 @@ export default function ExpenseClaims() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedClaim, setSelectedClaim] = useState<ExpenseClaim | null>(null);
 
-  const { data: claims = [], isLoading } = useQuery<ExpenseClaim[]>({
+  const { currentUser, isLoading: roleLoading } = useRole();
+  const role = currentUser?.role || "employee";
+  const isEmployee = role === "employee";
+  const isFinanceAdmin = role === "finance_admin" || role === "super_admin";
+
+  const { data: allClaims = [], isLoading } = useQuery<ExpenseClaim[]>({
     queryKey: ["/api/expense-claims"],
   });
+
+  const claims = isEmployee
+    ? allClaims.filter(c => c.employeeId === currentUser?.id)
+    : allClaims;
 
   const filtered = claims.filter(c => {
     const matchStatus = statusFilter === "all" || c.status === statusFilter;
@@ -265,6 +275,9 @@ export default function ExpenseClaims() {
     .filter(c => c.status === "approved" || c.status === "paid")
     .reduce((sum, c) => sum + c.totalAmount, 0);
   const draftCount = claims.filter(c => c.status === "draft").length;
+
+  if (roleLoading) return null;
+  if (role === "coordinator" || role === "travel_admin") return <Redirect to="/" />;
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">

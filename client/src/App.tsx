@@ -55,63 +55,79 @@ import { AuthSplash } from "@/components/layout/AuthSplash";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { UserAvatarMenu } from "@/components/layout/UserAvatarMenu";
 import { useState, useEffect } from "react";
+import { useRole } from "@/contexts/RoleContext";
 
-const menuItems: { title: string; subtitle?: string; url: string; icon: React.FC<TokaniIconProps> }[] = [
+const ALL_ROLES = ["employee", "coordinator", "manager", "finance_admin", "travel_admin", "super_admin"] as const;
+
+const menuItems: { title: string; subtitle?: string; url: string; icon: React.FC<TokaniIconProps>; allowedRoles: readonly string[] }[] = [
   {
     title: "Home",
     subtitle: "Overview",
     url: "/",
     icon: IconDashboard,
+    allowedRoles: ALL_ROLES,
   },
   {
     title: "New Request",
     url: "/request/new",
     icon: IconFlights,
+    allowedRoles: ["employee", "coordinator", "manager", "super_admin"],
   },
   {
     title: "My Requests",
     subtitle: "Personal",
     url: "/my-trips",
     icon: IconTrips,
+    allowedRoles: ALL_ROLES,
   },
   {
     title: "Approvals",
     url: "/approvals",
     icon: IconApprovals,
+    allowedRoles: ["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"],
   },
   {
     title: "Expenses",
     subtitle: "Claims & Receipts",
     url: "/expenses",
     icon: IconExpense,
+    allowedRoles: ["employee", "manager", "finance_admin", "super_admin"],
   },
   {
     title: "Reports",
     subtitle: "Analytics & Export",
     url: "/reports",
     icon: IconReports,
+    allowedRoles: ["manager", "finance_admin", "travel_admin", "super_admin"],
   },
   {
     title: "Travel Watch",
     subtitle: "Live Tracking",
     url: "/travel-watch",
     icon: IconDutyOfCare,
+    allowedRoles: ["coordinator", "manager", "travel_admin", "super_admin"],
   },
   {
     title: "Delegations",
     url: "/delegations",
     icon: IconTravellers,
+    allowedRoles: ["manager", "coordinator", "super_admin"],
   },
   {
     title: "Admin Portal",
     subtitle: "System Config",
     url: "/admin",
     icon: IconSettings,
+    allowedRoles: ["finance_admin", "travel_admin", "super_admin"],
   },
 ];
 
 function AppSidebar() {
   const [location] = useLocation();
+  const { currentUser } = useRole();
+  const userRole = currentUser?.role || "employee";
+
+  const visibleItems = menuItems.filter(item => item.allowedRoles.includes(userRole));
 
   return (
     <Sidebar>
@@ -120,7 +136,7 @@ function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const isActive = location === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>

@@ -40,7 +40,7 @@ export default function Home() {
   });
 
   const role = currentUser?.role || "employee";
-  const isManagerRole = ["manager", "super_admin", "coordinator"].includes(role);
+  const isManagerRole = ["manager", "super_admin", "coordinator", "travel_admin"].includes(role);
   const isFinanceRole = role === "finance_admin";
   const today = new Date();
 

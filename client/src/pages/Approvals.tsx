@@ -34,6 +34,8 @@ import { format } from "date-fns";
 import { nextApprover, requiresMoreApprovals } from "@/utils/approver";
 import { checkRequestForEscalation } from "@/utils/escalation";
 import { useToast } from "@/hooks/use-toast";
+import { useRole } from "@/contexts/RoleContext";
+import { Redirect } from "wouter";
 
 type SortField = "employee" | "destination" | "date" | "submitted" | "cost";
 type SortOrder = "asc" | "desc";
@@ -56,8 +58,11 @@ function daysUntilDeparture(startDate: string): number {
 
 export default function Approvals() {
   const { toast } = useToast();
+  const { currentUser: roleUser, isLoading: roleLoading } = useRole();
+  const userRole = roleUser?.role || "employee";
 
-  const [tab, setTab] = useState<TabKey>("pending");
+  const defaultTab: TabKey = userRole === "coordinator" ? "awaiting_quotes" : "pending";
+  const [tab, setTab] = useState<TabKey>(defaultTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filterDepartment, setFilterDepartment] = useState("all");
@@ -303,6 +308,9 @@ export default function Approvals() {
     );
   }
 
+  if (roleLoading) return null;
+  if (userRole === "employee") return <Redirect to="/" />;
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -310,7 +318,12 @@ export default function Approvals() {
         <div>
           <div className="flex items-center gap-3">
             <IconApprovals size={36} accentColor="#1FBED6" />
-            <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-approvals">Approvals</h1>
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-approvals">
+              {userRole === "coordinator" ? "Quote Collection Queue" :
+               userRole === "finance_admin" ? "Finance Review Queue" :
+               userRole === "travel_admin" ? "Travel Desk Queue" :
+               "Approval Queue"}
+            </h1>
           </div>
           <p className="text-muted-foreground mt-1">
             Review and action pending travel requests

@@ -52,10 +52,19 @@ export function DemoLogin() {
     loginMutation.mutate(data);
   };
 
-  // Auto-fill demo credentials for convenience
-  const fillDemoCredentials = () => {
+  const DEMO_ACCOUNTS = [
+    { role: "Super Admin", name: "Desmond Bale", email: "desmond.bale@islandtraveltech.com" },
+    { role: "Employee", name: "Jone Ratudina", email: "jone.ratudina@islandtraveltech.com" },
+    { role: "Coordinator", name: "Litia Vuniyayawa", email: "litia.vuniyayawa@islandtraveltech.com" },
+    { role: "Manager", name: "Tomasi Ravouvou", email: "tomasi.ravouvou@islandtraveltech.com" },
+    { role: "Finance Admin", name: "Mere Delana", email: "mere.delana@islandtraveltech.com" },
+    { role: "Travel Admin", name: "Nemani Tui", email: "nemani.tui@islandtraveltech.com" },
+  ];
+
+  // Auto-fill demo credentials for a chosen account
+  const fillDemoCredentials = (email = "desmond.bale@islandtraveltech.com") => {
     form.setValue("companyCode", "itt001");
-    form.setValue("email", "desmond.bale@islandtraveltech.com");
+    form.setValue("email", email);
     form.setValue("password", "itt1235*");
   };
 
@@ -154,19 +163,47 @@ export function DemoLogin() {
                 type="button" 
                 variant="outline"
                 className="w-full"
-                onClick={fillDemoCredentials}
+                onClick={() => fillDemoCredentials()}
                 disabled={loginMutation.isPending}
                 data-testid="button-fill-demo"
               >
-                Fill Demo Credentials
+                Fill Demo Credentials (Super Admin)
               </Button>
             </div>
 
-            <div className="text-xs text-muted-foreground text-center pt-2 space-y-1">
-              <p className="font-semibold">Demo Credentials:</p>
-              <p>Company: <code className="bg-muted px-1 rounded">itt001</code></p>
-              <p>Email: <code className="bg-muted px-1 rounded">desmond.bale@islandtraveltech.com</code></p>
-              <p>Password: <code className="bg-muted px-1 rounded">itt1235*</code></p>
+            <div className="pt-2">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">
+                Demo accounts — all share password <code className="bg-muted px-1 rounded">itt1235*</code>, company <code className="bg-muted px-1 rounded">itt001</code>
+              </p>
+              <div className="rounded-md border border-border overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Role</th>
+                      <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Name</th>
+                      <th className="px-2 py-1.5 text-right font-medium text-muted-foreground">Use</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DEMO_ACCOUNTS.map((acct, i) => (
+                      <tr key={acct.email} className={i % 2 === 0 ? "" : "bg-muted/20"}>
+                        <td className="px-2 py-1.5 text-muted-foreground">{acct.role}</td>
+                        <td className="px-2 py-1.5 font-medium">{acct.name}</td>
+                        <td className="px-2 py-1.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => fillDemoCredentials(acct.email)}
+                            className="text-primary underline underline-offset-2 hover:text-primary/80"
+                            data-testid={`button-fill-demo-${acct.role.toLowerCase().replace(/\s+/g, "-")}`}
+                          >
+                            Fill
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </form>
         </Form>

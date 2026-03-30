@@ -170,6 +170,10 @@ export class MemStorage implements IStorage {
     //   Password: itt1235* (stored as bcrypt hash below)
     //   Role: super_admin (full admin portal access)
     
+    // All demo users share password: itt1235*
+    // bcrypt hash of "itt1235*" generated with bcrypt.hash("itt1235*", 10)
+    const DEMO_HASH = "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS";
+
     const testUsers: User[] = [
       {
         id: "user-itt-manager-001",
@@ -179,8 +183,67 @@ export class MemStorage implements IStorage {
         profileImageUrl: null,
         role: "super_admin",
         companyCode: "itt001",
-        // bcrypt hash of "itt1235*" - generated with: bcrypt.hash("itt1235*", 10)
-        passwordHash: "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS",
+        passwordHash: DEMO_HASH,
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-itt-employee-001",
+        email: "jone.ratudina@islandtraveltech.com",
+        firstName: "Jone",
+        lastName: "Ratudina",
+        profileImageUrl: null,
+        role: "employee",
+        companyCode: "itt001",
+        passwordHash: DEMO_HASH,
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-itt-coordinator-001",
+        email: "litia.vuniyayawa@islandtraveltech.com",
+        firstName: "Litia",
+        lastName: "Vuniyayawa",
+        profileImageUrl: null,
+        role: "coordinator",
+        companyCode: "itt001",
+        passwordHash: DEMO_HASH,
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-itt-manager-002",
+        email: "tomasi.ravouvou@islandtraveltech.com",
+        firstName: "Tomasi",
+        lastName: "Ravouvou",
+        profileImageUrl: null,
+        role: "manager",
+        companyCode: "itt001",
+        passwordHash: DEMO_HASH,
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-itt-finance-001",
+        email: "mere.delana@islandtraveltech.com",
+        firstName: "Mere",
+        lastName: "Delana",
+        profileImageUrl: null,
+        role: "finance_admin",
+        companyCode: "itt001",
+        passwordHash: DEMO_HASH,
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
+      },
+      {
+        id: "user-itt-travel-001",
+        email: "nemani.tui@islandtraveltech.com",
+        firstName: "Nemani",
+        lastName: "Tui",
+        profileImageUrl: null,
+        role: "travel_admin",
+        companyCode: "itt001",
+        passwordHash: DEMO_HASH,
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },

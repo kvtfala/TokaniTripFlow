@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
+import { Redirect } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useRole } from "@/contexts/RoleContext";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -748,6 +750,7 @@ function DestinationDrawer({
 
 // ── Main TravelWatch page ─────────────────────────────────────────────────────
 export default function TravelWatch() {
+  const { currentUser: roleUser, isLoading: roleLoading } = useRole();
   const { current, upcoming, completed } = useTripsNowAndUpcoming();
   const allTrips = [...current, ...upcoming, ...completed];
   const now = new Date();
@@ -963,6 +966,11 @@ export default function TravelWatch() {
     if (advisory && advisory.level >= 2) return ADVISORY_MAP_FILL[advisory.level];
     return "hsl(var(--muted))";
   }, [activeTrips, advisories]);
+
+  if (roleLoading) return null;
+  const watchRole = roleUser?.role || "employee";
+  const watchAllowed = ["coordinator", "manager", "travel_admin", "super_admin"].includes(watchRole);
+  if (!watchAllowed) return <Redirect to="/" />;
 
   return (
     <TooltipProvider>

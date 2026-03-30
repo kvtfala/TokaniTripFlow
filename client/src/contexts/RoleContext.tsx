@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { UserRole } from "@shared/types";
 import type { User } from "@shared/schema";
@@ -12,7 +12,7 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-// Fallback user when not authenticated (should rarely be used due to auth loading state)
+// Fallback user used only while the auth query is loading (before first response)
 const DEFAULT_USER: User = {
   id: "user-default-001",
   email: "user@example.com",
@@ -27,21 +27,19 @@ const DEFAULT_USER: User = {
 };
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User>(DEFAULT_USER);
-  
-  // Fetch authenticated user from Replit Auth
+  // Derive currentUser directly from the query — no useEffect/useState race condition.
+  // When the TanStack Query cache is warm (shared with useAuth), this returns the
+  // actual user on the very first render with no intermediate "default user" state.
   const { data: authUser, isLoading } = useQuery<User>({
     queryKey: ["/api/auth/user"],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Update currentUser when auth data is available
-  useEffect(() => {
-    if (authUser) {
-      setCurrentUser(authUser);
-    }
-  }, [authUser]);
+  const currentUser: User = authUser ?? DEFAULT_USER;
+
+  // No-op kept for API compatibility — currentUser is always derived from auth cache.
+  const setCurrentUser = (_user: User) => {};
 
   const hasRole = (roles: UserRole | UserRole[]) => {
     if (!currentUser.role) return false;
@@ -76,9 +74,9 @@ export function getRoleName(role: UserRole): string {
     employee: "Employee",
     coordinator: "Travel Coordinator",
     manager: "Manager",
-    finance: "Finance",
-    travel_desk: "Travel Desk",
-    admin: "Administrator",
+    finance_admin: "Finance Admin",
+    travel_admin: "Travel Admin",
+    super_admin: "Super Admin",
   };
   return roleNames[role] || role;
 }
