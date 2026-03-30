@@ -53,8 +53,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, CheckCircle, XCircle, Info } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, XCircle, Info, Eye, X, Mail } from "lucide-react";
 
 type EmailTemplate = {
   id: string;
@@ -88,18 +89,30 @@ const templateSchema = z.object({
 type TemplateFormValues = z.infer<typeof templateSchema>;
 
 const PLACEHOLDERS = [
-  { key: "{{employee_name}}", description: "Traveller's full name" },
-  { key: "{{employee_number}}", description: "Employee number" },
-  { key: "{{trip_reference}}", description: "Trip reference number" },
-  { key: "{{destination}}", description: "Destination city/country" },
-  { key: "{{departure_date}}", description: "Departure date" },
-  { key: "{{return_date}}", description: "Return date" },
-  { key: "{{approver_name}}", description: "Name of the approver" },
-  { key: "{{rejection_reason}}", description: "Reason for rejection" },
-  { key: "{{expense_amount}}", description: "Total expense amount" },
-  { key: "{{policy_name}}", description: "Policy name" },
-  { key: "{{company_name}}", description: "Organization name" },
+  { key: "{{employee_name}}", description: "Traveller's full name", sample: "Jone Ratudina" },
+  { key: "{{employee_number}}", description: "Employee number", sample: "EMP-0042" },
+  { key: "{{trip_reference}}", description: "Trip reference number", sample: "TTF-2024-0142" },
+  { key: "{{destination}}", description: "Destination city/country", sample: "Sydney, Australia" },
+  { key: "{{departure_date}}", description: "Departure date", sample: "15 Apr 2024" },
+  { key: "{{return_date}}", description: "Return date", sample: "22 Apr 2024" },
+  { key: "{{approver_name}}", description: "Name of the approver", sample: "Tomasi Ravouvou" },
+  { key: "{{rejection_reason}}", description: "Reason for rejection", sample: "Budget limit exceeded for Q2" },
+  { key: "{{expense_amount}}", description: "Total expense amount", sample: "FJD 3,450.00" },
+  { key: "{{policy_name}}", description: "Policy name", sample: "International Travel Policy v2" },
+  { key: "{{company_name}}", description: "Organization name", sample: "Institute of Technology Toiaki" },
 ];
+
+function substitutePlaceholders(text: string): string {
+  let result = text;
+  for (const p of PLACEHOLDERS) {
+    result = result.split(p.key).join(p.sample);
+  }
+  return result;
+}
+
+function formatCategoryLabel(cat: string): string {
+  return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
 
 export function EmailTemplateManagement() {
   const { toast } = useToast();
@@ -107,40 +120,31 @@ export function EmailTemplateManagement() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [deletingTemplate, setDeletingTemplate] = useState<EmailTemplate | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Fetch templates
   const { data: templates = [], isLoading } = useQuery<EmailTemplate[]>({
     queryKey: ["/api/admin/templates"],
   });
 
-  // Create template mutation
   const createMutation = useMutation({
     mutationFn: async (data: TemplateFormValues) => {
-      const payload = {
+      return await apiRequest("POST", "/api/admin/templates", {
         ...data,
         createdBy: currentUser?.id || "system",
-      };
-      return await apiRequest("POST", "/api/admin/templates", payload);
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
       setIsCreateOpen(false);
-      toast({
-        title: "Template created",
-        description: "Email template has been created successfully.",
-      });
+      toast({ title: "Template created", description: "Email template has been created successfully." });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create email template.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to create email template.", variant: "destructive" });
     },
   });
 
-  // Update template mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<EmailTemplate> }) => {
       return await apiRequest("PATCH", `/api/admin/templates/${id}`, data);
@@ -148,21 +152,13 @@ export function EmailTemplateManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
       setEditingTemplate(null);
-      toast({
-        title: "Template updated",
-        description: "Email template has been updated successfully.",
-      });
+      toast({ title: "Template updated", description: "Email template has been updated successfully." });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update email template.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update email template.", variant: "destructive" });
     },
   });
 
-  // Delete template mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       return await apiRequest("DELETE", `/api/admin/templates/${id}`);
@@ -170,35 +166,53 @@ export function EmailTemplateManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
       setDeletingTemplate(null);
-      toast({
-        title: "Template deleted",
-        description: "Email template has been deleted successfully.",
-      });
+      toast({ title: "Template deleted", description: "Email template has been deleted successfully." });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete email template.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete email template.", variant: "destructive" });
     },
   });
 
-  // Filter templates
-  const filteredTemplates = categoryFilter === "all" 
-    ? templates 
+  const filteredTemplates = categoryFilter === "all"
+    ? templates
     : templates.filter(t => t.category === categoryFilter);
 
   const handleToggleActive = (template: EmailTemplate) => {
-    updateMutation.mutate({
-      id: template.id,
-      data: { isActive: !template.isActive },
-    });
+    updateMutation.mutate({ id: template.id, data: { isActive: !template.isActive } });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) setSelectedIds(new Set(filteredTemplates.map(t => t.id)));
+    else setSelectedIds(new Set());
+  };
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id); else next.delete(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkDelete = async () => {
+    for (const id of Array.from(selectedIds)) {
+      await apiRequest("DELETE", `/api/admin/templates/${id}`);
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
+    setSelectedIds(new Set());
+    toast({ title: `${selectedIds.size} templates deleted` });
+  };
+
+  const handleBulkActivate = async (isActive: boolean) => {
+    for (const id of Array.from(selectedIds)) {
+      await apiRequest("PATCH", `/api/admin/templates/${id}`, { isActive });
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
+    setSelectedIds(new Set());
+    toast({ title: `${selectedIds.size} templates ${isActive ? "activated" : "deactivated"}` });
   };
 
   return (
     <div className="space-y-6">
-      {/* Placeholder Reference Card */}
+      {/* Placeholder Reference */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -206,7 +220,7 @@ export function EmailTemplateManagement() {
             Available Placeholders
           </CardTitle>
           <CardDescription>
-            Use these placeholders in your email templates. They will be replaced with actual values.
+            Use these placeholders in your templates. Click the preview button on any row to see a rendered example.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -221,8 +235,8 @@ export function EmailTemplateManagement() {
         </CardContent>
       </Card>
 
-      {/* Actions and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      {/* Filters and Actions */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between flex-wrap gap-y-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Category:</span>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -232,9 +246,7 @@ export function EmailTemplateManagement() {
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {emailCategories.map(cat => (
-                <SelectItem key={cat} value={cat}>
-                  {cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                </SelectItem>
+                <SelectItem key={cat} value={cat}>{formatCategoryLabel(cat)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -267,6 +279,13 @@ export function EmailTemplateManagement() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={filteredTemplates.length > 0 && selectedIds.size === filteredTemplates.length}
+                  onCheckedChange={handleSelectAll}
+                  data-testid="checkbox-select-all"
+                />
+              </TableHead>
               <TableHead>Subject</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
@@ -277,22 +296,25 @@ export function EmailTemplateManagement() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Loading templates...
-                </TableCell>
+                <TableCell colSpan={6} className="text-center text-muted-foreground">Loading templates...</TableCell>
               </TableRow>
             ) : filteredTemplates.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No email templates found.
-                </TableCell>
+                <TableCell colSpan={6} className="text-center text-muted-foreground">No email templates found.</TableCell>
               </TableRow>
             ) : (
               filteredTemplates.map((template) => (
                 <TableRow key={template.id} data-testid={`row-template-${template.id}`}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(template.id)}
+                      onCheckedChange={(checked) => handleSelectRow(template.id, !!checked)}
+                      data-testid={`checkbox-${template.id}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium max-w-xs truncate">{template.subject}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {template.category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    {formatCategoryLabel(template.category)}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -307,11 +329,19 @@ export function EmailTemplateManagement() {
                       )}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {template.createdBy}
-                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{template.createdBy}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      {/* Preview Button */}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setPreviewTemplate(template)}
+                        data-testid={`button-preview-${template.id}`}
+                        title="Preview template"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -324,7 +354,7 @@ export function EmailTemplateManagement() {
                       <Dialog open={editingTemplate?.id === template.id} onOpenChange={(open) => !open && setEditingTemplate(null)}>
                         <DialogTrigger asChild>
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="ghost"
                             onClick={() => setEditingTemplate(template)}
                             data-testid={`button-edit-${template.id}`}
@@ -335,9 +365,7 @@ export function EmailTemplateManagement() {
                         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Edit Email Template</DialogTitle>
-                            <DialogDescription>
-                              Update the email template details and content.
-                            </DialogDescription>
+                            <DialogDescription>Update the email template details and content.</DialogDescription>
                           </DialogHeader>
                           <TemplateForm
                             defaultValues={{
@@ -352,7 +380,7 @@ export function EmailTemplateManagement() {
                         </DialogContent>
                       </Dialog>
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
                         onClick={() => setDeletingTemplate(template)}
                         data-testid={`button-delete-${template.id}`}
@@ -368,7 +396,63 @@ export function EmailTemplateManagement() {
         </Table>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-background border rounded-xl px-4 py-3 shadow-lg">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Button size="sm" variant="outline" onClick={() => handleBulkActivate(true)} data-testid="button-bulk-activate">Activate</Button>
+          <Button size="sm" variant="outline" onClick={() => handleBulkActivate(false)} data-testid="button-bulk-deactivate">Deactivate</Button>
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} data-testid="button-bulk-delete">Delete</Button>
+          <Button size="icon" variant="ghost" onClick={() => setSelectedIds(new Set())}><X className="w-4 h-4" /></Button>
+        </div>
+      )}
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewTemplate} onOpenChange={(open) => !open && setPreviewTemplate(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Template Preview
+            </DialogTitle>
+            <DialogDescription>
+              Showing how this template will look with sample Fijian data substituted in.
+            </DialogDescription>
+          </DialogHeader>
+          {previewTemplate && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline">{formatCategoryLabel(previewTemplate.category)}</Badge>
+                <Badge variant={previewTemplate.isActive ? "default" : "secondary"}>
+                  {previewTemplate.isActive ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-muted px-4 py-3 border-b">
+                  <div className="text-xs text-muted-foreground mb-1">Subject</div>
+                  <div className="font-medium text-sm">{substitutePlaceholders(previewTemplate.subject)}</div>
+                </div>
+                <div className="bg-background px-4 py-4">
+                  <div className="text-xs text-muted-foreground mb-2">Body</div>
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {substitutePlaceholders(previewTemplate.body)}
+                  </div>
+                </div>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">
+                  Sample data used: Jone Ratudina, EMP-0042, TTF-2024-0142, Sydney, Australia, 15 Apr 2024
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewTemplate(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
       <AlertDialog open={!!deletingTemplate} onOpenChange={() => setDeletingTemplate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -446,7 +530,7 @@ function TemplateForm({
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Dear {{employee_name}},&#10;&#10;Your travel request {{trip_reference}} requires approval..."
+                  placeholder={"Dear {{employee_name}},\n\nYour travel request {{trip_reference}} requires approval..."}
                   rows={10}
                   data-testid="input-body"
                 />
@@ -475,7 +559,7 @@ function TemplateForm({
                   <SelectContent>
                     {emailCategories.map(cat => (
                       <SelectItem key={cat} value={cat}>
-                        {cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        {formatCategoryLabel(cat)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -509,8 +593,8 @@ function TemplateForm({
         </div>
 
         <DialogFooter>
-          <Button type="submit" disabled={isPending} data-testid="button-submit">
-            {isPending ? "Saving..." : "Save Template"}
+          <Button type="submit" disabled={isPending} data-testid="button-submit-template">
+            {isPending ? "Saving..." : defaultValues ? "Update Template" : "Create Template"}
           </Button>
         </DialogFooter>
       </form>

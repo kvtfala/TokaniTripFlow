@@ -55,7 +55,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2, Send, AlertTriangle, Info as InfoIcon, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, AlertTriangle, Info as InfoIcon, AlertCircle, X } from "lucide-react";
 
 type SystemNotification = {
   id: string;
@@ -80,8 +80,8 @@ const notificationSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
   message: z.string().min(1, "Message is required"),
   severity: z.enum(severities as [string, ...string[]]),
-  targetRoles: z.string().optional(), // Comma-separated
-  targetUsers: z.string().optional(), // Comma-separated
+  targetRoles: z.string().optional(),
+  targetUsers: z.string().optional(),
   isPublished: z.boolean().default(false),
   isDismissible: z.boolean().default(true),
   expiresAt: z.string().optional(),
@@ -97,13 +97,12 @@ export function SystemNotificationsManagement() {
   const [deletingNotification, setDeletingNotification] = useState<SystemNotification | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [publishedFilter, setPublishedFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Fetch notifications
   const { data: notifications = [], isLoading } = useQuery<SystemNotification[]>({
     queryKey: ["/api/admin/notifications"],
   });
 
-  // Create notification mutation
   const createMutation = useMutation({
     mutationFn: async (data: NotificationFormValues) => {
       const payload = {
@@ -118,65 +117,38 @@ export function SystemNotificationsManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
       setIsCreateOpen(false);
-      toast({
-        title: "Notification created",
-        description: "System notification has been created successfully.",
-      });
+      toast({ title: "Notification created", description: "System notification has been created successfully." });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create system notification.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to create system notification.", variant: "destructive" });
     },
   });
 
-  // Update notification mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return await apiRequest("PATCH", `/api/admin/notifications/${id}`, data);
-    },
+    mutationFn: async ({ id, data }: { id: string; data: any }) =>
+      apiRequest("PATCH", `/api/admin/notifications/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
       setEditingNotification(null);
-      toast({
-        title: "Notification updated",
-        description: "System notification has been updated successfully.",
-      });
+      toast({ title: "Notification updated", description: "System notification has been updated successfully." });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update system notification.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update system notification.", variant: "destructive" });
     },
   });
 
-  // Delete notification mutation
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/notifications/${id}`);
-    },
+    mutationFn: async (id: string) => apiRequest("DELETE", `/api/admin/notifications/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
       setDeletingNotification(null);
-      toast({
-        title: "Notification deleted",
-        description: "System notification has been deleted successfully.",
-      });
+      toast({ title: "Notification deleted", description: "System notification has been deleted successfully." });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete system notification.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete system notification.", variant: "destructive" });
     },
   });
 
-  // Filter notifications
   const filteredNotifications = notifications.filter(n => {
     if (severityFilter !== "all" && n.severity !== severityFilter) return false;
     if (publishedFilter === "published" && !n.isPublished) return false;
@@ -193,6 +165,38 @@ export function SystemNotificationsManagement() {
         publishedAt: newIsPublished ? new Date().toISOString() : null,
       },
     });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) setSelectedIds(new Set(filteredNotifications.map(n => n.id)));
+    else setSelectedIds(new Set());
+  };
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id); else next.delete(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkDelete = async () => {
+    for (const id of Array.from(selectedIds)) {
+      await apiRequest("DELETE", `/api/admin/notifications/${id}`);
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
+    setSelectedIds(new Set());
+    toast({ title: `${selectedIds.size} notifications deleted` });
+  };
+
+  const handleBulkPublish = async (isPublished: boolean) => {
+    for (const id of Array.from(selectedIds)) {
+      await apiRequest("PATCH", `/api/admin/notifications/${id}`, {
+        isPublished,
+        publishedAt: isPublished ? new Date().toISOString() : null,
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
+    setSelectedIds(new Set());
+    toast({ title: `${selectedIds.size} notifications ${isPublished ? "published" : "unpublished"}` });
   };
 
   const getSeverityIcon = (severity: string) => {
@@ -213,9 +217,8 @@ export function SystemNotificationsManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Filters and Actions */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between flex-wrap">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Severity:</span>
             <Select value={severityFilter} onValueChange={setSeverityFilter}>
@@ -225,14 +228,11 @@ export function SystemNotificationsManagement() {
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 {severities.map(sev => (
-                  <SelectItem key={sev} value={sev}>
-                    {sev.charAt(0).toUpperCase() + sev.slice(1)}
-                  </SelectItem>
+                  <SelectItem key={sev} value={sev}>{sev.charAt(0).toUpperCase() + sev.slice(1)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Status:</span>
             <Select value={publishedFilter} onValueChange={setPublishedFilter}>
@@ -258,9 +258,7 @@ export function SystemNotificationsManagement() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create System Notification</DialogTitle>
-              <DialogDescription>
-                Create a new notification to display to users based on roles and expiry dates.
-              </DialogDescription>
+              <DialogDescription>Create a new notification to display to users based on roles and expiry dates.</DialogDescription>
             </DialogHeader>
             <NotificationForm
               onSubmit={(values) => createMutation.mutate(values)}
@@ -270,11 +268,17 @@ export function SystemNotificationsManagement() {
         </Dialog>
       </div>
 
-      {/* Notifications Table */}
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={filteredNotifications.length > 0 && selectedIds.size === filteredNotifications.length}
+                  onCheckedChange={handleSelectAll}
+                  data-testid="checkbox-select-all"
+                />
+              </TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Severity</TableHead>
               <TableHead>Target</TableHead>
@@ -286,24 +290,25 @@ export function SystemNotificationsManagement() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  Loading notifications...
-                </TableCell>
+                <TableCell colSpan={7} className="text-center text-muted-foreground">Loading notifications...</TableCell>
               </TableRow>
             ) : filteredNotifications.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No system notifications found.
-                </TableCell>
+                <TableCell colSpan={7} className="text-center text-muted-foreground">No system notifications found.</TableCell>
               </TableRow>
             ) : (
               filteredNotifications.map((notification) => (
                 <TableRow key={notification.id} data-testid={`row-notification-${notification.id}`}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(notification.id)}
+                      onCheckedChange={(checked) => handleSelectRow(notification.id, !!checked)}
+                      data-testid={`checkbox-${notification.id}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium max-w-xs">
                     <div className="truncate">{notification.title}</div>
-                    <div className="text-xs text-muted-foreground truncate mt-1">
-                      {notification.message}
-                    </div>
+                    <div className="text-xs text-muted-foreground truncate mt-1">{notification.message}</div>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getSeverityVariant(notification.severity)} className="gap-1">
@@ -342,7 +347,7 @@ export function SystemNotificationsManagement() {
                       <Dialog open={editingNotification?.id === notification.id} onOpenChange={(open) => !open && setEditingNotification(null)}>
                         <DialogTrigger asChild>
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="ghost"
                             onClick={() => setEditingNotification(notification)}
                             data-testid={`button-edit-${notification.id}`}
@@ -353,9 +358,7 @@ export function SystemNotificationsManagement() {
                         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Edit System Notification</DialogTitle>
-                            <DialogDescription>
-                              Update the notification details.
-                            </DialogDescription>
+                            <DialogDescription>Update the notification details.</DialogDescription>
                           </DialogHeader>
                           <NotificationForm
                             defaultValues={{
@@ -382,7 +385,7 @@ export function SystemNotificationsManagement() {
                         </DialogContent>
                       </Dialog>
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
                         onClick={() => setDeletingNotification(notification)}
                         data-testid={`button-delete-${notification.id}`}
@@ -398,14 +401,22 @@ export function SystemNotificationsManagement() {
         </Table>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-background border rounded-xl px-4 py-3 shadow-lg">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Button size="sm" variant="outline" onClick={() => handleBulkPublish(true)} data-testid="button-bulk-publish">Publish</Button>
+          <Button size="sm" variant="outline" onClick={() => handleBulkPublish(false)} data-testid="button-bulk-unpublish">Unpublish</Button>
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} data-testid="button-bulk-delete">Delete</Button>
+          <Button size="icon" variant="ghost" onClick={() => setSelectedIds(new Set())}><X className="w-4 h-4" /></Button>
+        </div>
+      )}
+
       <AlertDialog open={!!deletingNotification} onOpenChange={() => setDeletingNotification(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Notification</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingNotification?.title}"?
-              This action cannot be undone.
+              Are you sure you want to delete "{deletingNotification?.title}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -457,11 +468,7 @@ function NotificationForm({
             <FormItem>
               <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  placeholder="e.g., System Maintenance Notice"
-                  data-testid="input-title"
-                />
+                <Input {...field} placeholder="e.g., System Maintenance Notice" data-testid="input-title" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -475,12 +482,7 @@ function NotificationForm({
             <FormItem>
               <FormLabel>Message</FormLabel>
               <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="Detailed notification message..."
-                  rows={4}
-                  data-testid="input-message"
-                />
+                <Textarea {...field} placeholder="Detailed notification message..." rows={4} data-testid="input-message" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -518,17 +520,10 @@ function NotificationForm({
             name="expiresAt"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Expires At (Optional)</FormLabel>
+                <FormLabel>Expires At (optional)</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="datetime-local"
-                    data-testid="input-expires-at"
-                  />
+                  <Input {...field} type="datetime-local" data-testid="input-expires-at" />
                 </FormControl>
-                <FormDescription>
-                  Leave blank to never expire
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -540,38 +535,11 @@ function NotificationForm({
           name="targetRoles"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Target Roles (Optional)</FormLabel>
+              <FormLabel>Target Roles (optional)</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  placeholder="e.g., manager, finance_admin"
-                  data-testid="input-target-roles"
-                />
+                <Input {...field} placeholder="employee, manager, finance_admin" data-testid="input-target-roles" />
               </FormControl>
-              <FormDescription>
-                Comma-separated role names. Leave blank to show to all users.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="targetUsers"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Target Users (Optional)</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="e.g., user1, user2"
-                  data-testid="input-target-users"
-                />
-              </FormControl>
-              <FormDescription>
-                Comma-separated user IDs. Takes precedence over role targeting.
-              </FormDescription>
+              <FormDescription>Comma-separated role names. Leave empty to target all users.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -584,38 +552,29 @@ function NotificationForm({
             render={({ field }) => (
               <FormItem className="flex items-center gap-2 space-y-0">
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    data-testid="checkbox-published"
-                  />
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-published" />
                 </FormControl>
-                <FormLabel className="!mt-0">Publish Immediately</FormLabel>
+                <FormLabel className="!mt-0">Publish immediately</FormLabel>
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="isDismissible"
             render={({ field }) => (
               <FormItem className="flex items-center gap-2 space-y-0">
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    data-testid="checkbox-dismissible"
-                  />
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-dismissible" />
                 </FormControl>
-                <FormLabel className="!mt-0">Allow Dismissal</FormLabel>
+                <FormLabel className="!mt-0">Dismissible by users</FormLabel>
               </FormItem>
             )}
           />
         </div>
 
         <DialogFooter>
-          <Button type="submit" disabled={isPending} data-testid="button-submit">
-            {isPending ? "Saving..." : "Save Notification"}
+          <Button type="submit" disabled={isPending} data-testid="button-submit-notification">
+            {isPending ? "Saving..." : defaultValues ? "Update Notification" : "Create Notification"}
           </Button>
         </DialogFooter>
       </form>

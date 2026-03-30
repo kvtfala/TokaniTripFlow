@@ -54,7 +54,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type PerDiemRate = {
   id: string;
@@ -92,6 +93,7 @@ export function PerDiemRatesManagement() {
   const [editingRate, setEditingRate] = useState<PerDiemRate | null>(null);
   const [deletingRate, setDeletingRate] = useState<PerDiemRate | null>(null);
   const [tierFilter, setTierFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Fetch per diem rates
   const { data: rates = [], isLoading } = useQuery<PerDiemRate[]>({
@@ -173,6 +175,26 @@ export function PerDiemRatesManagement() {
     ? rates
     : rates.filter(r => r.tier === tierFilter);
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) setSelectedIds(new Set(filteredRates.map(r => r.id)));
+    else setSelectedIds(new Set());
+  };
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id); else next.delete(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkDelete = async () => {
+    for (const id of Array.from(selectedIds)) {
+      await apiRequest("DELETE", `/api/admin/rates/${id}`);
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/rates"] });
+    setSelectedIds(new Set());
+    toast({ title: `${selectedIds.size} rates deleted` });
+  };
+
   // Check if rate is currently active
   const isActiveRate = (rate: PerDiemRate) => {
     const now = new Date();
@@ -229,6 +251,13 @@ export function PerDiemRatesManagement() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={filteredRates.length > 0 && selectedIds.size === filteredRates.length}
+                  onCheckedChange={handleSelectAll}
+                  data-testid="checkbox-select-all"
+                />
+              </TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Daily Rate</TableHead>
               <TableHead>Tier</TableHead>
@@ -240,19 +269,26 @@ export function PerDiemRatesManagement() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Loading rates...
                 </TableCell>
               </TableRow>
             ) : filteredRates.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   No per diem rates found.
                 </TableCell>
               </TableRow>
             ) : (
               filteredRates.map((rate) => (
                 <TableRow key={rate.id} data-testid={`row-rate-${rate.id}`}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(rate.id)}
+                      onCheckedChange={(checked) => handleSelectRow(rate.id, !!checked)}
+                      data-testid={`checkbox-${rate.id}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{rate.location}</TableCell>
                   <TableCell className="text-sm">
                     <span className="font-mono">{rate.currency} {parseFloat(rate.dailyRate).toFixed(2)}</span>
@@ -332,6 +368,14 @@ export function PerDiemRatesManagement() {
           </TableBody>
         </Table>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-background border rounded-xl px-4 py-3 shadow-lg">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} data-testid="button-bulk-delete">Delete</Button>
+          <Button size="icon" variant="ghost" onClick={() => setSelectedIds(new Set())}><X className="w-4 h-4" /></Button>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingRate} onOpenChange={() => setDeletingRate(null)}>
