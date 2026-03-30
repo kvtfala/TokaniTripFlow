@@ -1,0 +1,385 @@
+Build a new demo client account inside Tokani TripFlow for:
+
+CLIENT NAME:
+CDP Couriers
+
+IMPORTANT CONTEXT:
+This is NOT a dispatch or courier tracking module.
+This is a Tokani TripFlow demo account for a corporate client, focused on internal travel request and approval workflows.
+
+GOAL:
+Create a polished demo-ready client account for CDP Couriers, branded using their uploaded logo and the colours taken from that logo/brand identity. If exact brand colours are not hardcoded yet, create theme variables and apply the closest matching yellow and brown tones from the logo in a clean, professional way.
+
+========================================
+1. CLIENT ACCOUNT SETUP
+========================================
+
+Create a tenant/client account called:
+- CDP Couriers
+
+Add branding support for this account:
+- Client logo upload/display
+- Use logo on login page, sidebar/header, and account profile
+- Apply client theme colours based on logo colours
+- Theme should remain professional and clean:
+  - primary color = logo yellow
+  - secondary/accent color = logo brown
+  - background = white or very light neutral
+  - text = dark neutral
+- Do NOT over-theme the whole app; keep 80% neutral and use brand colours mainly for buttons, highlights, links, badges, and active menu states
+
+Create a tenant settings object like:
+- companyName
+- logoUrl
+- primaryColor
+- secondaryColor
+- contactEmail
+- contactPhone
+- address
+- defaultCurrency
+- timezone
+
+Use demo company settings:
+- companyName: CDP Couriers
+- defaultCurrency: FJD
+- timezone: Pacific/Fiji
+- contactEmail: admin@cdpcouriers.demo
+- contactPhone: +679 000 0000
+- address: Suva, Fiji
+
+========================================
+2. STAFF / USER SETUP
+========================================
+
+Add the following people as staff under the CDP Couriers account:
+
+1. Mr. Sashi Singh
+   Role: Managing Director
+   Access Required: Yes
+   System Role: Executive Approver / Admin
+
+2. Mr. Rajnil Singh
+   Role: CEO
+   Access Required: Yes
+   System Role: Executive Approver / Admin
+
+3. Mr. George Singh
+   Role: GM Ops
+   Access Required: Yes
+   System Role: Department Approver / Operations Manager
+
+4. Mr. Ashwin Ram
+   Role: Manager Finance
+   Access Required: Yes
+   System Role: Finance Approver / Finance Manager
+
+5. Rajneelta
+   Role: Finance Staff & Travel Arranger
+   Access Required: Yes
+   System Role: Travel Arranger / Finance Staff / Request Processor
+
+Create demo credentials for the above users.
+
+Use these demo usernames/emails:
+- sashi.singh@cdpcouriers.demo
+- rajnil.singh@cdpcouriers.demo
+- george.singh@cdpcouriers.demo
+- ashwin.ram@cdpcouriers.demo
+- rajneelta@cdpcouriers.demo
+
+Use a simple demo password for all accounts:
+- Demo@12345
+
+IMPORTANT:
+- Mark these accounts clearly as demo data
+- If the system supports “must change password on first login”, disable it for demo purposes
+- Add avatar initials if no profile photo exists
+
+========================================
+3. PERMISSIONS / ACCESS LOGIC
+========================================
+
+Set access and permissions as follows:
+
+Managing Director (Mr. Sashi Singh)
+- Full account visibility
+- Can see all requests
+- Can approve/reject executive-level or high-cost requests
+- Can view dashboards and reports
+- Can view audit history
+- Can manage users for demo purposes
+
+CEO (Mr. Rajnil Singh)
+- Full account visibility
+- Can approve/reject requests
+- Can see dashboards and reports
+- Can view request history and comments
+- Can escalate requests
+
+GM Ops (Mr. George Singh)
+- Can view operational travel requests
+- Can approve/reject department requests
+- Can comment on requests
+- Can see team travel activity
+- Can escalate to CEO/MD if needed
+
+Manager Finance (Mr. Ashwin Ram)
+- Can review estimated cost
+- Can approve/reject from finance perspective
+- Can comment and request clarification
+- Can view finance-related request summaries
+- Can see approved vs pending travel spend
+
+Rajneelta (Finance Staff & Travel Arranger)
+- Can create and edit travel requests
+- Can update request details
+- Can assign or record intended travel mode
+- Can add notes and cost estimates
+- Can submit requests into approval workflow
+- Can view request statuses
+- Cannot final-approve executive requests unless system already supports delegated approval
+
+========================================
+4. DEMO WORKFLOW LOGIC
+========================================
+
+This demo account must reflect that TripFlow understands realistic Fiji travel routing.
+
+IMPORTANT:
+In real life, the Travel Arranger usually adds the travel mode.
+For this demo, the system should suggest valid travel modes based on route so the data makes sense.
+
+Create route intelligence for demo use only, such as:
+
+- Suva -> Nadi = Air or Land
+- Nadi -> Lautoka = Land only
+- Suva -> Labasa = Air or Sea
+- Suva -> Nausori = Land only
+- Suva -> Savusavu = Air or Sea
+- Suva -> Taveuni = Air or Sea
+
+When a route is selected, show:
+- available travel mode suggestions
+- final mode can still be chosen by Travel Arranger
+
+Use labels like:
+- Air
+- Land
+- Sea
+
+Optional helper text:
+- “Suggested based on route”
+- “Final mode entered by Travel Arranger”
+
+========================================
+5. DEMO DATA TO PRELOAD
+========================================
+
+Add a good set of realistic demo travel requests under the CDP Couriers account.
+These should make the dashboard feel alive and ready for presentation.
+
+Create at least 10 demo requests with a mix of statuses:
+- Draft
+- Pending Approval
+- Approved
+- Rejected
+- Booked
+- Completed
+
+Use realistic Fiji routes and purposes.
+Some sample entries:
+
+1.
+Requester: Rajneelta
+Traveller: Mr. George Singh
+Route: Suva -> Nadi
+Suggested Modes: Air, Land
+Selected Mode: Land
+Purpose: Operations meeting with Western Division team
+Estimated Cost: FJD 145
+Status: Pending Approval
+Approver Chain: GM/Finance -> CEO
+
+2.
+Requester: Rajneelta
+Traveller: Mr. Ashwin Ram
+Route: Suva -> Labasa
+Suggested Modes: Air, Sea
+Selected Mode: Air
+Purpose: Finance review and branch visit
+Estimated Cost: FJD 420
+Status: Approved
+Approver Chain: Finance -> CEO
+
+3.
+Requester: Rajneelta
+Traveller: Mr. Sashi Singh
+Route: Suva -> Nadi
+Selected Mode: Air
+Purpose: Executive meeting with strategic partners
+Estimated Cost: FJD 390
+Status: Booked
+
+4.
+Requester: Rajneelta
+Traveller: Mr. Rajnil Singh
+Route: Suva -> Savusavu
+Selected Mode: Air
+Purpose: Client relationship visit
+Estimated Cost: FJD 510
+Status: Pending Approval
+
+5.
+Requester: Rajneelta
+Traveller: Mr. George Singh
+Route: Nadi -> Lautoka
+Selected Mode: Land
+Purpose: Site operations visit
+Estimated Cost: FJD 55
+Status: Completed
+
+6.
+Requester: Rajneelta
+Traveller: Mr. Ashwin Ram
+Route: Suva -> Nausori
+Selected Mode: Land
+Purpose: Bank and finance meetings
+Estimated Cost: FJD 35
+Status: Completed
+
+7.
+Requester: Rajneelta
+Traveller: Mr. George Singh
+Route: Suva -> Labasa
+Selected Mode: Sea
+Purpose: Cargo coordination and branch support
+Estimated Cost: FJD 220
+Status: Rejected
+Reason: Timing not suitable for operational urgency
+
+8.
+Requester: Rajneelta
+Traveller: Mr. Rajnil Singh
+Route: Suva -> Taveuni
+Selected Mode: Air
+Purpose: Regional client discussion
+Estimated Cost: FJD 560
+Status: Approved
+
+9.
+Requester: Rajneelta
+Traveller: Mr. Ashwin Ram
+Route: Suva -> Nadi
+Selected Mode: Land
+Purpose: Finance compliance meeting
+Estimated Cost: FJD 150
+Status: Draft
+
+10.
+Requester: Rajneelta
+Traveller: Mr. George Singh
+Route: Suva -> Nadi
+Selected Mode: Air
+Purpose: Urgent management review
+Estimated Cost: FJD 405
+Status: Pending Approval
+
+Add sensible dates across the last 30–60 days and a few upcoming requests.
+
+========================================
+6. DASHBOARD FOR CDP ACCOUNT
+========================================
+
+Create a branded client dashboard for CDP Couriers.
+
+Show:
+- Total Requests
+- Pending Approval
+- Approved
+- Rejected
+- Booked
+- Completed
+
+Also show:
+- Recent Requests table
+- Requests by Status
+- Requests by Travel Mode
+- Requests by Route
+- Upcoming Travel
+- Approval Queue
+
+Keep layout executive-friendly and presentation-ready.
+
+Use CDP branding in:
+- sidebar
+- top header
+- status highlights
+- action buttons
+
+Do NOT make it look like a courier dispatch dashboard.
+This is an internal corporate workflow dashboard.
+
+========================================
+7. LOGIN / DEMO EXPERIENCE
+========================================
+
+Create a clean branded login page for CDP Couriers:
+- show CDP logo
+- show company name
+- show small text: “Demo Client Account”
+- use brand-themed login button
+
+Also create a demo credentials panel on the login page or a hidden demo helper card for presentation use.
+
+Display these demo users:
+- Managing Director – sashi.singh@cdpcouriers.demo / Demo@12345
+- CEO – rajnil.singh@cdpcouriers.demo / Demo@12345
+- GM Ops – george.singh@cdpcouriers.demo / Demo@12345
+- Manager Finance – ashwin.ram@cdpcouriers.demo / Demo@12345
+- Travel Arranger – rajneelta@cdpcouriers.demo / Demo@12345
+
+Make it easy to switch between roles for demo purposes.
+
+========================================
+8. UI / DATA QUALITY RULES
+========================================
+
+- Seed all this as demo data only
+- Make names, statuses, comments, and dates look realistic
+- Ensure all demo records are tied specifically to the CDP Couriers tenant
+- Maintain a clean SaaS structure with tenant-based branding
+- Do not create custom layouts just for CDP; apply branding through tenant theme variables
+- Keep the system scalable for future clients
+
+========================================
+9. OPTIONAL NICE-TO-HAVE FEATURES FOR DEMO
+========================================
+
+If easy to add, include:
+- request comments/history
+- approval timeline
+- status badges
+- route + travel mode chip display
+- “created by / arranged by” fields
+- audit log snippet for each request
+
+========================================
+10. TECHNICAL EXPECTATION
+========================================
+
+Implement this as:
+- a seeded demo tenant/account
+- seeded users
+- seeded requests
+- tenant-aware branding/theme config
+- role-aware login and dashboard experience
+
+If sample logo file upload is not yet wired, create a placeholder logo config path and a clearly labeled area to drop in the CDP logo image later without breaking the UI.
+
+Return:
+- the seeded tenant/account
+- all seeded users
+- demo credentials
+- demo requests
+- working branded dashboard
+- working login experience
