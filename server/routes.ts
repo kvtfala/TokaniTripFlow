@@ -892,9 +892,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ error: "Access denied" });
     }
     // Whitelist mutable fields — prevent arbitrary overwrite of sensitive columns
+    const VALID_ROLES = ["employee", "coordinator", "manager", "finance_admin", "travel_admin", "super_admin"];
     const { role, isActive } = req.body;
     const safeUpdates: Record<string, unknown> = {};
-    if (role !== undefined) safeUpdates.role = role;
+    if (role !== undefined) {
+      if (!VALID_ROLES.includes(role)) {
+        return res.status(400).json({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}` });
+      }
+      safeUpdates.role = role;
+    }
     if (isActive !== undefined) safeUpdates.isActive = isActive;
     if (Object.keys(safeUpdates).length === 0) {
       return res.status(400).json({ error: "No updatable fields provided (allowed: role, isActive)" });
