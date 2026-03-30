@@ -14,6 +14,18 @@ export interface TenantConfig {
   sidebarPrimaryForegroundHSL: string;
 }
 
+const CSS_VARS = [
+  "--primary",
+  "--primary-foreground",
+  "--accent",
+  "--accent-foreground",
+  "--secondary",
+  "--secondary-foreground",
+  "--sidebar-primary",
+  "--sidebar-primary-foreground",
+  "--ring",
+] as const;
+
 const TENANT_CONFIGS: Record<string, TenantConfig> = {
   itt001: {
     companyCode: "itt001",
@@ -45,22 +57,51 @@ const DEFAULT_TENANT = TENANT_CONFIGS["itt001"];
 
 const TenantContext = createContext<TenantConfig>(DEFAULT_TENANT);
 
+function clearTenantOverrides() {
+  const root = document.documentElement;
+  CSS_VARS.forEach((v) => root.style.removeProperty(v));
+}
+
+function applyTenantLight(tenant: TenantConfig) {
+  const root = document.documentElement;
+  root.style.setProperty("--primary", tenant.primaryHSL);
+  root.style.setProperty("--primary-foreground", tenant.primaryForegroundHSL);
+  root.style.setProperty("--accent", tenant.accentHSL);
+  root.style.setProperty("--accent-foreground", tenant.primaryForegroundHSL);
+  root.style.setProperty("--secondary", tenant.accentHSL);
+  root.style.setProperty("--secondary-foreground", tenant.primaryForegroundHSL);
+  root.style.setProperty("--sidebar-primary", tenant.sidebarPrimaryHSL);
+  root.style.setProperty("--sidebar-primary-foreground", tenant.sidebarPrimaryForegroundHSL);
+  root.style.setProperty("--ring", tenant.primaryHSL);
+}
+
 export function TenantProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useRole();
   const companyCode = currentUser?.companyCode ?? "itt001";
   const tenant = TENANT_CONFIGS[companyCode] ?? DEFAULT_TENANT;
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty("--primary", tenant.primaryHSL);
-    root.style.setProperty("--primary-foreground", tenant.primaryForegroundHSL);
-    root.style.setProperty("--accent", tenant.accentHSL);
-    root.style.setProperty("--accent-foreground", tenant.primaryForegroundHSL);
-    root.style.setProperty("--secondary", tenant.accentHSL);
-    root.style.setProperty("--secondary-foreground", tenant.primaryForegroundHSL);
-    root.style.setProperty("--sidebar-primary", tenant.sidebarPrimaryHSL);
-    root.style.setProperty("--sidebar-primary-foreground", tenant.sidebarPrimaryForegroundHSL);
-    root.style.setProperty("--ring", tenant.primaryHSL);
+    const syncTheme = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      if (isDark) {
+        clearTenantOverrides();
+      } else {
+        applyTenantLight(tenant);
+      }
+    };
+
+    syncTheme();
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => {
+      observer.disconnect();
+      clearTenantOverrides();
+    };
   }, [companyCode, tenant]);
 
   return (
