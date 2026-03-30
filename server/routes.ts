@@ -954,8 +954,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.patch("/api/admin/vendors/:id", requireRole(["finance_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
-    // Validate request body
-    const validation = validateRequest(insertVendorSchema.partial(), req.body);
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertVendorSchema.omit({ companyCode: true, proposedBy: true }).partial(), req.body);
     if (!validation.success) {
       return res.status(400).json({ error: validation.error });
     }
@@ -1064,8 +1064,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.patch("/api/admin/templates/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    // Validate request body
-    const validation = validateRequest(insertEmailTemplateSchema.partial(), req.body);
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertEmailTemplateSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
     if (!validation.success) {
       return res.status(400).json({ error: validation.error });
     }
@@ -1173,8 +1173,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.patch("/api/admin/rates/:id", requireRole(["finance_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
-    // Validate request body
-    const validation = validateRequest(insertPerDiemRateSchema.partial(), req.body);
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertPerDiemRateSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
     if (!validation.success) {
       return res.status(400).json({ error: validation.error });
     }
@@ -1271,8 +1271,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.patch("/api/admin/policies/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    // Validate request body
-    const validation = validateRequest(insertTravelPolicySchema.partial(), req.body);
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertTravelPolicySchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
     if (!validation.success) {
       return res.status(400).json({ error: validation.error });
     }
@@ -1369,8 +1369,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.patch("/api/admin/workflows/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    // Validate request body
-    const validation = validateRequest(insertWorkflowRuleSchema.partial(), req.body);
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertWorkflowRuleSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
     if (!validation.success) {
       return res.status(400).json({ error: validation.error });
     }
@@ -1468,8 +1468,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.patch("/api/admin/notifications/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
-    // Validate request body
-    const validation = validateRequest(insertSystemNotificationSchema.partial(), req.body);
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertSystemNotificationSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
     if (!validation.success) {
       return res.status(400).json({ error: validation.error });
     }
