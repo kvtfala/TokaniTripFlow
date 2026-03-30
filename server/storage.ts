@@ -52,6 +52,7 @@ export interface IStorage {
   updateQuotePolicy(policy: Partial<QuotePolicy>): Promise<QuotePolicy>;
   
   // Admin Portal - Vendors
+  // companyCode is optional by design: null/undefined = platform super_admin bypass (sees all tenants)
   getVendors(status?: string, companyCode?: string | null): Promise<Vendor[]>;
   getVendor(id: string): Promise<Vendor | undefined>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
@@ -59,6 +60,7 @@ export interface IStorage {
   deleteVendor(id: string): Promise<boolean>;
   
   // Admin Portal - Email Templates
+  // companyCode policy: null/undefined = platform super_admin bypass (no filter); string = tenant-scoped
   getEmailTemplates(category?: string, companyCode?: string | null): Promise<EmailTemplate[]>;
   getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
