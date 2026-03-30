@@ -1940,6 +1940,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // ──────────────────────────────────────────────────────────────────────
+  // ADMIN PORTAL - COMPANY SETTINGS
+  // ──────────────────────────────────────────────────────────────────────
+  app.get("/api/admin/settings", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const cc = req.currentUser.companyCode;
+    if (!cc) return res.status(400).json({ error: "No company code associated with this account" });
+    const settings = await storage.getCompanySettings(cc);
+    res.json(settings ?? { companyCode: cc, displayName: "", contactEmail: "", timezone: "Pacific/Fiji", logoUrl: "" });
+  }));
+
+  app.patch("/api/admin/settings", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const cc = req.currentUser.companyCode;
+    if (!cc) return res.status(400).json({ error: "No company code associated with this account" });
+    const { displayName, contactEmail, timezone, logoUrl } = req.body;
+    const updated = await storage.upsertCompanySettings({
+      companyCode: cc,
+      displayName: displayName ?? "",
+      contactEmail: contactEmail ?? null,
+      timezone: timezone ?? "Pacific/Fiji",
+      logoUrl: logoUrl ?? null,
+    });
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: cc,
+      action: "update",
+      entityType: "company_settings",
+      entityId: cc,
+      changes: req.body,
+    });
+    res.json(updated);
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // ADMIN PORTAL - COST CENTRES
+  // ──────────────────────────────────────────────────────────────────────
+  app.get("/api/admin/cost-centres", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const cc = req.currentUser.companyCode;
+    if (!cc) return res.status(400).json({ error: "No company code associated with this account" });
+    const centres = await storage.getCostCentreRecords(cc);
+    res.json(centres);
+  }));
+
+  app.post("/api/admin/cost-centres", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const cc = req.currentUser.companyCode;
+    if (!cc) return res.status(400).json({ error: "No company code associated with this account" });
+    const { code, name, budgetLimit } = req.body;
+    if (!code || !name) return res.status(400).json({ error: "code and name are required" });
+    const record = await storage.createCostCentreRecord({
+      companyCode: cc,
+      code: String(code).trim(),
+      name: String(name).trim(),
+      budgetLimit: budgetLimit ? String(budgetLimit) : null,
+    });
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: cc,
+      action: "create",
+      entityType: "cost_centre",
+      entityId: record.id,
+      newValue: record,
+    });
+    res.status(201).json(record);
+  }));
+
+  app.patch("/api/admin/cost-centres/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const existing = await storage.getCostCentreRecord(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Cost centre not found" });
+    if (!assertAdminTenantRecord(req, existing)) return res.status(403).json({ error: "Access denied" });
+    const { code, name, budgetLimit } = req.body;
+    const updated = await storage.updateCostCentreRecord(req.params.id, {
+      ...(code !== undefined && { code: String(code).trim() }),
+      ...(name !== undefined && { name: String(name).trim() }),
+      budgetLimit: budgetLimit !== undefined ? (budgetLimit ? String(budgetLimit) : null) : existing.budgetLimit,
+    });
+    if (!updated) return res.status(404).json({ error: "Cost centre not found" });
+    res.json(updated);
+  }));
+
+  app.delete("/api/admin/cost-centres/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const existing = await storage.getCostCentreRecord(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Cost centre not found" });
+    if (!assertAdminTenantRecord(req, existing)) return res.status(403).json({ error: "Access denied" });
+    await storage.deleteCostCentreRecord(req.params.id);
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "delete",
+      entityType: "cost_centre",
+      entityId: req.params.id,
+      previousValue: existing,
+    });
+    res.status(204).send();
+  }));
+
   const httpServer = createServer(app);
 
   return httpServer;

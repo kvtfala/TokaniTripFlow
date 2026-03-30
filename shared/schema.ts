@@ -27,6 +27,8 @@ export const users = pgTable("users", {
   role: varchar("role", { length: 50 }).default("employee"),
   companyCode: varchar("company_code", { length: 20 }), // Demo company identifier (e.g., "itt001")
   passwordHash: varchar("password_hash"), // For demo login only (not used by Replit Auth)
+  isActive: boolean("is_active").notNull().default(true), // Deactivation flag
+  lastLogin: timestamp("last_login"), // Tracked on each login
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -229,3 +231,34 @@ export type InsertAuditLog = typeof auditLogs.$inferInsert;
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, timestamp: true }).extend({
   action: auditActionSchema,
 });
+
+// Company Settings table - Per-tenant company profile configuration
+export const companySettings = pgTable("company_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }).notNull().unique(),
+  displayName: varchar("display_name", { length: 255 }).notNull(),
+  contactEmail: varchar("contact_email", { length: 255 }),
+  timezone: varchar("timezone", { length: 100 }).default("Pacific/Fiji"),
+  logoUrl: varchar("logo_url", { length: 500 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type CompanySettings = typeof companySettings.$inferSelect;
+export type InsertCompanySettings = typeof companySettings.$inferInsert;
+export const insertCompanySettingsSchema = createInsertSchema(companySettings).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Cost Centres table - DB-backed cost centre management
+export const costCentres = pgTable("cost_centres", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyCode: varchar("company_code", { length: 20 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  budgetLimit: decimal("budget_limit", { precision: 12, scale: 2 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type CostCentreRecord = typeof costCentres.$inferSelect;
+export type InsertCostCentreRecord = typeof costCentres.$inferInsert;
+export const insertCostCentreSchema = createInsertSchema(costCentres).omit({ id: true, createdAt: true, updatedAt: true });

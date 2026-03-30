@@ -15,6 +15,10 @@ import {
   type InsertSystemNotification,
   type AuditLog,
   type InsertAuditLog,
+  type CompanySettings,
+  type InsertCompanySettings,
+  type CostCentreRecord,
+  type InsertCostCentreRecord,
 } from "@shared/schema";
 import type { TravelRequest, DelegateAssignment, CostCentre, HistoryEntry, TravelQuote, QuotePolicy, ExpenseClaim } from "@shared/types";
 import { randomUUID } from "crypto";
@@ -107,6 +111,19 @@ export interface IStorage {
   createExpenseClaim(claim: Omit<ExpenseClaim, "id" | "createdAt" | "updatedAt">): Promise<ExpenseClaim>;
   updateExpenseClaim(id: string, updates: Partial<ExpenseClaim>): Promise<ExpenseClaim | undefined>;
   deleteExpenseClaim(id: string): Promise<boolean>;
+
+  // Admin Portal - Company Settings (per-tenant profile)
+  // companyCode policy: null/undefined = platform super_admin bypass (no filter); string = tenant-scoped
+  getCompanySettings(companyCode: string): Promise<CompanySettings | undefined>;
+  upsertCompanySettings(data: InsertCompanySettings): Promise<CompanySettings>;
+
+  // Admin Portal - Cost Centres (DB-backed)
+  // companyCode policy: same as above
+  getCostCentreRecords(companyCode: string): Promise<CostCentreRecord[]>;
+  getCostCentreRecord(id: string): Promise<CostCentreRecord | undefined>;
+  createCostCentreRecord(data: InsertCostCentreRecord): Promise<CostCentreRecord>;
+  updateCostCentreRecord(id: string, updates: Partial<CostCentreRecord>): Promise<CostCentreRecord | undefined>;
+  deleteCostCentreRecord(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -125,6 +142,8 @@ export class MemStorage implements IStorage {
   private systemNotifications: Map<string, SystemNotification>;
   private auditLogs: Map<string, AuditLog>;
   private expenseClaims: Map<string, ExpenseClaim>;
+  private companySettingsMap: Map<string, CompanySettings>; // key = companyCode
+  private costCentreRecords: Map<string, CostCentreRecord>;
 
   private ttrCounter: number = 0;
   private ttrYear: number = new Date().getFullYear();
@@ -158,6 +177,8 @@ export class MemStorage implements IStorage {
     this.systemNotifications = new Map();
     this.auditLogs = new Map();
     this.expenseClaims = new Map();
+    this.companySettingsMap = new Map();
+    this.costCentreRecords = new Map();
     
     // Seed with sample data
     this.seedSampleData();
@@ -186,6 +207,8 @@ export class MemStorage implements IStorage {
         role: "super_admin",
         companyCode: "itt001",
         passwordHash: DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-30T08:00:00Z"),
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
@@ -198,6 +221,8 @@ export class MemStorage implements IStorage {
         role: "employee",
         companyCode: "itt001",
         passwordHash: DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-29T09:15:00Z"),
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
@@ -210,6 +235,8 @@ export class MemStorage implements IStorage {
         role: "coordinator",
         companyCode: "itt001",
         passwordHash: DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-30T07:30:00Z"),
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
@@ -222,6 +249,8 @@ export class MemStorage implements IStorage {
         role: "manager",
         companyCode: "itt001",
         passwordHash: DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-28T14:00:00Z"),
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
@@ -234,6 +263,8 @@ export class MemStorage implements IStorage {
         role: "finance_admin",
         companyCode: "itt001",
         passwordHash: DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-30T08:45:00Z"),
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
@@ -246,6 +277,8 @@ export class MemStorage implements IStorage {
         role: "travel_admin",
         companyCode: "itt001",
         passwordHash: DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-29T11:20:00Z"),
         createdAt: new Date("2025-01-01T00:00:00Z"),
         updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
@@ -266,6 +299,8 @@ export class MemStorage implements IStorage {
         role: "super_admin",
         companyCode: "cdp001",
         passwordHash: CDP_DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-30T09:00:00Z"),
         createdAt: new Date("2025-06-01T00:00:00Z"),
         updatedAt: new Date("2025-06-01T00:00:00Z"),
       },
@@ -278,6 +313,8 @@ export class MemStorage implements IStorage {
         role: "super_admin",
         companyCode: "cdp001",
         passwordHash: CDP_DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-28T10:00:00Z"),
         createdAt: new Date("2025-06-01T00:00:00Z"),
         updatedAt: new Date("2025-06-01T00:00:00Z"),
       },
@@ -290,6 +327,8 @@ export class MemStorage implements IStorage {
         role: "manager",
         companyCode: "cdp001",
         passwordHash: CDP_DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-27T14:30:00Z"),
         createdAt: new Date("2025-06-01T00:00:00Z"),
         updatedAt: new Date("2025-06-01T00:00:00Z"),
       },
@@ -302,6 +341,8 @@ export class MemStorage implements IStorage {
         role: "finance_admin",
         companyCode: "cdp001",
         passwordHash: CDP_DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-29T08:00:00Z"),
         createdAt: new Date("2025-06-01T00:00:00Z"),
         updatedAt: new Date("2025-06-01T00:00:00Z"),
       },
@@ -314,6 +355,8 @@ export class MemStorage implements IStorage {
         role: "coordinator",
         companyCode: "cdp001",
         passwordHash: CDP_DEMO_HASH,
+        isActive: true,
+        lastLogin: new Date("2026-03-30T07:00:00Z"),
         createdAt: new Date("2025-06-01T00:00:00Z"),
         updatedAt: new Date("2025-06-01T00:00:00Z"),
       },
@@ -2259,6 +2302,52 @@ export class MemStorage implements IStorage {
       },
     ];
     cdpAuditLogs.forEach(log => this.auditLogs.set(log.id, log));
+
+    // ── Company Settings ────────────────────────────────────────────────────
+    const ittSettings: CompanySettings = {
+      id: "settings-itt-001",
+      companyCode: "itt001",
+      displayName: "Island Travel Technologies",
+      contactEmail: "admin@islandtraveltech.com",
+      timezone: "Pacific/Fiji",
+      logoUrl: null,
+      createdAt: new Date("2025-01-01T00:00:00Z"),
+      updatedAt: new Date("2025-01-01T00:00:00Z"),
+    };
+    const cdpSettings: CompanySettings = {
+      id: "settings-cdp-001",
+      companyCode: "cdp001",
+      displayName: "CDP Couriers",
+      contactEmail: "admin@cdpcouriers.demo",
+      timezone: "Pacific/Fiji",
+      logoUrl: null,
+      createdAt: new Date("2025-06-01T00:00:00Z"),
+      updatedAt: new Date("2025-06-01T00:00:00Z"),
+    };
+    this.companySettingsMap.set("itt001", ittSettings);
+    this.companySettingsMap.set("cdp001", cdpSettings);
+
+    // ── Cost Centres ────────────────────────────────────────────────────────
+    const ittCostCentres: CostCentreRecord[] = [
+      { id: "cc-itt-001", companyCode: "itt001", code: "100-BOD", name: "Board of Directors", budgetLimit: "500000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-002", companyCode: "itt001", code: "200-EXE", name: "Executive Management", budgetLimit: "350000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-003", companyCode: "itt001", code: "300-TRV", name: "Travel Operations", budgetLimit: "280000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-004", companyCode: "itt001", code: "400-VIS", name: "Visa / Immigration Services", budgetLimit: "120000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-005", companyCode: "itt001", code: "500-CSR", name: "Customer Service / Reservations", budgetLimit: "200000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-006", companyCode: "itt001", code: "600-FIN", name: "Finance & Accounting", budgetLimit: "180000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-007", companyCode: "itt001", code: "700-TEC", name: "Technology & Data", budgetLimit: "220000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-008", companyCode: "itt001", code: "800-MKT", name: "Marketing & Sales", budgetLimit: "160000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-009", companyCode: "itt001", code: "900-CMP", name: "Compliance, Audit, Risk", budgetLimit: "140000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-010", companyCode: "itt001", code: "1000-ADM", name: "Administration & HR", budgetLimit: "170000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+      { id: "cc-itt-011", companyCode: "itt001", code: "1100-SUB", name: "Subsidiaries (Combined)", budgetLimit: "300000.00", createdAt: new Date("2025-01-01T00:00:00Z"), updatedAt: new Date("2025-01-01T00:00:00Z") },
+    ];
+    const cdpCostCentres: CostCentreRecord[] = [
+      { id: "cc-cdp-001", companyCode: "cdp001", code: "CDP-OPS", name: "Operations", budgetLimit: "150000.00", createdAt: new Date("2025-06-01T00:00:00Z"), updatedAt: new Date("2025-06-01T00:00:00Z") },
+      { id: "cc-cdp-002", companyCode: "cdp001", code: "CDP-FIN", name: "Finance", budgetLimit: "80000.00", createdAt: new Date("2025-06-01T00:00:00Z"), updatedAt: new Date("2025-06-01T00:00:00Z") },
+      { id: "cc-cdp-003", companyCode: "cdp001", code: "CDP-EXEC", name: "Executive", budgetLimit: "200000.00", createdAt: new Date("2025-06-01T00:00:00Z"), updatedAt: new Date("2025-06-01T00:00:00Z") },
+    ];
+    ittCostCentres.forEach(cc => this.costCentreRecords.set(cc.id, cc));
+    cdpCostCentres.forEach(cc => this.costCentreRecords.set(cc.id, cc));
   }
 
   // Admin Portal - User Management
@@ -2705,6 +2794,76 @@ export class MemStorage implements IStorage {
 
   async deleteExpenseClaim(id: string): Promise<boolean> {
     return this.expenseClaims.delete(id);
+  }
+
+  // Admin Portal - Company Settings
+  async getCompanySettings(companyCode: string): Promise<CompanySettings | undefined> {
+    const settings = this.companySettingsMap.get(companyCode);
+    return settings ? structuredClone(settings) : undefined;
+  }
+
+  async upsertCompanySettings(data: InsertCompanySettings): Promise<CompanySettings> {
+    const existing = this.companySettingsMap.get(data.companyCode);
+    const now = new Date();
+    const record: CompanySettings = {
+      id: existing?.id ?? `settings-${randomUUID().slice(0, 8)}`,
+      companyCode: data.companyCode,
+      displayName: data.displayName,
+      contactEmail: data.contactEmail ?? null,
+      timezone: data.timezone ?? "Pacific/Fiji",
+      logoUrl: data.logoUrl ?? null,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    this.companySettingsMap.set(data.companyCode, record);
+    return structuredClone(record);
+  }
+
+  // Admin Portal - Cost Centre Records
+  async getCostCentreRecords(companyCode: string): Promise<CostCentreRecord[]> {
+    return Array.from(this.costCentreRecords.values())
+      .filter(cc => cc.companyCode === companyCode)
+      .sort((a, b) => a.code.localeCompare(b.code))
+      .map(cc => structuredClone(cc));
+  }
+
+  async getCostCentreRecord(id: string): Promise<CostCentreRecord | undefined> {
+    const cc = this.costCentreRecords.get(id);
+    return cc ? structuredClone(cc) : undefined;
+  }
+
+  async createCostCentreRecord(data: InsertCostCentreRecord): Promise<CostCentreRecord> {
+    const id = `cc-${randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const record: CostCentreRecord = {
+      id,
+      companyCode: data.companyCode,
+      code: data.code,
+      name: data.name,
+      budgetLimit: data.budgetLimit ?? null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.costCentreRecords.set(id, record);
+    return structuredClone(record);
+  }
+
+  async updateCostCentreRecord(id: string, updates: Partial<CostCentreRecord>): Promise<CostCentreRecord | undefined> {
+    const existing = this.costCentreRecords.get(id);
+    if (!existing) return undefined;
+    const updated: CostCentreRecord = {
+      ...existing,
+      ...updates,
+      id,
+      companyCode: existing.companyCode, // immutable
+      updatedAt: new Date(),
+    };
+    this.costCentreRecords.set(id, updated);
+    return structuredClone(updated);
+  }
+
+  async deleteCostCentreRecord(id: string): Promise<boolean> {
+    return this.costCentreRecords.delete(id);
   }
 }
 
