@@ -875,7 +875,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Tenant-scope: only return users in the same company (platform admins see all)
       const userCode = req.currentUser?.companyCode;
       const users = userCode ? allUsers.filter(u => u.companyCode === userCode) : allUsers;
-      res.json(users);
+      // Sanitize: never expose password hashes or other internal fields to clients
+      const sanitized = users.map(({ passwordHash: _ph, ...safe }) => safe);
+      res.json(sanitized);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
     }
