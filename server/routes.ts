@@ -901,7 +901,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       safeUpdates.role = role;
     }
-    if (isActive !== undefined) safeUpdates.isActive = isActive;
+    if (isActive !== undefined) {
+      if (typeof isActive !== "boolean") {
+        return res.status(400).json({ error: "isActive must be a boolean" });
+      }
+      safeUpdates.isActive = isActive;
+    }
     if (Object.keys(safeUpdates).length === 0) {
       return res.status(400).json({ error: "No updatable fields provided (allowed: role, isActive)" });
     }
@@ -2037,6 +2042,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       budgetLimit: budgetLimit !== undefined ? (budgetLimit ? String(budgetLimit) : null) : existing.budgetLimit,
     });
     if (!updated) return res.status(404).json({ error: "Cost centre not found" });
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "cost_centre",
+      entityId: req.params.id,
+      previousValue: existing,
+      newValue: updated,
+    });
     res.json(updated);
   }));
 
