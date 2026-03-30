@@ -891,7 +891,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!assertAdminTenantRecord(req, targetUser)) {
       return res.status(403).json({ error: "Access denied" });
     }
-    const updated = await storage.updateUser(req.params.id, req.body);
+    // Whitelist mutable fields — prevent arbitrary overwrite of sensitive columns
+    const { role, isActive } = req.body;
+    const safeUpdates: Record<string, unknown> = {};
+    if (role !== undefined) safeUpdates.role = role;
+    if (isActive !== undefined) safeUpdates.isActive = isActive;
+    if (Object.keys(safeUpdates).length === 0) {
+      return res.status(400).json({ error: "No updatable fields provided (allowed: role, isActive)" });
+    }
+    const updated = await storage.updateUser(req.params.id, safeUpdates);
     if (!updated) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -904,10 +912,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       action: "update",
       entityType: "user",
       entityId: req.params.id,
-      changes: req.body,
+      changes: safeUpdates,
     });
     
-    res.json(updated);
+    // Sanitize: strip passwordHash before returning
+    const { passwordHash: _ph, ...safeUser } = updated;
+    res.json(safeUser);
   }));
 
   // Admin Portal - Vendors
