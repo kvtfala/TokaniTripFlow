@@ -360,9 +360,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Pre-approve to collect quotes — auto-send RFQ to all approved vendors
+      // Pre-approve to collect quotes — auto-send RFQ to all approved vendors (tenant-scoped)
       const now = new Date().toISOString();
-      const approvedVendors = await storage.getVendors("approved");
+      const actorFull = actor?.id ? await storage.getUser(actor.id) : null;
+      const actorTenantCode = actorFull?.companyCode ?? null;
+      const approvedVendors = await storage.getVendors("approved", actorTenantCode);
 
       const rfqRecipients = approvedVendors.map((v: any) => ({
         vendorName: v.name,
@@ -1542,9 +1544,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ──────────────────────────────────────────────────────────────────────
   // PUBLIC VENDOR LISTING (for RFQ selection – no admin role required)
   // ──────────────────────────────────────────────────────────────────────
-  app.get("/api/vendors/approved", isAuthenticated, asyncHandler(async (req, res) => {
+  app.get("/api/vendors/approved", isAuthenticated, asyncHandler(async (req: any, res) => {
     const category = req.query.category as string | undefined;
-    const vendors = await storage.getVendors("approved");
+    // Resolve tenant code from the acting user so we only return this tenant's vendors
+    const actor = await resolveActingUser(req);
+    const actorFull = actor?.id ? await storage.getUser(actor.id) : null;
+    const tenantCode = actorFull?.companyCode ?? null;
+    const vendors = await storage.getVendors("approved", tenantCode);
     const filtered = category ? vendors.filter(v => v.category === category) : vendors;
     res.json(filtered);
   }));
