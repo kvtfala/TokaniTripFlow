@@ -1,0 +1,55 @@
+Adjust the plan with these revisions before proceeding:
+
+Break the work into phases instead of treating it as one large migration task. Separate it into:
+database/environment verification
+schema completion
+schema push
+shared seed data setup
+DrizzleStorage implementation by functional group
+runtime wiring
+validation/regression testing
+Do not treat “implement all 67+ methods” as one single block. Group the IStorage methods and complete them in this order:
+users/auth/tenants
+travel requests/approvals/delegations
+quotes/vendors
+expense claims
+admin portal data such as templates, workflow rules, policies, notifications, per diem rates, cost centres
+Add explicit startup logging in server/index.ts so the app always prints which storage engine is active:
+Using DrizzleStorage
+Using MemStorage
+Tighten fallback logic. Do not silently fall back to MemStorage in any serious database-enabled environment. Only allow fallback in local/dev mode. If PostgreSQL is expected and DATABASE_URL is missing, fail loudly.
+Revise the schema task so it does not only create tables. It must also include:
+primary keys
+foreign keys where appropriate
+notNull rules where appropriate
+defaults where appropriate
+indexes on common access patterns, especially tenantId, userId, requestId, status, and createdAt
+careful use of jsonb only for truly nested/flexible fields like history, approval arrays, and line items
+Revise the seed approach. Do not leave demo seed data buried only inside MemStorage. Extract the demo data into one shared reusable source so MemStorage and server/seed.ts do not maintain two separate copies.
+Add a clear rule for db:seed. Define whether it resets and rebuilds demo data or only inserts when empty. For demo use, prefer reset-and-reseed so ITT and CDP can be rebuilt cleanly from scratch.
+Expand “done looks like” to include tenant isolation, not just persistence. Completion must prove:
+ITT users cannot see CDP data
+CDP users cannot see ITT data
+role-based access still works
+data survives restart
+Expand the validation step. “Verify all pages function correctly” is too weak. Validation must explicitly test:
+login for all demo users
+dashboard
+My Trips
+approvals
+vendors
+templates
+policies
+workflow rules
+notifications
+per diem rates
+cost centres
+quotes
+expense claims
+persistence after restart
+tenant isolation
+Add a rule that the task is not complete just because the app loads or the DB connects. It is only complete when the app is definitely using PostgreSQL, both demo tenants work end-to-end, and persistence plus tenant separation have been verified.
+Keep MemStorage in the codebase only as a reference/dev fallback, but make sure it is no longer the active runtime path when the database is enabled.
+Preserve existing route contracts and app behaviour. Replit should not change routes or UI behaviour just to make the DB migration easier unless there is a verified bug.
+
+That is the revision I want made to the plan before implementation starts.
