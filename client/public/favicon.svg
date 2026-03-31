@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Navy background tile -->
+  <rect width="512" height="512" fill="#111B3F"/>
+
+  <!-- White vertical stem of T (centered: 206–306, y: 75–435) -->
+  <rect x="206" y="75" width="100" height="360" fill="#FFFFFF"/>
+
+  <!-- Teal horizontal crossbar of T (x: 75–437, y: 75–155) -->
+  <rect x="75" y="75" width="362" height="80" fill="#1FBED6"/>
+</svg>
