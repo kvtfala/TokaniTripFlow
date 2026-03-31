@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Loader2, Lock, Mail, Building2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,14 +17,6 @@ const ITT_ACCOUNTS = [
   { role: "Manager", name: "Tomasi Ravouvou", email: "tomasi.ravouvou@islandtraveltech.com" },
   { role: "Finance Admin", name: "Mere Delana", email: "mere.delana@islandtraveltech.com" },
   { role: "Travel Admin", name: "Nemani Tui", email: "nemani.tui@islandtraveltech.com" },
-];
-
-const CDP_ACCOUNTS = [
-  { role: "Super Admin (MD)", name: "Sashi Singh", email: "sashi.singh@cdpcouriers.demo" },
-  { role: "Super Admin (CEO)", name: "Rajnil Singh", email: "rajnil.singh@cdpcouriers.demo" },
-  { role: "Manager (GM Ops)", name: "George Singh", email: "george.singh@cdpcouriers.demo" },
-  { role: "Finance Admin", name: "Ashwin Ram", email: "ashwin.ram@cdpcouriers.demo" },
-  { role: "Coordinator", name: "Rajneelta", email: "rajneelta@cdpcouriers.demo" },
 ];
 
 function AccountTable({
@@ -227,26 +218,6 @@ export function DemoLogin() {
                 />
               </div>
 
-              <Separator />
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-5 w-5 rounded-full bg-[#F5C800] flex-shrink-0" />
-                  <p className="text-xs font-semibold text-foreground">
-                    CDP Couriers
-                  </p>
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    <code className="bg-muted px-1 rounded">cdp001</code> · <code className="bg-muted px-1 rounded">Demo@12345</code>
-                  </span>
-                </div>
-                <AccountTable
-                  accounts={CDP_ACCOUNTS}
-                  companyCode="cdp001"
-                  password="Demo@12345"
-                  onFill={fillCredentials}
-                  accentClass="text-[#b8960a] hover:text-[#b8960a]/80"
-                />
-              </div>
             </div>
           </form>
         </Form>
