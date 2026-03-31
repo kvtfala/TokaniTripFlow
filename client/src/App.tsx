@@ -49,6 +49,7 @@ import ManagerDashboard from "@/pages/ManagerDashboard";
 import RequestDetail from "@/pages/RequestDetail";
 import TravelDeskDashboard from "@/pages/TravelDeskDashboard";
 import LandingPage from "@/pages/LandingPage";
+import TenantLoginPage from "@/pages/TenantLoginPage";
 import AdminPortal from "@/pages/AdminPortal";
 import TokenApproval from "@/pages/TokenApproval";
 import ExpenseClaims from "@/pages/ExpenseClaims";
@@ -240,6 +241,10 @@ function Router() {
     return (
       <Switch>
         <Route path="/approve/:token" component={TokenApproval} />
+        {/* Tenant-specific login pages — add new clients here: */}
+        <Route path="/cdp">
+          <TenantLoginPage companyCode="cdp001" companyName="CDP Couriers" />
+        </Route>
         <Route path="/" component={LandingPage} />
         <Route component={LandingPage} />
       </Switch>
