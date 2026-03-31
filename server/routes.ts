@@ -153,6 +153,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Object Storage — presigned URL upload + file serving
   registerObjectStorageRoutes(app);
 
+  // Sitemap — public pages only (no auth required)
+  app.get("/sitemap.xml", (_req, res) => {
+    const BASE_URL = "https://tripflow.tokani.com.fj";
+    const now = new Date().toISOString().split("T")[0];
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${BASE_URL}/</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
+    res.set("Content-Type", "application/xml");
+    res.send(xml);
+  });
+
   // Auth User Endpoint - Works with both Replit Auth and Demo sessions
   app.get('/api/auth/user', asyncHandler(async (req: any, res) => {
     // Check if user is authenticated (either via Replit Auth or Demo login)
