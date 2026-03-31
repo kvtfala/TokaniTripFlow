@@ -283,8 +283,7 @@ export class MemStorage implements IStorage {
     ];
 
     // ── CDP Couriers Demo Users ──────────────────────────────────────────────
-    // Company: CDP Couriers | Code: cdp001 | Password: Demo@12345
-    // bcrypt hash of "Demo@12345" generated with bcrypt.hash("Demo@12345", 10)
+    // Company: CDP Couriers | Code: cdp001
     const CDP_DEMO_HASH = "$2b$10$DOF5lGyFep2rEma0gSVYn./NHcD2TFRKE8Av.d/aY1ZinHcu5UNUe";
 
     const cdpUsers: User[] = [
