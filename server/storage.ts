@@ -190,11 +190,9 @@ export class MemStorage implements IStorage {
     // DEMO CREDENTIALS (for demo environment only):
     //   Company Code: itt001
     //   Email: desmond.bale@islandtraveltech.com
-    //   Password: itt1235* (stored as bcrypt hash below)
     //   Role: super_admin (full admin portal access)
     
-    // All demo users share password: itt1235*
-    // bcrypt hash of "itt1235*" generated with bcrypt.hash("itt1235*", 10)
+    // All demo users share the same bcrypt-hashed password
     const DEMO_HASH = "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS";
 
     const testUsers: User[] = [
