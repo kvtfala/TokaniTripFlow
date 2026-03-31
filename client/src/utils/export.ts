@@ -1,5 +1,5 @@
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import jsPDF from "jspdf";
 import type { TravelRequest } from "@shared/types";
 import { format } from "date-fns";
@@ -78,25 +78,52 @@ export function exportToCSV(requests: TravelRequest[], filename: string): void {
 /**
  * Export to Excel (XLSX)
  */
-export function exportToExcel(requests: TravelRequest[], filename: string): void {
+export async function exportToExcel(requests: TravelRequest[], filename: string): Promise<void> {
   const rows = requestsToExportRows(requests);
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Travel Requests");
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Travel Requests");
+
+  if (rows.length === 0) {
+    const buffer = await workbook.xlsx.writeBuffer();
+    triggerDownload(buffer, filename);
+    return;
+  }
+
+  const keys = Object.keys(rows[0]) as (keyof ExportRow)[];
 
   const maxWidth = rows.reduce((w, r) => {
-    return Object.keys(r).reduce((w2, k) => {
-      const val = (r as any)[k];
-      const len = val ? val.toString().length : 10;
+    return keys.reduce((w2, k) => {
+      const val = r[k];
+      const len = val !== undefined && val !== null ? val.toString().length : 10;
       w2[k] = Math.max(w2[k] || 10, len);
       return w2;
     }, w);
   }, {} as Record<string, number>);
 
-  worksheet["!cols"] = Object.keys(maxWidth).map((k) => ({ wch: maxWidth[k] + 2 }));
+  worksheet.columns = keys.map((k) => ({
+    header: k,
+    key: k,
+    width: (maxWidth[k] || 10) + 2,
+  }));
 
-  XLSX.writeFile(workbook, filename);
+  rows.forEach((row) => worksheet.addRow(row));
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  triggerDownload(buffer, filename);
+}
+
+function triggerDownload(buffer: ArrayBuffer, filename: string): void {
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const link = document.createElement("a");
+  link.setAttribute("href", URL.createObjectURL(blob));
+  link.setAttribute("download", filename);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 /**
