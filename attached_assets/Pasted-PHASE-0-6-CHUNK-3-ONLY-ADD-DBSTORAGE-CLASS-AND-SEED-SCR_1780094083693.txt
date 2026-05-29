@@ -1,0 +1,116 @@
+PHASE 0.6 — CHUNK 3 ONLY: ADD DBSTORAGE CLASS AND SEED SCRIPT
+
+Proceed with Chunk 3 only.
+
+Context:
+Chunk 1 added schema definitions.
+Chunk 2 created and verified the PostgreSQL tables.
+The app is still using MemStorage, and that must remain unchanged after this chunk.
+
+Goal:
+Add a DbStorage class and seed script so PostgreSQL persistence can be tested in isolation before switching the live app away from MemStorage.
+
+Important:
+
+* Do not swap storage yet.
+* Do not change the exported storage singleton.
+* The app must continue using MemStorage after this phase.
+* Do not modify frontend files.
+* Do not add TTC fields yet.
+* Do not change approval logic.
+* Do not add AI.
+* Do not fix unrelated pre-existing TypeScript errors unless they block this work directly.
+
+Tasks:
+
+1. In server/storage.ts, add a DbStorage class that implements the existing IStorage interface using Drizzle ORM and the new PostgreSQL tables:
+
+   * travel_requests
+   * travel_quotes
+   * expense_claims
+   * delegate_assignments
+   * quote_policies
+   * ref_sequences
+
+2. Keep the existing MemStorage class unchanged as much as possible.
+
+3. Keep the exported storage line using MemStorage for now:
+   export const storage: IStorage = new MemStorage();
+
+4. Implement DbStorage methods to match existing MemStorage method signatures and JSON response shapes exactly.
+
+5. Use JSONB fields to round-trip nested objects exactly as the frontend expects:
+
+   * destination
+   * costCentre
+   * perDiem
+   * visaCheck
+   * costBreakdown
+   * rfqRecipients
+   * suggestedModes
+   * history
+   * lineItems
+   * reconciliation
+
+6. Ensure new travel requests default history to [] if no history is provided.
+
+7. Implement crash-safe TTR/TCL reference generation using ref_sequences:
+
+   * companyCode
+   * prefix
+   * year
+   * lastCounter
+     Use a PostgreSQL transaction with UPDATE ... RETURNING, or the Drizzle equivalent, so duplicate numbers cannot happen under concurrent submissions.
+
+8. For delegate_assignments, note that DelegateAssignment in shared/types.ts does not currently include companyCode. Implement the safest approach without breaking the existing interface:
+
+   * either inject companyCode at route/storage boundary where available,
+   * or document the required route change for Chunk 4.
+     Do not break existing delegation behaviour.
+
+9. Create a new server/seed.ts script that inserts the existing demo operational data into PostgreSQL:
+
+   * seeded ITT requests
+   * seeded CDP requests
+   * related quotes
+   * expense claims
+   * delegations
+   * quote policies
+   * ref_sequences counters
+
+10. The seed script must be safe to re-run:
+
+* check whether rows already exist before inserting,
+* avoid duplicate TTR/TCL numbers,
+* avoid duplicate quote policies.
+
+11. Add a small verification helper or instructions to compare MemStorage seeded data shape with DbStorage returned data shape.
+
+12. Do not run the storage swap.
+
+Testing:
+
+* Run TypeScript/build checks as far as reasonable.
+* Run the seed script against the development DB.
+* Verify PostgreSQL contains the expected seeded operational records.
+* Verify DbStorage can retrieve:
+
+  * all travel requests
+  * one travel request by ID
+  * quotes for a request
+  * expense claims for a request
+  * delegations
+  * quote policy
+* Confirm the app still starts and still uses MemStorage.
+
+Output required:
+
+* Files changed.
+* New files created.
+* Whether seed ran successfully.
+* Counts inserted into each new table.
+* Any differences between MemStorage data shape and DbStorage data shape.
+* Any unresolved risks before the storage swap.
+* Confirm the exported storage singleton is still MemStorage.
+
+Stop after Chunk 3 and wait for my approval.
