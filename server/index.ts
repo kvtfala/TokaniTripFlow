@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { ensureDemoUsers } from "./dbInit";
 
 const app = express();
 
@@ -47,6 +48,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Ensure demo users exist in the database before any routes are registered.
+  // This is a no-op if users already exist (runs in < 200ms).
+  await ensureDemoUsers();
+
   const server = await registerRoutes(app);
 
   // Global error handler for async routes (catches errors from asyncHandler)
