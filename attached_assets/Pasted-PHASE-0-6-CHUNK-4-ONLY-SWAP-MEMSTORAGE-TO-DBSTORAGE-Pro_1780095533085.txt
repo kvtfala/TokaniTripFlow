@@ -1,0 +1,80 @@
+PHASE 0.6 — CHUNK 4 ONLY: SWAP MEMSTORAGE TO DBSTORAGE
+
+Proceed with Chunk 4 only.
+
+Context:
+Chunk 1 added PostgreSQL schema definitions.
+Chunk 2 created and verified the PostgreSQL tables.
+Chunk 3 added:
+
+* server/db.ts
+* server/dbStorage.ts
+* server/seed.ts
+
+The seed script has successfully inserted operational demo data into PostgreSQL.
+The app is still running on MemStorage.
+
+Goal:
+Switch the live storage layer from MemStorage to DbStorage so travel requests, quotes, expense claims, delegations, quote policies, and TTR/TCL counters persist in PostgreSQL.
+
+Important:
+
+* This should be a minimal cut-over.
+* Change only what is necessary.
+* Do not add TTC fields yet.
+* Do not add new statuses yet.
+* Do not change approval logic.
+* Do not change frontend UI unless a small compatibility fix is required.
+* Do not fix unrelated pre-existing TypeScript errors.
+* Keep rollback simple.
+
+Tasks:
+
+1. In server/storage.ts, change the exported storage singleton from MemStorage to DbStorage.
+2. Import DbStorage correctly from server/dbStorage.ts.
+3. Ensure the app starts cleanly.
+4. Confirm the API now reads travel requests from PostgreSQL.
+5. Confirm server restarts do not lose travel request data.
+6. Confirm TTR/TCL number generation uses the PostgreSQL ref_sequences logic.
+7. Confirm tenant/company filtering still works.
+8. Confirm request history still returns as an array.
+9. Confirm quote data still returns correctly.
+10. Confirm expense claims still return correctly.
+11. Confirm approval/rejection routes still work.
+12. Confirm RFQ/quote routes still work if applicable.
+
+Manual test checklist:
+
+* Login works.
+* Dashboard loads.
+* My Requests / My Trips loads.
+* Existing request detail opens.
+* Request history displays.
+* Approvals page loads.
+* Travel Desk Dashboard loads.
+* Reports page loads.
+* Travel Watch loads.
+* Expense Claims section loads.
+* Admin → Vendors still loads.
+* Submit a new travel request.
+* Restart the server.
+* Confirm the new request still exists after restart.
+* Confirm TTR number does not duplicate.
+* Add or view a quote if possible.
+* Confirm no cross-tenant data leakage between ITT and CDP demo data.
+
+Rollback plan:
+If critical errors occur, revert only the storage export line back to MemStorage and report the issue.
+
+Output required:
+
+* Files changed.
+* Exact storage export change made.
+* Confirmation that DbStorage is now active.
+* Confirmation that data persists after restart.
+* Manual test results.
+* Any compatibility fixes made.
+* Any unresolved risks.
+* Whether it is safe to proceed to TTC Phase 1.
+
+Stop after Chunk 4 and wait for my approval.

@@ -1,3 +1,5 @@
+import { DbStorage } from "./dbStorage";
+import { db } from "./db";
 import { 
   type User, 
   type UpsertUser,
@@ -2876,4 +2878,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage(db);

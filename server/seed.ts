@@ -19,6 +19,7 @@ import {
   delegateAssignments,
   quotePolicies,
   refSequences,
+  users,
 } from "@shared/schema";
 import { eq, and, count } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -699,6 +700,48 @@ async function seedRefSequences(): Promise<number> {
   return inserted;
 }
 
+// ── Demo Users ────────────────────────────────────────────────────────────────
+
+const DEMO_HASH = "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS";
+const CDP_DEMO_HASH = "$2b$10$DOF5lGyFep2rEma0gSVYn./NHcD2TFRKE8Av.d/aY1ZinHcu5UNUe";
+
+const demoUsers = [
+  // ── ITT users ──
+  { id: "user-itt-manager-001", email: "desmond.bale@islandtraveltech.com", firstName: "Desmond", lastName: "Bale", role: "super_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-employee-001", email: "jone.ratudina@islandtraveltech.com", firstName: "Jone", lastName: "Ratudina", role: "employee", companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-coordinator-001", email: "litia.vuniyayawa@islandtraveltech.com", firstName: "Litia", lastName: "Vuniyayawa", role: "coordinator", companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-manager-002", email: "tomasi.ravouvou@islandtraveltech.com", firstName: "Tomasi", lastName: "Ravouvou", role: "manager", companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-finance-001", email: "mere.delana@islandtraveltech.com", firstName: "Mere", lastName: "Delana", role: "finance_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-travel-001", email: "nemani.tui@islandtraveltech.com", firstName: "Nemani", lastName: "Tui", role: "travel_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
+  // ── CDP users ──
+  { id: "user-cdp-md-001", email: "sashi.singh@cdpcouriers.demo", firstName: "Sashi", lastName: "Singh", role: "super_admin", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
+  { id: "user-cdp-ceo-001", email: "rajnil.singh@cdpcouriers.demo", firstName: "Rajnil", lastName: "Singh", role: "super_admin", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
+  { id: "user-cdp-gm-001", email: "george.singh@cdpcouriers.demo", firstName: "George", lastName: "Singh", role: "manager", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
+  { id: "user-cdp-fin-001", email: "ashwin.ram@cdpcouriers.demo", firstName: "Ashwin", lastName: "Ram", role: "finance_admin", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
+  { id: "user-cdp-arr-001", email: "rajneelta@cdpcouriers.demo", firstName: "Rajneelta", lastName: null, role: "coordinator", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
+];
+
+async function seedUsers(): Promise<number> {
+  let inserted = 0;
+  const now = new Date("2025-01-01T00:00:00Z");
+  for (const u of demoUsers) {
+    const existing = await db.select({ id: users.id }).from(users).where(eq(users.id, u.id));
+    if (existing.length === 0) {
+      await db.insert(users).values({
+        ...u,
+        lastName: u.lastName ?? null,
+        profileImageUrl: null,
+        isActive: true,
+        lastLogin: null,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+      inserted++;
+    }
+  }
+  return inserted;
+}
+
 // ── Verification ──────────────────────────────────────────────────────────────
 
 async function verify() {
@@ -708,8 +751,10 @@ async function verify() {
   const [{ seqCount }] = await db.select({ seqCount: count() }).from(refSequences);
   const [{ quoteCount }] = await db.select({ quoteCount: count() }).from(travelQuotes);
   const [{ delCount }] = await db.select({ delCount: count() }).from(delegateAssignments);
+  const [{ userCount }] = await db.select({ userCount: count() }).from(users);
 
   console.log("\n── DB Counts After Seed ──────────────────────────────────");
+  console.log(`  users           : ${userCount}`);
   console.log(`  travel_requests : ${reqCount}`);
   console.log(`  expense_claims  : ${claimCount}`);
   console.log(`  quote_policies  : ${policyCount}`);
@@ -723,6 +768,9 @@ async function verify() {
 async function main() {
   console.log("Tokani TripFlow — seed.ts");
   console.log("────────────────────────────────────────────────────────");
+
+  const usersInserted = await seedUsers();
+  console.log(`  users            : ${usersInserted} inserted (${11 - usersInserted} already existed)`);
 
   const reqsInserted = await seedTravelRequests();
   console.log(`  travel_requests  : ${reqsInserted} inserted (${21 - reqsInserted} already existed)`);
