@@ -39,21 +39,19 @@ const DEMO_USERS = [
 ] as const;
 
 /**
- * Ensure the database has at least the 11 demo users needed for demo login.
- * Uses INSERT … ON CONFLICT DO NOTHING so existing rows are never overwritten.
- * Runs in < 200ms on a live database with indexes.
+ * Ensure all 11 demo users required for /api/demo-login exist in the database.
+ * Uses INSERT … ON CONFLICT DO NOTHING so existing rows are never overwritten
+ * and the function is safe to call regardless of how many other users exist.
+ * Runs in < 200ms (single batch insert of 11 rows).
  */
 export async function ensureDemoUsers(): Promise<void> {
-  const [{ total }] = await db.select({ total: count() }).from(users);
-
-  // Fast-path: if users already exist skip the inserts entirely.
-  // This covers the 99% case (previously seeded or already running).
-  const demoIds = DEMO_USERS.map(u => u.id);
-  if (total >= DEMO_USERS.length) return;
-
   const now = new Date("2025-01-01T00:00:00Z");
 
-  await db
+  // Always attempt the batch insert — ON CONFLICT DO NOTHING makes this safe
+  // even when some or all demo users already exist.  We cannot rely on a total
+  // user count because the DB may already hold non-demo users from Replit Auth
+  // or previous sessions, causing a count-based early exit to skip required rows.
+  const result = await db
     .insert(users)
     .values(
       DEMO_USERS.map(u => ({
@@ -71,7 +69,10 @@ export async function ensureDemoUsers(): Promise<void> {
         updatedAt: now,
       }))
     )
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: users.id });
 
-  console.log("[dbInit] Demo users ensured in database.");
+  if (result.length > 0) {
+    console.log(`[dbInit] Inserted ${result.length} missing demo user(s).`);
+  }
 }
