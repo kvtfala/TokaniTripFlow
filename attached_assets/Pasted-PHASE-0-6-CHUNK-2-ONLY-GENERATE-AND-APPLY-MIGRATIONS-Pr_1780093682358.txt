@@ -1,0 +1,66 @@
+PHASE 0.6 — CHUNK 2 ONLY: GENERATE AND APPLY MIGRATIONS
+
+Proceed with Chunk 2 only.
+
+Context:
+Chunk 1 has been completed successfully. shared/schema.ts now includes the new operational tables:
+
+* travel_requests
+* travel_quotes
+* expense_claims
+* delegate_assignments
+* quote_policies
+* ref_sequences
+
+Important:
+
+* Do not change app behaviour.
+* Do not swap storage from MemStorage yet.
+* Do not modify server/storage.ts.
+* Do not modify server/routes.ts.
+* Do not modify frontend files.
+* Do not add TTC fields yet.
+* Do not fix unrelated pre-existing TypeScript errors unless they directly block migration generation.
+* The app must continue using MemStorage after this step.
+
+Goal:
+Generate and apply PostgreSQL migrations for the new operational TripFlow tables added in shared/schema.ts.
+
+Tasks:
+
+1. Use the existing Drizzle setup to generate migration files for the new tables.
+2. Review the generated migration SQL before applying it.
+3. Apply the migration to the development PostgreSQL database.
+4. Confirm the following tables exist in PostgreSQL:
+
+   * travel_requests
+   * travel_quotes
+   * expense_claims
+   * delegate_assignments
+   * quote_policies
+   * ref_sequences
+5. Confirm indexes were created for:
+
+   * companyCode / company_code where applicable
+   * status where applicable
+   * requestId / request_id where applicable
+   * employeeId / employee_id where applicable
+   * startDate / start_date where applicable
+   * unique composite index on ref_sequences for companyCode + prefix + year
+6. Confirm JSONB columns were created correctly.
+7. Confirm foreign key relationships are valid where applicable.
+8. Confirm the app still starts and continues using MemStorage.
+9. Run whatever build/type checks are reasonable, but do not attempt broad unrelated fixes.
+10. Summarise any migration warnings or risks.
+
+Output required:
+
+* List migration files created.
+* Summarise all database changes.
+* Confirm whether the six tables exist.
+* Confirm whether any migration failed or required adjustment.
+* Confirm no app behaviour changed.
+* Confirm MemStorage is still active.
+* Tell me what I should manually test before approving Chunk 3.
+
+Stop after Chunk 2 and wait for my approval.
