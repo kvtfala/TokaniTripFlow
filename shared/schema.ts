@@ -361,6 +361,17 @@ export const travelRequests = pgTable(
     emergencyContactPhone: varchar("emergency_contact_phone", { length: 50 }),
     countryRiskLevel: varchar("country_risk_level", { length: 10 }), // "low" | "medium" | "high"
 
+    // ── TTC Case Management fields (Phase 1) ─────────────────────────────
+    // Tokani Travel Coordination operational metadata — editable by coordinator/travel_admin/super_admin only.
+    ttcCaseType: varchar("ttc_case_type", { length: 50 }), // nullable — set by coordinator when case is classified
+    ttcPriority: varchar("ttc_priority", { length: 20 }).notNull().default("normal"), // normal | high | urgent
+    ttcServiceLevel: varchar("ttc_service_level", { length: 20 }).notNull().default("remote"), // remote | full_service | onsite
+    currentDependency: varchar("current_dependency", { length: 30 }).notNull().default("none"), // who is blocking next step
+    nextAction: text("next_action"), // free-text next step for coordinator
+    followUpDueDate: timestamp("follow_up_due_date"), // when to follow up
+    issueFlag: boolean("issue_flag").notNull().default(false), // coordinator marks problem cases
+    caseOwner: varchar("case_owner", { length: 100 }), // user ID of assigned coordinator
+
     // ── JSONB columns — nested objects read/written as a whole ─────────────
     // destination: { code, city, country }
     destination: jsonb("destination").$type<{ code: string; city: string; country: string }>().notNull(),

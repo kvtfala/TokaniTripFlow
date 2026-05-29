@@ -122,6 +122,18 @@ export interface TravelRequest {
 
   // Tenant scoping
   companyCode?: string; // Company/tenant the request belongs to (e.g. "cdp001")
+
+  // ── TTC Case Management fields (Phase 1) ──────────────────────────────────
+  // Tokani Travel Coordination operational metadata. Editable by coordinator /
+  // travel_admin / super_admin only. Visible (read-only) to all other roles.
+  ttcCaseType?: "complex_travel" | "medical_travel" | "medical_escort" | "official_travel" | "delegation_travel" | "urgent_travel" | "visa_dependent_travel" | "other";
+  ttcPriority?: "normal" | "high" | "urgent";
+  ttcServiceLevel?: "remote" | "full_service" | "onsite";
+  currentDependency?: "tokani" | "client" | "agent" | "approver" | "traveller" | "visa_documents" | "finance" | "none";
+  nextAction?: string;         // Free-text next step for coordinator
+  followUpDueDate?: string;    // ISO date string (nullable)
+  issueFlag?: boolean;         // Coordinator marks problem cases
+  caseOwner?: string;          // User ID of assigned coordinator (nullable)
 }
 
 export interface TravelQuote {

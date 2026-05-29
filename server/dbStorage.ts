@@ -106,6 +106,15 @@ function rowToTravelRequest(row: TravelRequestRecord): TravelRequest {
   if (row.countryRiskLevel) req.countryRiskLevel = row.countryRiskLevel;
   if (row.costBreakdown) req.costBreakdown = row.costBreakdown;
   if (row.rfqRecipients) req.rfqRecipients = row.rfqRecipients;
+  // TTC case management fields (Phase 1)
+  if (row.ttcCaseType) req.ttcCaseType = row.ttcCaseType;
+  req.ttcPriority = (row.ttcPriority ?? "normal") as TravelRequest["ttcPriority"];
+  req.ttcServiceLevel = (row.ttcServiceLevel ?? "remote") as TravelRequest["ttcServiceLevel"];
+  req.currentDependency = (row.currentDependency ?? "none") as TravelRequest["currentDependency"];
+  if (row.nextAction) req.nextAction = row.nextAction;
+  if (row.followUpDueDate) req.followUpDueDate = row.followUpDueDate.toISOString();
+  req.issueFlag = row.issueFlag ?? false;
+  if (row.caseOwner) req.caseOwner = row.caseOwner;
   return req as unknown as TravelRequest;
 }
 
@@ -376,6 +385,15 @@ export class DbStorage implements IStorage {
     if (updates.emergencyContactName !== undefined) set.emergencyContactName = updates.emergencyContactName;
     if (updates.emergencyContactPhone !== undefined) set.emergencyContactPhone = updates.emergencyContactPhone;
     if (updates.countryRiskLevel !== undefined) set.countryRiskLevel = updates.countryRiskLevel;
+    // TTC case management fields (Phase 1)
+    if (updates.ttcCaseType !== undefined) set.ttcCaseType = updates.ttcCaseType ?? null;
+    if (updates.ttcPriority !== undefined) set.ttcPriority = updates.ttcPriority;
+    if (updates.ttcServiceLevel !== undefined) set.ttcServiceLevel = updates.ttcServiceLevel;
+    if (updates.currentDependency !== undefined) set.currentDependency = updates.currentDependency;
+    if (updates.nextAction !== undefined) set.nextAction = updates.nextAction ?? null;
+    if (updates.followUpDueDate !== undefined) set.followUpDueDate = updates.followUpDueDate ? new Date(updates.followUpDueDate) : null;
+    if (updates.issueFlag !== undefined) set.issueFlag = updates.issueFlag;
+    if (updates.caseOwner !== undefined) set.caseOwner = updates.caseOwner ?? null;
 
     const [row] = await this.db.update(travelRequests).set(set).where(eq(travelRequests.id, id)).returning();
     return row ? rowToTravelRequest(row) : undefined;

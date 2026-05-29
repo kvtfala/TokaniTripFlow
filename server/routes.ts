@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { createHmac, timingSafeEqual } from "crypto";
+import { z } from "zod";
 import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote, ExpenseClaim } from "@shared/types";
 import { extractReceiptData } from "./services/receiptOcr";
@@ -295,6 +296,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/requests", isLoggedIn, asyncHandler(async (req, res) => {
     const request = await storage.createTravelRequest(req.body);
     res.json(request);
+  }));
+
+  // ── PATCH /api/requests/:id/ttc — update TTC case-management fields ────────
+  // Restricted to coordinator / travel_admin / super_admin.
+  // Appends a TTC_UPDATED history entry so changes are traceable.
+  const ttcUpdateSchema = z.object({
+    ttcCaseType: z.enum(["complex_travel","medical_travel","medical_escort","official_travel","delegation_travel","urgent_travel","visa_dependent_travel","other"]).nullable().optional(),
+    ttcPriority: z.enum(["normal","high","urgent"]).optional(),
+    ttcServiceLevel: z.enum(["remote","full_service","onsite"]).optional(),
+    currentDependency: z.enum(["tokani","client","agent","approver","traveller","visa_documents","finance","none"]).optional(),
+    nextAction: z.string().max(2000).nullable().optional(),
+    followUpDueDate: z.string().nullable().optional(),
+    issueFlag: z.boolean().optional(),
+    caseOwner: z.string().max(100).nullable().optional(),
+  });
+
+  const TTC_ALLOWED_ROLES = new Set(["coordinator", "travel_admin", "super_admin"]);
+
+  app.patch("/api/requests/:id/ttc", isLoggedIn, asyncHandler(async (req: any, res) => {
+    const actor = await resolveActingUser(req);
+    if (!actor || !TTC_ALLOWED_ROLES.has(actor.role)) {
+      return res.status(403).json({ error: "Only coordinators and travel admins may edit TTC fields." });
+    }
+
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const parsed = ttcUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid TTC fields", details: parsed.error.flatten() });
+    }
+
+    const updates: Partial<import("@shared/types").TravelRequest> = { ...parsed.data };
+
+    // Append a history entry so the change is traceable
+    const historyEntry = {
+      ts: new Date().toISOString(),
+      actor: actor.displayName,
+      action: "TTC_UPDATED",
+      note: `TTC fields updated by ${actor.displayName}`,
+    };
+    updates.history = [...(request.history ?? []), historyEntry];
+
+    const updated = await storage.updateTravelRequest(req.params.id, updates);
+    res.json(updated);
   }));
 
   // Helper: resolve the currently logged-in user from session (OIDC or demo).

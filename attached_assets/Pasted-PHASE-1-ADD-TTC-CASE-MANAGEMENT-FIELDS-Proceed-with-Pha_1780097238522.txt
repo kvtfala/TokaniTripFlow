@@ -1,0 +1,135 @@
+PHASE 1 — ADD TTC CASE MANAGEMENT FIELDS
+
+Proceed with Phase 1 only.
+
+Context:
+TripFlow has now been switched from MemStorage to DbStorage and core travel data is persistent in PostgreSQL.
+
+Goal:
+Add basic Tokani Travel Coordination case-management fields to existing travel requests without breaking the current TripFlow request and approval workflow.
+
+Important:
+
+* Do not rebuild the app.
+* Do not change approval logic.
+* Do not add new statuses yet.
+* Do not add AI.
+* Do not add ticketing fields yet.
+* Do not modify unrelated files.
+* Do not fix unrelated pre-existing TypeScript errors unless they directly block this phase.
+* Keep this phase additive and safe.
+
+Add these fields to the correct shared types, PostgreSQL schema/migration, backend request handling, storage update handling, and request detail display.
+
+Fields to add:
+
+1. ttcCaseType
+   Allowed values:
+
+* complex_travel
+* medical_travel
+* medical_escort
+* official_travel
+* delegation_travel
+* urgent_travel
+* visa_dependent_travel
+* other
+
+2. ttcPriority
+   Allowed values:
+
+* normal
+* high
+* urgent
+
+3. ttcServiceLevel
+   Allowed values:
+
+* remote
+* full_service
+* onsite
+
+4. currentDependency
+   Allowed values:
+
+* tokani
+* client
+* agent
+* approver
+* traveller
+* visa_documents
+* finance
+* none
+
+5. nextAction
+   Free text field.
+
+6. followUpDueDate
+   Nullable date/time field.
+
+7. issueFlag
+   Boolean field.
+
+8. caseOwner
+   Use the existing user ID structure if suitable. If not, use a nullable text field for now.
+
+Database:
+
+* Add these fields to the travel_requests table.
+* Generate/apply migration safely using the existing Drizzle setup.
+* Use safe defaults:
+
+  * ttcPriority: normal
+  * ttcServiceLevel: remote
+  * currentDependency: none
+  * issueFlag: false
+  * other fields nullable unless required by existing logic.
+
+Backend/API:
+
+* Ensure create/update travel request logic can accept and return these fields.
+* Add a narrow update endpoint if safer, for example:
+  PATCH /api/requests/:id/ttc
+  This endpoint should only update TTC fields.
+* Restrict TTC field editing to:
+
+  * coordinator
+  * travel_admin
+  * super_admin
+* Normal travellers/requesters should view but not edit these fields.
+
+Frontend:
+
+* On Request Detail, add a new collapsible section called “Tokani Travel Coordination”.
+* Display all TTC fields.
+* Allow coordinator/travel_admin/super_admin to edit the fields.
+* Keep other users read-only.
+* Do not restructure the entire RequestDetail page.
+
+Audit/history:
+
+* If request history is the safer existing trail, append a history entry when TTC fields are updated.
+* If audit log is easy to use, also log the change.
+* Do not overbuild this.
+
+Testing:
+
+* Run build/type checks as far as reasonable.
+* Confirm app starts cleanly.
+* Confirm existing request detail pages still open.
+* Confirm a coordinator/admin can update TTC fields.
+* Confirm a normal user cannot edit TTC fields.
+* Confirm updated TTC fields persist after server restart.
+* Confirm no tenant data leakage.
+
+Output required:
+
+* Files changed.
+* Database migration summary.
+* API changes.
+* UI changes.
+* Manual test results.
+* Any compatibility fixes.
+* Whether safe to proceed to Phase 2.
+
+Stop after Phase 1 and wait for approval.

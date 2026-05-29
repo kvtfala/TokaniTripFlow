@@ -48,8 +48,20 @@ import {
   Upload,
   Copy,
   ExternalLink,
-  Receipt
+  Receipt,
+  ChevronDown,
+  ChevronUp,
+  Briefcase,
+  Flag,
+  Save,
+  Pencil
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 import type { Vendor } from "@shared/schema";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
@@ -814,6 +826,20 @@ export default function RequestDetail() {
   const [comment, setComment] = useState("");
   const [claimWizardOpen, setClaimWizardOpen] = useState(false);
 
+  // TTC case-management section state
+  const [ttcOpen, setTtcOpen] = useState(false);
+  const [ttcEditing, setTtcEditing] = useState(false);
+  const [ttcForm, setTtcForm] = useState({
+    ttcCaseType: "" as string,
+    ttcPriority: "normal" as string,
+    ttcServiceLevel: "remote" as string,
+    currentDependency: "none" as string,
+    nextAction: "",
+    followUpDueDate: "",
+    issueFlag: false as boolean,
+    caseOwner: "",
+  });
+
   // Fetch the currently logged-in user so we can apply proper permission checks
   const { data: currentUser } = useQuery<{ id: string; role: string; firstName?: string; lastName?: string }>({
     queryKey: ["/api/auth/user"],
@@ -912,6 +938,48 @@ export default function RequestDetail() {
       });
     },
   });
+
+  // TTC mutation — PATCH /api/requests/:id/ttc
+  const ttcMutation = useMutation({
+    mutationFn: async (fields: typeof ttcForm) => {
+      return apiRequest("PATCH", `/api/requests/${id}/ttc`, {
+        ttcCaseType: fields.ttcCaseType || null,
+        ttcPriority: fields.ttcPriority,
+        ttcServiceLevel: fields.ttcServiceLevel,
+        currentDependency: fields.currentDependency,
+        nextAction: fields.nextAction || null,
+        followUpDueDate: fields.followUpDueDate || null,
+        issueFlag: fields.issueFlag,
+        caseOwner: fields.caseOwner || null,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests", id] });
+      setTtcEditing(false);
+      toast({ title: "TTC fields saved", description: "Tokani Travel Coordination details updated." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save TTC fields.", variant: "destructive" });
+    },
+  });
+
+  // Sync TTC form when request data loads or changes
+  useEffect(() => {
+    if (request) {
+      setTtcForm({
+        ttcCaseType: request.ttcCaseType ?? "",
+        ttcPriority: request.ttcPriority ?? "normal",
+        ttcServiceLevel: request.ttcServiceLevel ?? "remote",
+        currentDependency: request.currentDependency ?? "none",
+        nextAction: request.nextAction ?? "",
+        followUpDueDate: request.followUpDueDate
+          ? request.followUpDueDate.slice(0, 10) // "YYYY-MM-DD"
+          : "",
+        issueFlag: request.issueFlag ?? false,
+        caseOwner: request.caseOwner ?? "",
+      });
+    }
+  }, [request]);
 
   if (isLoading) {
     return (
@@ -1323,6 +1391,302 @@ export default function RequestDetail() {
               </CardContent>
             </Card>
           )}
+          {/* ── Tokani Travel Coordination (TTC) Section ── */}
+          {(() => {
+            const canEditTtc = currentUser && ["coordinator","travel_admin","super_admin"].includes(currentUser.role);
+            const priorityLabel = { normal: "Normal", high: "High", urgent: "Urgent" };
+            const serviceLabel = { remote: "Remote", full_service: "Full Service", onsite: "On-site" };
+            const dependencyLabel: Record<string,string> = {
+              tokani: "Tokani", client: "Client", agent: "Agent", approver: "Approver",
+              traveller: "Traveller", visa_documents: "Visa / Documents", finance: "Finance", none: "None"
+            };
+            const caseTypeLabel: Record<string,string> = {
+              complex_travel: "Complex Travel", medical_travel: "Medical Travel",
+              medical_escort: "Medical Escort", official_travel: "Official Travel",
+              delegation_travel: "Delegation Travel", urgent_travel: "Urgent Travel",
+              visa_dependent_travel: "Visa Dependent Travel", other: "Other"
+            };
+            return (
+              <Collapsible open={ttcOpen} onOpenChange={setTtcOpen} className="mt-5">
+                <Card>
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="pb-3 cursor-pointer select-none" data-testid="button-ttc-toggle">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Briefcase className="w-4 h-4 text-primary" />
+                          Tokani Travel Coordination
+                          {request.issueFlag && (
+                            <Badge variant="destructive" className="ml-1" data-testid="badge-ttc-issue-flag">Issue Flagged</Badge>
+                          )}
+                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                          {request.ttcPriority && request.ttcPriority !== "normal" && (
+                            <Badge variant={request.ttcPriority === "urgent" ? "destructive" : "secondary"} data-testid="badge-ttc-priority">
+                              {priorityLabel[request.ttcPriority as keyof typeof priorityLabel] ?? request.ttcPriority}
+                            </Badge>
+                          )}
+                          {ttcOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <CardContent className="pt-0 pb-4">
+                      {/* Read-only view */}
+                      {!ttcEditing && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Case Type</p>
+                              <p className="font-medium" data-testid="text-ttc-case-type">
+                                {request.ttcCaseType ? caseTypeLabel[request.ttcCaseType] ?? request.ttcCaseType : <span className="text-muted-foreground italic">Not set</span>}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Priority</p>
+                              <p className="font-medium" data-testid="text-ttc-priority">
+                                {priorityLabel[request.ttcPriority as keyof typeof priorityLabel] ?? request.ttcPriority ?? "Normal"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Service Level</p>
+                              <p className="font-medium" data-testid="text-ttc-service-level">
+                                {serviceLabel[request.ttcServiceLevel as keyof typeof serviceLabel] ?? request.ttcServiceLevel ?? "Remote"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Current Dependency</p>
+                              <p className="font-medium" data-testid="text-ttc-dependency">
+                                {dependencyLabel[request.currentDependency ?? "none"] ?? "None"}
+                              </p>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <p className="text-xs text-muted-foreground">Next Action</p>
+                              <p className="font-medium" data-testid="text-ttc-next-action">
+                                {request.nextAction || <span className="text-muted-foreground italic">None</span>}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Follow-up Due</p>
+                              <p className="font-medium" data-testid="text-ttc-follow-up">
+                                {request.followUpDueDate
+                                  ? format(new Date(request.followUpDueDate), "d MMM yyyy")
+                                  : <span className="text-muted-foreground italic">Not set</span>}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Case Owner</p>
+                              <p className="font-medium" data-testid="text-ttc-case-owner">
+                                {request.caseOwner || <span className="text-muted-foreground italic">Unassigned</span>}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Issue Flag</p>
+                              <p className="font-medium flex items-center gap-1" data-testid="text-ttc-issue-flag">
+                                {request.issueFlag
+                                  ? <><Flag className="w-3.5 h-3.5 text-destructive" /> Flagged</>
+                                  : "Clear"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {canEditTtc && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setTtcEditing(true)}
+                              data-testid="button-ttc-edit"
+                            >
+                              <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                              Edit TTC Fields
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Edit form — coordinators/admins only */}
+                      {ttcEditing && canEditTtc && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Case Type */}
+                            <div className="space-y-1.5">
+                              <Label htmlFor="ttc-case-type">Case Type</Label>
+                              <Select
+                                value={ttcForm.ttcCaseType || ""}
+                                onValueChange={(v) => setTtcForm(f => ({ ...f, ttcCaseType: v === "none" ? "" : v }))}
+                              >
+                                <SelectTrigger id="ttc-case-type" data-testid="select-ttc-case-type">
+                                  <SelectValue placeholder="Select case type…" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Not set</SelectItem>
+                                  <SelectItem value="complex_travel">Complex Travel</SelectItem>
+                                  <SelectItem value="medical_travel">Medical Travel</SelectItem>
+                                  <SelectItem value="medical_escort">Medical Escort</SelectItem>
+                                  <SelectItem value="official_travel">Official Travel</SelectItem>
+                                  <SelectItem value="delegation_travel">Delegation Travel</SelectItem>
+                                  <SelectItem value="urgent_travel">Urgent Travel</SelectItem>
+                                  <SelectItem value="visa_dependent_travel">Visa Dependent Travel</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Priority */}
+                            <div className="space-y-1.5">
+                              <Label htmlFor="ttc-priority">Priority</Label>
+                              <Select
+                                value={ttcForm.ttcPriority}
+                                onValueChange={(v) => setTtcForm(f => ({ ...f, ttcPriority: v }))}
+                              >
+                                <SelectTrigger id="ttc-priority" data-testid="select-ttc-priority">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="normal">Normal</SelectItem>
+                                  <SelectItem value="high">High</SelectItem>
+                                  <SelectItem value="urgent">Urgent</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Service Level */}
+                            <div className="space-y-1.5">
+                              <Label htmlFor="ttc-service-level">Service Level</Label>
+                              <Select
+                                value={ttcForm.ttcServiceLevel}
+                                onValueChange={(v) => setTtcForm(f => ({ ...f, ttcServiceLevel: v }))}
+                              >
+                                <SelectTrigger id="ttc-service-level" data-testid="select-ttc-service-level">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="remote">Remote</SelectItem>
+                                  <SelectItem value="full_service">Full Service</SelectItem>
+                                  <SelectItem value="onsite">On-site</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Current Dependency */}
+                            <div className="space-y-1.5">
+                              <Label htmlFor="ttc-dependency">Current Dependency</Label>
+                              <Select
+                                value={ttcForm.currentDependency}
+                                onValueChange={(v) => setTtcForm(f => ({ ...f, currentDependency: v }))}
+                              >
+                                <SelectTrigger id="ttc-dependency" data-testid="select-ttc-dependency">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  <SelectItem value="tokani">Tokani</SelectItem>
+                                  <SelectItem value="client">Client</SelectItem>
+                                  <SelectItem value="agent">Agent</SelectItem>
+                                  <SelectItem value="approver">Approver</SelectItem>
+                                  <SelectItem value="traveller">Traveller</SelectItem>
+                                  <SelectItem value="visa_documents">Visa / Documents</SelectItem>
+                                  <SelectItem value="finance">Finance</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Follow-up Due Date */}
+                            <div className="space-y-1.5">
+                              <Label htmlFor="ttc-follow-up">Follow-up Due Date</Label>
+                              <Input
+                                id="ttc-follow-up"
+                                type="date"
+                                value={ttcForm.followUpDueDate}
+                                onChange={(e) => setTtcForm(f => ({ ...f, followUpDueDate: e.target.value }))}
+                                data-testid="input-ttc-follow-up-date"
+                              />
+                            </div>
+
+                            {/* Case Owner */}
+                            <div className="space-y-1.5">
+                              <Label htmlFor="ttc-case-owner">Case Owner (user ID or name)</Label>
+                              <Input
+                                id="ttc-case-owner"
+                                placeholder="e.g. litia.vuniyayawa@…"
+                                value={ttcForm.caseOwner}
+                                onChange={(e) => setTtcForm(f => ({ ...f, caseOwner: e.target.value }))}
+                                data-testid="input-ttc-case-owner"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Next Action — full width */}
+                          <div className="space-y-1.5">
+                            <Label htmlFor="ttc-next-action">Next Action</Label>
+                            <Textarea
+                              id="ttc-next-action"
+                              placeholder="Describe the next step for this case…"
+                              value={ttcForm.nextAction}
+                              onChange={(e) => setTtcForm(f => ({ ...f, nextAction: e.target.value }))}
+                              rows={2}
+                              data-testid="textarea-ttc-next-action"
+                            />
+                          </div>
+
+                          {/* Issue Flag */}
+                          <div className="flex items-center gap-3">
+                            <Switch
+                              id="ttc-issue-flag"
+                              checked={ttcForm.issueFlag}
+                              onCheckedChange={(checked) => setTtcForm(f => ({ ...f, issueFlag: checked }))}
+                              data-testid="switch-ttc-issue-flag"
+                            />
+                            <Label htmlFor="ttc-issue-flag" className="flex items-center gap-1.5 cursor-pointer">
+                              <Flag className="w-3.5 h-3.5 text-destructive" />
+                              Flag as Issue
+                            </Label>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              onClick={() => ttcMutation.mutate(ttcForm)}
+                              disabled={ttcMutation.isPending}
+                              data-testid="button-ttc-save"
+                            >
+                              <Save className="w-3.5 h-3.5 mr-1.5" />
+                              {ttcMutation.isPending ? "Saving…" : "Save TTC Fields"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setTtcEditing(false);
+                                // reset form to current request values
+                                if (request) {
+                                  setTtcForm({
+                                    ttcCaseType: request.ttcCaseType ?? "",
+                                    ttcPriority: request.ttcPriority ?? "normal",
+                                    ttcServiceLevel: request.ttcServiceLevel ?? "remote",
+                                    currentDependency: request.currentDependency ?? "none",
+                                    nextAction: request.nextAction ?? "",
+                                    followUpDueDate: request.followUpDueDate ? request.followUpDueDate.slice(0, 10) : "",
+                                    issueFlag: request.issueFlag ?? false,
+                                    caseOwner: request.caseOwner ?? "",
+                                  });
+                                }
+                              }}
+                              data-testid="button-ttc-cancel"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            );
+          })()}
         </div>
 
         {/* ── Right: Sticky action sidebar ── */}
