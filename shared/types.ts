@@ -121,7 +121,7 @@ export interface TravelRequest {
   suggestedModes?: Array<"Air" | "Land" | "Sea">; // Route-intelligence suggestions
 
   // Tenant scoping
-  companyCode?: string; // Company/tenant the request belongs to (e.g. "cdp001")
+  companyCode?: string; // Company/tenant the request belongs to (e.g. "itt001", "thc001", "khc001")
 
   // ── TTC Case Management fields (Phase 1) ──────────────────────────────────
   // Tokani Travel Coordination operational metadata. Editable by coordinator /

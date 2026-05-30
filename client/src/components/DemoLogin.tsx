@@ -11,12 +11,22 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const ITT_ACCOUNTS = [
-  { role: "Super Admin", name: "Desmond Bale", email: "desmond.bale@islandtraveltech.com" },
-  { role: "Employee", name: "Jone Ratudina", email: "jone.ratudina@islandtraveltech.com" },
-  { role: "Coordinator", name: "Litia Vuniyayawa", email: "litia.vuniyayawa@islandtraveltech.com" },
-  { role: "Manager", name: "Tomasi Ravouvou", email: "tomasi.ravouvou@islandtraveltech.com" },
-  { role: "Finance Admin", name: "Mere Delana", email: "mere.delana@islandtraveltech.com" },
-  { role: "Travel Admin", name: "Nemani Tui", email: "nemani.tui@islandtraveltech.com" },
+  { role: "Super Admin", name: "Desmond Bale",       email: "desmond.bale@islandtraveltech.com" },
+  { role: "Employee",    name: "Jone Ratudina",       email: "jone.ratudina@islandtraveltech.com" },
+  { role: "Coordinator", name: "Litia Vuniyayawa",   email: "litia.vuniyayawa@islandtraveltech.com" },
+  { role: "Manager",     name: "Tomasi Ravouvou",    email: "tomasi.ravouvou@islandtraveltech.com" },
+  { role: "Finance",     name: "Mere Delana",         email: "mere.delana@islandtraveltech.com" },
+  { role: "Travel Admin",name: "Nemani Tui",          email: "nemani.tui@islandtraveltech.com" },
+];
+
+const THC_ACCOUNTS = [
+  { role: "Employee",  name: "Peni Taufa",   email: "peni.taufa@tuvaluhighcomm.demo" },
+  { role: "Manager",   name: "Semisi Pio",   email: "semisi.pio@tuvaluhighcomm.demo" },
+];
+
+const KHC_ACCOUNTS = [
+  { role: "Employee",  name: "Tearia Tabai", email: "tearia.tabai@kiribatihighcomm.demo" },
+  { role: "Manager",   name: "Bwere Ieang",  email: "bwere.ieang@kiribatihighcomm.demo" },
 ];
 
 function AccountTable({
@@ -129,7 +139,7 @@ export function DemoLogin() {
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input
-                        placeholder="Company Code (e.g., itt001 or cdp001)"
+                        placeholder="Company Code (e.g., itt001, thc001, khc001)"
                         className="pl-10"
                         data-testid="input-company-code"
                         {...field}
@@ -199,6 +209,7 @@ export function DemoLogin() {
             </Button>
 
             <div className="space-y-4 pt-1">
+              {/* Island Travel Technologies */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-5 w-5 rounded-full bg-[#2274D1] flex-shrink-0" />
@@ -218,6 +229,45 @@ export function DemoLogin() {
                 />
               </div>
 
+              {/* Tuvalu High Commission */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-5 w-5 rounded-full bg-[#1A3A6B] flex-shrink-0" />
+                  <p className="text-xs font-semibold text-foreground">
+                    Tuvalu High Commission
+                  </p>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    <code className="bg-muted px-1 rounded">thc001</code> · <code className="bg-muted px-1 rounded">itt1235*</code>
+                  </span>
+                </div>
+                <AccountTable
+                  accounts={THC_ACCOUNTS}
+                  companyCode="thc001"
+                  password="itt1235*"
+                  onFill={fillCredentials}
+                  accentClass="text-[#1A3A6B] hover:text-[#1A3A6B]/80"
+                />
+              </div>
+
+              {/* Kiribati High Commission */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-5 w-5 rounded-full bg-[#1B4F8A] flex-shrink-0" />
+                  <p className="text-xs font-semibold text-foreground">
+                    Kiribati High Commission
+                  </p>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    <code className="bg-muted px-1 rounded">khc001</code> · <code className="bg-muted px-1 rounded">itt1235*</code>
+                  </span>
+                </div>
+                <AccountTable
+                  accounts={KHC_ACCOUNTS}
+                  companyCode="khc001"
+                  password="itt1235*"
+                  onFill={fillCredentials}
+                  accentClass="text-[#1B4F8A] hover:text-[#1B4F8A]/80"
+                />
+              </div>
             </div>
           </form>
         </Form>

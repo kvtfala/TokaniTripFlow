@@ -296,313 +296,235 @@ const ittRequests = [
   },
 ];
 
-// ── CDP Travel Requests ───────────────────────────────────────────────────────
+// ── Tuvalu High Commission Travel Requests ─────────────────────────────────
 
-const cdpRequests = [
+const thcRequests = [
   {
-    id: "cdp-req-001", ttrNumber: "CDP-2026-00001", companyCode: "cdp001",
-    employeeName: "Mr. George Singh", employeeNumber: "CDP-OPS-001",
-    position: "General Manager Operations", department: "Operations", employeeId: "user-cdp-gm-001",
-    destination: { code: "NAN", city: "Nadi", country: "Fiji" },
-    preferredRoute: "Suva → Nadi", travelMode: "Land", suggestedModes: ["Air", "Land"],
-    startDate: "2026-04-08", endDate: "2026-04-09",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Operations meeting with Western Division team",
-    perDiem: { totalFJD: 80, days: 2, mieFJD: 40, firstDayFJD: 30, middleDaysFJD: 0, lastDayFJD: 30 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "submitted", submittedAt: "2026-03-28T08:30:00Z",
-    costCentre: { code: "CDP-OPS", name: "Operations" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 0,
-    history: [{ ts: "2026-03-28T08:30:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — Operations meeting Western Division" }],
-    needsFlights: false, needsAccommodation: false, needsVisa: false, needsTransport: true,
-    totalEstimatedBudget: 145,
-    costBreakdown: { flights: 0, accommodation: 0, groundTransfers: 145, perDiem: 80, totalCost: 145 },
-  },
-  {
-    id: "cdp-req-002", ttrNumber: "CDP-2026-00002", companyCode: "cdp001",
-    employeeName: "Mr. Ashwin Ram", employeeNumber: "CDP-FIN-001",
-    position: "Manager Finance", department: "Finance", employeeId: "user-cdp-fin-001",
-    destination: { code: "LBS", city: "Labasa", country: "Fiji" },
-    preferredRoute: "Suva → Labasa", travelMode: "Air", suggestedModes: ["Air", "Sea"],
-    startDate: "2026-02-12", endDate: "2026-02-14",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Finance review and branch visit",
-    perDiem: { totalFJD: 120, days: 3, mieFJD: 40, firstDayFJD: 30, middleDaysFJD: 40, lastDayFJD: 30 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "approved", submittedAt: "2026-02-03T09:15:00Z",
-    costCentre: { code: "CDP-FIN", name: "Finance" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 3,
+    id: 'thc-req-001', ttrNumber: 'THC-2026-00001', companyCode: 'thc001',
+    employeeName: 'Mr. Peni Taufa', employeeNumber: 'THC-OFF-001',
+    position: 'Third Secretary', department: 'Consular', employeeId: 'user-thc-employee-001',
+    destination: { code: 'SUV', city: 'Suva', country: 'Fiji' },
+    preferredRoute: 'Funafuti → Suva', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-04-14', endDate: '2026-04-16',
+    emergencyContactName: 'Semisi Pio', emergencyContactPhone: '+688 20 123', countryRiskLevel: 'low',
+    purpose: 'Official consultation with Fiji Ministry of Foreign Affairs and trade delegation meetings',
+    perDiem: { totalFJD: 1050, days: 3, mieFJD: 350, firstDayFJD: 262.5, middleDaysFJD: 350, lastDayFJD: 262.5 },
+    visaCheck: { status: 'OK', message: 'No visa required for Fiji.' },
+    status: 'ticketed', submittedAt: '2026-03-25T08:00:00Z',
+    costCentre: { code: 'THC-CON', name: 'Consular' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 1,
+    reviewedAt: '2026-03-26T10:00:00Z', reviewedBy: 'user-thc-manager-001',
     history: [
-      { ts: "2026-02-03T09:15:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — Finance review Labasa branch" },
-      { ts: "2026-02-04T10:00:00Z", actor: "user-cdp-gm-001", action: "APPROVE", note: "Approved — routine finance visit" },
-      { ts: "2026-02-04T14:30:00Z", actor: "user-cdp-fin-001", action: "APPROVE", note: "Finance approved" },
-      { ts: "2026-02-05T08:00:00Z", actor: "user-cdp-ceo-001", action: "APPROVE", note: "Executive approval granted" },
+      { ts: '2026-03-25T08:00:00Z', actor: 'user-thc-employee-001', action: 'SUBMIT', note: 'Consultation requested by Ministry of Foreign Affairs Fiji' },
+      { ts: '2026-03-26T10:00:00Z', actor: 'user-thc-manager-001', action: 'APPROVE', note: 'Approved — official government consultation' },
+      { ts: '2026-03-27T09:00:00Z', actor: 'user-thc-employee-001', action: 'TICKET', note: 'Air Pacific flight confirmed — FJ-801' },
     ],
     needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: true,
-    totalEstimatedBudget: 420,
-    costBreakdown: { flights: 220, accommodation: 80, groundTransfers: 0, perDiem: 120, totalCost: 420 },
+    totalEstimatedBudget: 2100,
+    costBreakdown: { flights: 680, accommodation: 370, groundTransfers: 80, perDiem: 1050, totalCost: 2100 },
   },
   {
-    id: "cdp-req-003", ttrNumber: "CDP-2026-00003", companyCode: "cdp001",
-    employeeName: "Mr. Sashi Singh", employeeNumber: "CDP-MD-001",
-    position: "Managing Director", department: "Executive", employeeId: "user-cdp-md-001",
-    destination: { code: "NAN", city: "Nadi", country: "Fiji" },
-    preferredRoute: "Suva → Nadi", travelMode: "Air", suggestedModes: ["Air", "Land"],
-    startDate: "2026-04-15", endDate: "2026-04-17",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Executive meeting with strategic partners",
-    perDiem: { totalFJD: 120, days: 3, mieFJD: 40, firstDayFJD: 30, middleDaysFJD: 40, lastDayFJD: 30 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "ticketed", submittedAt: "2026-03-20T10:00:00Z",
-    costCentre: { code: "CDP-EXEC", name: "Executive" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 3,
+    id: 'thc-req-002', ttrNumber: 'THC-2026-00002', companyCode: 'thc001',
+    employeeName: 'Mr. Peni Taufa', employeeNumber: 'THC-OFF-001',
+    position: 'Third Secretary', department: 'Political Affairs', employeeId: 'user-thc-employee-001',
+    destination: { code: 'VLI', city: 'Port Vila', country: 'Vanuatu' },
+    preferredRoute: 'Funafuti → Suva → Port Vila', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-05-20', endDate: '2026-05-24',
+    emergencyContactName: 'Semisi Pio', emergencyContactPhone: '+688 20 123', countryRiskLevel: 'low',
+    purpose: 'Pacific Islands Forum Dialogue on Climate Financing and Small Island Developing States priorities',
+    perDiem: { totalFJD: 1750, days: 5, mieFJD: 350, firstDayFJD: 262.5, middleDaysFJD: 1050, lastDayFJD: 262.5 },
+    visaCheck: { status: 'OK', message: 'No visa required for Vanuatu for Tuvalu passport holders.' },
+    status: 'approved', submittedAt: '2026-04-28T09:00:00Z',
+    costCentre: { code: 'THC-POL', name: 'Political Affairs' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 1,
+    reviewedAt: '2026-04-29T11:00:00Z', reviewedBy: 'user-thc-manager-001',
     history: [
-      { ts: "2026-03-20T10:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — MD strategic partner meeting" },
-      { ts: "2026-03-21T09:00:00Z", actor: "user-cdp-gm-001", action: "APPROVE", note: "Approved" },
-      { ts: "2026-03-21T11:00:00Z", actor: "user-cdp-fin-001", action: "APPROVE", note: "Budget cleared" },
-      { ts: "2026-03-21T14:00:00Z", actor: "user-cdp-ceo-001", action: "APPROVE", note: "Approved by CEO" },
-      { ts: "2026-03-22T09:00:00Z", actor: "user-cdp-arr-001", action: "TICKET", note: "Flight booked — Fiji Airways FJ103" },
+      { ts: '2026-04-28T09:00:00Z', actor: 'user-thc-employee-001', action: 'SUBMIT', note: 'PIF Dialogue — official delegation' },
+      { ts: '2026-04-29T11:00:00Z', actor: 'user-thc-manager-001', action: 'APPROVE', note: 'Approved — strategic Pacific engagement' },
     ],
     needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: true,
-    totalEstimatedBudget: 390,
-    costBreakdown: { flights: 180, accommodation: 90, groundTransfers: 0, perDiem: 120, totalCost: 390 },
+    totalEstimatedBudget: 3600,
+    costBreakdown: { flights: 1400, accommodation: 900, groundTransfers: 120, perDiem: 1750, totalCost: 3600 },
   },
   {
-    id: "cdp-req-004", ttrNumber: "CDP-2026-00004", companyCode: "cdp001",
-    employeeName: "Mr. Rajnil Singh", employeeNumber: "CDP-CEO-001",
-    position: "Chief Executive Officer", department: "Executive", employeeId: "user-cdp-ceo-001",
-    destination: { code: "SVU", city: "Savusavu", country: "Fiji" },
-    preferredRoute: "Suva → Savusavu", travelMode: "Air", suggestedModes: ["Air", "Sea"],
-    startDate: "2026-04-22", endDate: "2026-04-24",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Client relationship visit",
-    perDiem: { totalFJD: 150, days: 3, mieFJD: 50, firstDayFJD: 37.5, middleDaysFJD: 50, lastDayFJD: 37.5 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "submitted", submittedAt: "2026-04-01T11:00:00Z",
-    costCentre: { code: "CDP-EXEC", name: "Executive" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 0,
-    history: [{ ts: "2026-04-01T11:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — CEO client relationship visit" }],
-    needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: false,
-    totalEstimatedBudget: 510,
-    costBreakdown: { flights: 280, accommodation: 80, groundTransfers: 0, perDiem: 150, totalCost: 510 },
-  },
-  {
-    id: "cdp-req-005", ttrNumber: "CDP-2026-00005", companyCode: "cdp001",
-    employeeName: "Mr. George Singh", employeeNumber: "CDP-OPS-001",
-    position: "General Manager Operations", department: "Operations", employeeId: "user-cdp-gm-001",
-    destination: { code: "LTK", city: "Lautoka", country: "Fiji" },
-    preferredRoute: "Nadi → Lautoka", travelMode: "Land", suggestedModes: ["Land"],
-    startDate: "2026-01-20", endDate: "2026-01-20",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Site operations visit",
-    perDiem: { totalFJD: 40, days: 1, mieFJD: 40, firstDayFJD: 30, middleDaysFJD: 0, lastDayFJD: 30 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "approved", submittedAt: "2026-01-15T08:00:00Z",
-    costCentre: { code: "CDP-OPS", name: "Operations" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 2,
+    id: 'thc-req-003', ttrNumber: 'THC-2026-00003', companyCode: 'thc001',
+    employeeName: 'Mr. Peni Taufa', employeeNumber: 'THC-OFF-001',
+    position: 'Third Secretary', department: 'Consular', employeeId: 'user-thc-employee-001',
+    destination: { code: 'DEL', city: 'New Delhi', country: 'India' },
+    preferredRoute: 'Funafuti → Suva → Singapore → New Delhi', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-06-10', endDate: '2026-06-15',
+    emergencyContactName: 'Semisi Pio', emergencyContactPhone: '+688 20 123', countryRiskLevel: 'low',
+    purpose: 'Medical escort coordination and consular assistance for Tuvaluan nationals receiving medical treatment in India',
+    perDiem: { totalFJD: 2100, days: 6, mieFJD: 350, firstDayFJD: 262.5, middleDaysFJD: 1400, lastDayFJD: 262.5 },
+    visaCheck: { status: 'ACTION', message: 'Indian e-Visa required. Apply at least 4 business days before travel.' },
+    status: 'submitted', submittedAt: '2026-05-10T10:00:00Z',
+    costCentre: { code: 'THC-CON', name: 'Consular' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 0,
     history: [
-      { ts: "2026-01-15T08:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — site operations Lautoka" },
-      { ts: "2026-01-15T13:00:00Z", actor: "user-cdp-gm-001", action: "APPROVE", note: "Approved — day trip" },
-      { ts: "2026-01-15T15:00:00Z", actor: "user-cdp-fin-001", action: "APPROVE", note: "Finance approved" },
+      { ts: '2026-05-10T10:00:00Z', actor: 'user-thc-employee-001', action: 'SUBMIT', note: 'Urgent — medical escort for 3 Tuvaluan nationals' },
     ],
-    needsFlights: false, needsAccommodation: false, needsVisa: false, needsTransport: true,
-    totalEstimatedBudget: 55,
-    costBreakdown: { flights: 0, accommodation: 0, groundTransfers: 55, perDiem: 40, totalCost: 55 },
+    needsFlights: true, needsAccommodation: true, needsVisa: true, needsTransport: true,
+    totalEstimatedBudget: 5800,
+    costBreakdown: { flights: 2800, accommodation: 1200, groundTransfers: 200, visaFees: 150, perDiem: 2100, totalCost: 5800 },
   },
   {
-    id: "cdp-req-006", ttrNumber: "CDP-2026-00006", companyCode: "cdp001",
-    employeeName: "Mr. Ashwin Ram", employeeNumber: "CDP-FIN-001",
-    position: "Manager Finance", department: "Finance", employeeId: "user-cdp-fin-001",
-    destination: { code: "NAU", city: "Nausori", country: "Fiji" },
-    preferredRoute: "Suva → Nausori", travelMode: "Land", suggestedModes: ["Land"],
-    startDate: "2026-01-28", endDate: "2026-01-28",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Bank and finance meetings",
-    perDiem: { totalFJD: 30, days: 1, mieFJD: 30, firstDayFJD: 22.5, middleDaysFJD: 0, lastDayFJD: 22.5 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "approved", submittedAt: "2026-01-24T09:00:00Z",
-    costCentre: { code: "CDP-FIN", name: "Finance" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 2,
+    id: 'thc-req-004', ttrNumber: 'THC-2026-00004', companyCode: 'thc001',
+    employeeName: 'Mr. Semisi Pio', employeeNumber: 'THC-MGR-001',
+    position: 'High Commissioner', department: 'Executive', employeeId: 'user-thc-manager-001',
+    destination: { code: 'CBR', city: 'Canberra', country: 'Australia' },
+    preferredRoute: 'Funafuti → Suva → Sydney → Canberra', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-06-02', endDate: '2026-06-05',
+    emergencyContactName: 'Tuvalu Foreign Affairs', emergencyContactPhone: '+688 20 800', countryRiskLevel: 'low',
+    purpose: 'Bilateral government meeting with Australian Department of Foreign Affairs — climate resilience funding and migration pathways',
+    perDiem: { totalFJD: 1800, days: 4, mieFJD: 450, firstDayFJD: 337.5, middleDaysFJD: 900, lastDayFJD: 337.5 },
+    visaCheck: { status: 'ACTION', message: 'Australian visa or eVisitor required for official travel.' },
+    status: 'in_review', submittedAt: '2026-05-08T08:00:00Z',
+    costCentre: { code: 'THC-EXEC', name: 'Executive' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 0,
     history: [
-      { ts: "2026-01-24T09:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — bank meetings Nausori" },
-      { ts: "2026-01-24T11:30:00Z", actor: "user-cdp-gm-001", action: "APPROVE", note: "Approved" },
-      { ts: "2026-01-24T14:00:00Z", actor: "user-cdp-fin-001", action: "APPROVE", note: "Finance approved" },
+      { ts: '2026-05-08T08:00:00Z', actor: 'user-thc-manager-001', action: 'SUBMIT', note: 'Bilateral meeting — DFAT scheduled by Australian High Commission Fiji' },
     ],
-    needsFlights: false, needsAccommodation: false, needsVisa: false, needsTransport: true,
-    totalEstimatedBudget: 35,
-    costBreakdown: { flights: 0, accommodation: 0, groundTransfers: 35, perDiem: 30, totalCost: 35 },
-  },
-  {
-    id: "cdp-req-007", ttrNumber: "CDP-2026-00007", companyCode: "cdp001",
-    employeeName: "Mr. George Singh", employeeNumber: "CDP-OPS-001",
-    position: "General Manager Operations", department: "Operations", employeeId: "user-cdp-gm-001",
-    destination: { code: "LBS", city: "Labasa", country: "Fiji" },
-    preferredRoute: "Suva → Labasa", travelMode: "Sea", suggestedModes: ["Air", "Sea"],
-    startDate: "2026-03-05", endDate: "2026-03-07",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Cargo coordination and branch support",
-    perDiem: { totalFJD: 90, days: 3, mieFJD: 30, firstDayFJD: 22.5, middleDaysFJD: 30, lastDayFJD: 22.5 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "rejected", submittedAt: "2026-02-20T10:00:00Z",
-    reviewedAt: "2026-02-21T09:30:00Z", reviewedBy: "user-cdp-gm-001",
-    reviewComment: "Timing not suitable for operational urgency — reschedule for next quarter.",
-    costCentre: { code: "CDP-OPS", name: "Operations" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 0,
-    history: [
-      { ts: "2026-02-20T10:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — cargo coordination Labasa" },
-      { ts: "2026-02-21T09:30:00Z", actor: "user-cdp-gm-001", action: "REJECT", note: "Timing not suitable for operational urgency — reschedule for next quarter" },
-    ],
-    needsFlights: false, needsAccommodation: true, needsVisa: false, needsTransport: false,
-    totalEstimatedBudget: 220,
-    costBreakdown: { flights: 0, accommodation: 130, groundTransfers: 0, perDiem: 90, totalCost: 220 },
-  },
-  {
-    id: "cdp-req-008", ttrNumber: "CDP-2026-00008", companyCode: "cdp001",
-    employeeName: "Mr. Rajnil Singh", employeeNumber: "CDP-CEO-001",
-    position: "Chief Executive Officer", department: "Executive", employeeId: "user-cdp-ceo-001",
-    destination: { code: "TVU", city: "Taveuni", country: "Fiji" },
-    preferredRoute: "Suva → Taveuni", travelMode: "Air", suggestedModes: ["Air", "Sea"],
-    startDate: "2026-03-28", endDate: "2026-04-02",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Regional client discussion",
-    perDiem: { totalFJD: 150, days: 3, mieFJD: 50, firstDayFJD: 37.5, middleDaysFJD: 50, lastDayFJD: 37.5 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "approved", submittedAt: "2026-02-25T09:00:00Z",
-    costCentre: { code: "CDP-EXEC", name: "Executive" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 3,
-    history: [
-      { ts: "2026-02-25T09:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — CEO regional client visit Taveuni" },
-      { ts: "2026-02-26T08:30:00Z", actor: "user-cdp-gm-001", action: "APPROVE", note: "Approved" },
-      { ts: "2026-02-26T11:00:00Z", actor: "user-cdp-fin-001", action: "APPROVE", note: "Finance cleared" },
-      { ts: "2026-02-26T14:30:00Z", actor: "user-cdp-md-001", action: "APPROVE", note: "MD approval — executive travel" },
-    ],
-    needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: false,
-    totalEstimatedBudget: 560,
-    costBreakdown: { flights: 320, accommodation: 90, groundTransfers: 0, perDiem: 150, totalCost: 560 },
-  },
-  {
-    id: "cdp-req-009", ttrNumber: "CDP-2026-00009", companyCode: "cdp001",
-    employeeName: "Mr. Ashwin Ram", employeeNumber: "CDP-FIN-001",
-    position: "Manager Finance", department: "Finance", employeeId: "user-cdp-fin-001",
-    destination: { code: "NAN", city: "Nadi", country: "Fiji" },
-    preferredRoute: "Suva → Nadi", travelMode: "Land", suggestedModes: ["Air", "Land"],
-    startDate: "2026-05-06", endDate: "2026-05-07",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Finance compliance meeting",
-    perDiem: { totalFJD: 80, days: 2, mieFJD: 40, firstDayFJD: 30, middleDaysFJD: 0, lastDayFJD: 30 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "draft", submittedAt: "2026-04-02T14:00:00Z",
-    costCentre: { code: "CDP-FIN", name: "Finance" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 0,
-    history: [{ ts: "2026-04-02T14:00:00Z", actor: "user-cdp-arr-001", action: "COMMENT", note: "Draft created by Rajneelta — pending review before submission" }],
-    needsFlights: false, needsAccommodation: false, needsVisa: false, needsTransport: true,
-    totalEstimatedBudget: 150,
-    costBreakdown: { flights: 0, accommodation: 0, groundTransfers: 150, perDiem: 80, totalCost: 150 },
-  },
-  {
-    id: "cdp-req-010", ttrNumber: "CDP-2026-00010", companyCode: "cdp001",
-    employeeName: "Mr. George Singh", employeeNumber: "CDP-OPS-001",
-    position: "General Manager Operations", department: "Operations", employeeId: "user-cdp-gm-001",
-    destination: { code: "NAN", city: "Nadi", country: "Fiji" },
-    preferredRoute: "Suva → Nadi", travelMode: "Air", suggestedModes: ["Air", "Land"],
-    startDate: "2026-04-28", endDate: "2026-04-30",
-    emergencyContactName: "CDP Couriers HQ", emergencyContactPhone: "+679 000 0000", countryRiskLevel: "low",
-    purpose: "Urgent management review",
-    perDiem: { totalFJD: 120, days: 3, mieFJD: 40, firstDayFJD: 30, middleDaysFJD: 40, lastDayFJD: 30 },
-    visaCheck: { status: "OK", message: "Domestic travel within Fiji — no visa required." },
-    status: "in_review", submittedAt: "2026-04-03T08:00:00Z",
-    costCentre: { code: "CDP-OPS", name: "Operations" }, fundingType: "advance",
-    approverFlow: ["manager", "finance_admin", "super_admin"], approverIndex: 1,
-    history: [
-      { ts: "2026-04-03T08:00:00Z", actor: "user-cdp-arr-001", action: "SUBMIT", note: "Arranged by Rajneelta — urgent management review" },
-      { ts: "2026-04-03T11:00:00Z", actor: "user-cdp-gm-001", action: "APPROVE", note: "GM approved — escalated to Finance" },
-    ],
-    needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: false,
-    totalEstimatedBudget: 405,
-    costBreakdown: { flights: 180, accommodation: 105, groundTransfers: 0, perDiem: 120, totalCost: 405 },
+    needsFlights: true, needsAccommodation: true, needsVisa: true, needsTransport: true,
+    totalEstimatedBudget: 6200,
+    costBreakdown: { flights: 2800, accommodation: 1400, groundTransfers: 200, visaFees: 250, perDiem: 1800, totalCost: 6200 },
   },
 ];
 
-// ── CDP Expense Claims ────────────────────────────────────────────────────────
+// ── Kiribati High Commission Travel Requests ──────────────────────────────────
 
-const cdpClaims = [
+const khcRequests = [
   {
-    id: "claim-cdp-001", tclNumber: "TCL-CDP-00001", requestId: "cdp-req-002",
-    travelRequestRef: "CDP-2026-00002", companyCode: "cdp001",
-    employeeId: "user-cdp-fin-001", employeeName: "Mr. Ashwin Ram",
-    lineItems: [
-      { id: "li-c001-1", description: "Fiji Airways – Suva to Labasa return", category: "Flights", amount: 220, merchantName: "Fiji Airways", receiptDate: "2026-02-12" },
-      { id: "li-c001-2", description: "Labasa accommodation – 2 nights Grand Eastern", category: "Accommodation", amount: 160, merchantName: "Grand Eastern Hotel Labasa", receiptDate: "2026-02-13" },
-      { id: "li-c001-3", description: "Working meals – branch team", category: "Meals", amount: 85, merchantName: "Various Labasa", receiptDate: "2026-02-13" },
-      { id: "li-c001-4", description: "Taxi – airport to town return", category: "Transport (Local)", amount: 40, merchantName: "Labasa Taxis", receiptDate: "2026-02-12" },
+    id: 'khc-req-001', ttrNumber: 'KHC-2026-00001', companyCode: 'khc001',
+    employeeName: 'Ms. Tearia Tabai', employeeNumber: 'KHC-OFF-001',
+    position: 'Second Secretary', department: 'Consular', employeeId: 'user-khc-employee-001',
+    destination: { code: 'TRW', city: 'Tarawa', country: 'Kiribati' },
+    preferredRoute: 'Suva → Tarawa', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-04-08', endDate: '2026-04-12',
+    emergencyContactName: 'Bwere Ieang', emergencyContactPhone: '+686 21 234', countryRiskLevel: 'low',
+    purpose: 'Consular assistance visit and document processing for Kiribati nationals — liaison with Government of Kiribati on passports and civil status',
+    perDiem: { totalFJD: 1600, days: 5, mieFJD: 320, firstDayFJD: 240, middleDaysFJD: 960, lastDayFJD: 240 },
+    visaCheck: { status: 'OK', message: 'No visa required for Kiribati nationals visiting Tarawa.' },
+    status: 'ticketed', submittedAt: '2026-03-18T09:30:00Z',
+    costCentre: { code: 'KHC-CON', name: 'Consular' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 1,
+    reviewedAt: '2026-03-19T10:00:00Z', reviewedBy: 'user-khc-manager-001',
+    history: [
+      { ts: '2026-03-18T09:30:00Z', actor: 'user-khc-employee-001', action: 'SUBMIT', note: 'Consular visit — 47 pending passport applications' },
+      { ts: '2026-03-19T10:00:00Z', actor: 'user-khc-manager-001', action: 'APPROVE', note: 'Approved — routine consular cycle' },
+      { ts: '2026-03-20T08:00:00Z', actor: 'user-khc-employee-001', action: 'TICKET', note: 'Air Kiribati flight confirmed' },
     ],
-    totalAmount: "505", currency: "FJD", status: "paid",
-    submittedAt: new Date("2026-02-18T09:00:00Z"),
-    reviewedAt: new Date("2026-02-20T10:30:00Z"),
-    reviewedBy: "Sashi Singh", reviewNotes: "All receipts verified. Payment processed.",
-    reconciliation: { advanceAmount: 420, varianceAmount: 85 },
-    createdAt: new Date("2026-02-17T08:00:00Z"), updatedAt: new Date("2026-02-20T10:30:00Z"),
+    needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: true,
+    totalEstimatedBudget: 2900,
+    costBreakdown: { flights: 950, accommodation: 720, groundTransfers: 120, perDiem: 1600, totalCost: 2900 },
   },
   {
-    id: "claim-cdp-002", tclNumber: "TCL-CDP-00002", requestId: "cdp-req-005",
-    travelRequestRef: "CDP-2026-00005", companyCode: "cdp001",
-    employeeId: "user-cdp-gm-001", employeeName: "Mr. George Singh",
-    lineItems: [
-      { id: "li-c002-1", description: "Vehicle hire – Nadi to Lautoka", category: "Transport (Local)", amount: 55, merchantName: "Pacific Car Rental", receiptDate: "2026-01-20" },
-      { id: "li-c002-2", description: "Working lunch – site supervisor", category: "Meals", amount: 42, merchantName: "Lautoka Catering", receiptDate: "2026-01-20" },
+    id: 'khc-req-002', ttrNumber: 'KHC-2026-00002', companyCode: 'khc001',
+    employeeName: 'Ms. Tearia Tabai', employeeNumber: 'KHC-OFF-001',
+    position: 'Second Secretary', department: 'Environment', employeeId: 'user-khc-employee-001',
+    destination: { code: 'NAN', city: 'Nadi', country: 'Fiji' },
+    preferredRoute: 'South Tarawa → Nadi', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-05-06', endDate: '2026-05-09',
+    emergencyContactName: 'Bwere Ieang', emergencyContactPhone: '+686 21 234', countryRiskLevel: 'low',
+    purpose: 'Pacific Regional Climate and Ocean Resilience Conference — representing Kiribati on sea-level adaptation and loss and damage mechanisms',
+    perDiem: { totalFJD: 1200, days: 4, mieFJD: 300, firstDayFJD: 225, middleDaysFJD: 600, lastDayFJD: 225 },
+    visaCheck: { status: 'OK', message: 'No visa required for Fiji.' },
+    status: 'approved', submittedAt: '2026-04-15T10:00:00Z',
+    costCentre: { code: 'KHC-ENV', name: 'Environment' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 1,
+    reviewedAt: '2026-04-16T09:00:00Z', reviewedBy: 'user-khc-manager-001',
+    history: [
+      { ts: '2026-04-15T10:00:00Z', actor: 'user-khc-employee-001', action: 'SUBMIT', note: 'Climate conference — Kiribati official delegation' },
+      { ts: '2026-04-16T09:00:00Z', actor: 'user-khc-manager-001', action: 'APPROVE', note: 'Approved — priority climate engagement' },
     ],
-    totalAmount: "97", currency: "FJD", status: "paid",
-    submittedAt: new Date("2026-01-22T08:30:00Z"),
-    reviewedAt: new Date("2026-01-23T11:00:00Z"),
-    reviewedBy: "Ashwin Ram", reviewNotes: "Day trip expenses verified. Approved.",
-    reconciliation: { advanceAmount: 55, varianceAmount: 42 },
-    createdAt: new Date("2026-01-21T16:00:00Z"), updatedAt: new Date("2026-01-23T11:00:00Z"),
+    needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: true,
+    totalEstimatedBudget: 2700,
+    costBreakdown: { flights: 1100, accommodation: 800, groundTransfers: 100, perDiem: 1200, totalCost: 2700 },
   },
   {
-    id: "claim-cdp-003", tclNumber: "TCL-CDP-00003", requestId: "cdp-req-006",
-    travelRequestRef: "CDP-2026-00006", companyCode: "cdp001",
-    employeeId: "user-cdp-fin-001", employeeName: "Mr. Ashwin Ram",
-    lineItems: [
-      { id: "li-c003-1", description: "Taxi Suva CBD to Nausori return", category: "Transport (Local)", amount: 35, merchantName: "Express Cabs Fiji", receiptDate: "2026-01-28" },
-      { id: "li-c003-2", description: "Working lunch – bank representatives", category: "Meals", amount: 58, merchantName: "Bay of Bengal Nausori", receiptDate: "2026-01-28" },
+    id: 'khc-req-003', ttrNumber: 'KHC-2026-00003', companyCode: 'khc001',
+    employeeName: 'Ms. Tearia Tabai', employeeNumber: 'KHC-OFF-001',
+    position: 'Second Secretary', department: 'Multilateral', employeeId: 'user-khc-employee-001',
+    destination: { code: 'JFK', city: 'New York', country: 'United States' },
+    preferredRoute: 'South Tarawa → Nadi → Los Angeles → New York', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-09-22', endDate: '2026-09-27',
+    emergencyContactName: 'Bwere Ieang', emergencyContactPhone: '+686 21 234', countryRiskLevel: 'low',
+    purpose: 'UN General Assembly 81st Session side meetings — Pacific SIDS statement support and bilateral consultations on climate financing',
+    perDiem: { totalFJD: 2800, days: 6, mieFJD: 467, firstDayFJD: 350, middleDaysFJD: 1867, lastDayFJD: 350 },
+    visaCheck: { status: 'ACTION', message: 'US B1/B2 visa or ESTA required. Official travel may require diplomatic visa — check with Kiribati Foreign Affairs.' },
+    status: 'submitted', submittedAt: '2026-05-20T11:00:00Z',
+    costCentre: { code: 'KHC-MLT', name: 'Multilateral' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 0,
+    history: [
+      { ts: '2026-05-20T11:00:00Z', actor: 'user-khc-employee-001', action: 'SUBMIT', note: 'UNGA — Kiribati delegation support, early submission for visa lead time' },
     ],
-    totalAmount: "93", currency: "FJD", status: "approved",
-    submittedAt: new Date("2026-01-30T09:00:00Z"),
-    reviewedAt: new Date("2026-01-31T14:00:00Z"),
-    reviewedBy: "Sashi Singh", reviewNotes: "Approved. Awaiting next payment run.",
+    needsFlights: true, needsAccommodation: true, needsVisa: true, needsTransport: true,
+    totalEstimatedBudget: 9400,
+    costBreakdown: { flights: 4800, accommodation: 2400, groundTransfers: 200, visaFees: 300, perDiem: 2800, totalCost: 9400 },
+  },
+  {
+    id: 'khc-req-004', ttrNumber: 'KHC-2026-00004', companyCode: 'khc001',
+    employeeName: 'Ms. Bwere Ieang', employeeNumber: 'KHC-MGR-001',
+    position: 'High Commissioner', department: 'Executive', employeeId: 'user-khc-manager-001',
+    destination: { code: 'APW', city: 'Apia', country: 'Samoa' },
+    preferredRoute: 'South Tarawa → Nadi → Apia', travelMode: 'Air', suggestedModes: ['Air'],
+    startDate: '2026-06-16', endDate: '2026-06-19',
+    emergencyContactName: 'Kiribati Foreign Affairs', emergencyContactPhone: '+686 21 099', countryRiskLevel: 'low',
+    purpose: 'Pacific Forum Officials Meeting (FOM) — preparatory session for 2026 Pacific Islands Forum Leaders Summit',
+    perDiem: { totalFJD: 1500, days: 4, mieFJD: 375, firstDayFJD: 281.25, middleDaysFJD: 750, lastDayFJD: 281.25 },
+    visaCheck: { status: 'OK', message: 'No visa required for Samoa.' },
+    status: 'in_review', submittedAt: '2026-05-25T09:00:00Z',
+    costCentre: { code: 'KHC-EXEC', name: 'Executive' }, fundingType: 'advance',
+    approverFlow: ['manager'], approverIndex: 0,
+    history: [
+      { ts: '2026-05-25T09:00:00Z', actor: 'user-khc-manager-001', action: 'SUBMIT', note: 'FOM preparatory — High Commissioner attendance required' },
+    ],
+    needsFlights: true, needsAccommodation: true, needsVisa: false, needsTransport: true,
+    totalEstimatedBudget: 3600,
+    costBreakdown: { flights: 1600, accommodation: 900, groundTransfers: 120, perDiem: 1500, totalCost: 3600 },
+  },
+];
+
+// ── Tuvalu High Commission Expense Claims ─────────────────────────────────────
+
+const thcClaims = [
+  {
+    id: 'claim-thc-001', tclNumber: 'TCL-THC-00001', requestId: 'thc-req-001',
+    travelRequestRef: 'THC-2026-00001', companyCode: 'thc001',
+    employeeId: 'user-thc-employee-001', employeeName: 'Mr. Peni Taufa',
+    lineItems: [
+      { id: 'li-thc-001-1', description: 'Air Pacific FJ-801 — Funafuti to Suva return', category: 'Flights', amount: 680, merchantName: 'Air Pacific', receiptDate: '2026-04-14' },
+      { id: 'li-thc-001-2', description: 'Tanoa Plaza Hotel Suva — 2 nights', category: 'Accommodation', amount: 370, merchantName: 'Tanoa International Hotel', receiptDate: '2026-04-14' },
+      { id: 'li-thc-001-3', description: 'Working meals — Ministry delegation', category: 'Meals', amount: 145, merchantName: 'Various Suva', receiptDate: '2026-04-15' },
+      { id: 'li-thc-001-4', description: 'Taxi Suva CBD — Fijian Government complex', category: 'Transport (Local)', amount: 45, merchantName: 'Suva City Cabs', receiptDate: '2026-04-14' },
+    ],
+    totalAmount: '1240', currency: 'FJD', status: 'paid',
+    submittedAt: new Date('2026-04-20T10:00:00Z'),
+    reviewedAt: new Date('2026-04-22T14:00:00Z'),
+    reviewedBy: 'Semisi Pio', reviewNotes: 'All official receipts verified. Payment processed.',
+    reconciliation: { advanceAmount: 2100, varianceAmount: -860 },
+    createdAt: new Date('2026-04-19T08:00:00Z'), updatedAt: new Date('2026-04-22T14:00:00Z'),
+  },
+];
+
+// ── Kiribati High Commission Expense Claims ───────────────────────────────────
+
+const khcClaims = [
+  {
+    id: 'claim-khc-001', tclNumber: 'TCL-KHC-00001', requestId: 'khc-req-001',
+    travelRequestRef: 'KHC-2026-00001', companyCode: 'khc001',
+    employeeId: 'user-khc-employee-001', employeeName: 'Ms. Tearia Tabai',
+    lineItems: [
+      { id: 'li-khc-001-1', description: 'Air Kiribati — Suva to Tarawa return', category: 'Flights', amount: 950, merchantName: 'Air Kiribati', receiptDate: '2026-04-08' },
+      { id: 'li-khc-001-2', description: 'Otintaai Hotel Tarawa — 4 nights', category: 'Accommodation', amount: 720, merchantName: 'Otintaai Hotel', receiptDate: '2026-04-08' },
+      { id: 'li-khc-001-3', description: 'Working meals — consular processing days', category: 'Meals', amount: 180, merchantName: 'Various Tarawa', receiptDate: '2026-04-09' },
+      { id: 'li-khc-001-4', description: 'Ground transfers — airport and government offices', category: 'Transport (Local)', amount: 120, merchantName: 'Tarawa Transport', receiptDate: '2026-04-08' },
+    ],
+    totalAmount: '1970', currency: 'FJD', status: 'approved',
+    submittedAt: new Date('2026-04-16T09:00:00Z'),
+    reviewedAt: new Date('2026-04-18T11:00:00Z'),
+    reviewedBy: 'Bwere Ieang', reviewNotes: 'Receipts verified. Approved for payment.',
     reconciliation: null,
-    createdAt: new Date("2026-01-29T17:00:00Z"), updatedAt: new Date("2026-01-31T14:00:00Z"),
-  },
-  {
-    id: "claim-cdp-004", tclNumber: "TCL-CDP-00004", requestId: "cdp-req-008",
-    travelRequestRef: "CDP-2026-00008", companyCode: "cdp001",
-    employeeId: "user-cdp-ceo-001", employeeName: "Mr. Rajnil Singh",
-    lineItems: [
-      { id: "li-c004-1", description: "Fiji Airways – Suva to Taveuni return", category: "Flights", amount: 320, merchantName: "Fiji Airways", receiptDate: "2026-03-10" },
-      { id: "li-c004-2", description: "Taveuni Estate – 2 nights accommodation", category: "Accommodation", amount: 180, merchantName: "Taveuni Estate Resort", receiptDate: "2026-03-11" },
-      { id: "li-c004-3", description: "Client dinner – Taveuni", category: "Meals", amount: 135, merchantName: "Coconut Grove Restaurant", receiptDate: "2026-03-11" },
-      { id: "li-c004-4", description: "4WD hire – airport to resort", category: "Transport (Local)", amount: 80, merchantName: "Taveuni 4WD Hire", receiptDate: "2026-03-10" },
-    ],
-    totalAmount: "715", currency: "FJD", status: "under_review",
-    submittedAt: new Date("2026-03-15T10:00:00Z"),
-    reviewedAt: null, reviewedBy: null, reviewNotes: null, reconciliation: null,
-    createdAt: new Date("2026-03-14T16:30:00Z"), updatedAt: new Date("2026-03-15T10:00:00Z"),
-  },
-  {
-    id: "claim-cdp-005", tclNumber: "TCL-CDP-00005", requestId: "cdp-req-003",
-    travelRequestRef: "CDP-2026-00003", companyCode: "cdp001",
-    employeeId: "user-cdp-md-001", employeeName: "Mr. Sashi Singh",
-    lineItems: [
-      { id: "li-c005-1", description: "Fiji Airways – Suva to Nadi return", category: "Flights", amount: 180, merchantName: "Fiji Airways", receiptDate: "2026-04-15" },
-      { id: "li-c005-2", description: "Sheraton Fiji – 2 nights", category: "Accommodation", amount: 360, merchantName: "Sheraton Fiji Golf & Beach Resort", receiptDate: "2026-04-16" },
-      { id: "li-c005-3", description: "Business dinner – strategic partners", category: "Meals", amount: 220, merchantName: "Nadi Bay Resort Restaurant", receiptDate: "2026-04-16" },
-      { id: "li-c005-4", description: "Working breakfast meeting", category: "Meals", amount: 65, merchantName: "Sheraton Fiji Café", receiptDate: "2026-04-17" },
-      { id: "li-c005-5", description: "Airport transfers Nadi", category: "Transport (Local)", amount: 60, merchantName: "Pacific Transfers", receiptDate: "2026-04-17" },
-    ],
-    totalAmount: "885", currency: "FJD", status: "submitted",
-    submittedAt: new Date("2026-04-20T09:30:00Z"),
-    reviewedAt: null, reviewedBy: null, reviewNotes: null, reconciliation: null,
-    createdAt: new Date("2026-04-19T15:00:00Z"), updatedAt: new Date("2026-04-20T09:30:00Z"),
+    createdAt: new Date('2026-04-15T16:00:00Z'), updatedAt: new Date('2026-04-18T11:00:00Z'),
   },
 ];
 
@@ -613,7 +535,8 @@ async function seedTravelRequests(): Promise<number> {
 
   const allRequests = [
     ...ittRequests.map(r => travelRequestRow(r, "itt001")),
-    ...cdpRequests.map(r => travelRequestRow(r, r.companyCode)),
+    ...thcRequests.map(r => travelRequestRow(r, r.companyCode)),
+    ...khcRequests.map(r => travelRequestRow(r, r.companyCode)),
   ];
 
   for (const row of allRequests) {
@@ -631,7 +554,7 @@ async function seedTravelRequests(): Promise<number> {
 async function seedExpenseClaims(): Promise<number> {
   let inserted = 0;
 
-  for (const claim of cdpClaims) {
+  for (const claim of [...thcClaims, ...khcClaims]) {
     const existing = await db.select({ id: expenseClaims.id })
       .from(expenseClaims).where(eq(expenseClaims.id, claim.id));
     if (existing.length === 0) {
@@ -671,8 +594,10 @@ async function seedRefSequences(): Promise<number> {
 
   const counters = [
     { companyCode: "itt001", prefix: "TTR", year, lastCounter: 11 },
-    { companyCode: "cdp001", prefix: "CDP", year, lastCounter: 10 },
-    { companyCode: "cdp001", prefix: "TCL", year, lastCounter: 0 },
+    { companyCode: "thc001", prefix: "THC", year, lastCounter: 4 },
+    { companyCode: "thc001", prefix: "TCL", year, lastCounter: 1 },
+    { companyCode: "khc001", prefix: "KHC", year, lastCounter: 4 },
+    { companyCode: "khc001", prefix: "TCL", year, lastCounter: 1 },
   ];
 
   for (const counter of counters) {
@@ -702,23 +627,23 @@ async function seedRefSequences(): Promise<number> {
 
 // ── Demo Users ────────────────────────────────────────────────────────────────
 
+// All demo orgs share one password: itt1235*
 const DEMO_HASH = "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS";
-const CDP_DEMO_HASH = "$2b$10$DOF5lGyFep2rEma0gSVYn./NHcD2TFRKE8Av.d/aY1ZinHcu5UNUe";
 
 const demoUsers = [
-  // ── ITT users ──
-  { id: "user-itt-manager-001", email: "desmond.bale@islandtraveltech.com", firstName: "Desmond", lastName: "Bale", role: "super_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-employee-001", email: "jone.ratudina@islandtraveltech.com", firstName: "Jone", lastName: "Ratudina", role: "employee", companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-coordinator-001", email: "litia.vuniyayawa@islandtraveltech.com", firstName: "Litia", lastName: "Vuniyayawa", role: "coordinator", companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-manager-002", email: "tomasi.ravouvou@islandtraveltech.com", firstName: "Tomasi", lastName: "Ravouvou", role: "manager", companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-finance-001", email: "mere.delana@islandtraveltech.com", firstName: "Mere", lastName: "Delana", role: "finance_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-travel-001", email: "nemani.tui@islandtraveltech.com", firstName: "Nemani", lastName: "Tui", role: "travel_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
-  // ── CDP users ──
-  { id: "user-cdp-md-001", email: "sashi.singh@cdpcouriers.demo", firstName: "Sashi", lastName: "Singh", role: "super_admin", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-ceo-001", email: "rajnil.singh@cdpcouriers.demo", firstName: "Rajnil", lastName: "Singh", role: "super_admin", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-gm-001", email: "george.singh@cdpcouriers.demo", firstName: "George", lastName: "Singh", role: "manager", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-fin-001", email: "ashwin.ram@cdpcouriers.demo", firstName: "Ashwin", lastName: "Ram", role: "finance_admin", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-arr-001", email: "rajneelta@cdpcouriers.demo", firstName: "Rajneelta", lastName: null, role: "coordinator", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
+  // ── Island Travel Technologies (itt001) ──
+  { id: "user-itt-manager-001",     email: "desmond.bale@islandtraveltech.com",     firstName: "Desmond", lastName: "Bale",       role: "super_admin",   companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-employee-001",    email: "jone.ratudina@islandtraveltech.com",    firstName: "Jone",    lastName: "Ratudina",   role: "employee",      companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-coordinator-001", email: "litia.vuniyayawa@islandtraveltech.com", firstName: "Litia",   lastName: "Vuniyayawa", role: "coordinator",   companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-manager-002",     email: "tomasi.ravouvou@islandtraveltech.com",  firstName: "Tomasi",  lastName: "Ravouvou",   role: "manager",       companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-finance-001",     email: "mere.delana@islandtraveltech.com",      firstName: "Mere",    lastName: "Delana",     role: "finance_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-travel-001",      email: "nemani.tui@islandtraveltech.com",       firstName: "Nemani",  lastName: "Tui",        role: "travel_admin",  companyCode: "itt001", passwordHash: DEMO_HASH },
+  // ── Tuvalu High Commission (thc001) ──
+  { id: "user-thc-employee-001",    email: "peni.taufa@tuvaluhighcomm.demo",        firstName: "Peni",    lastName: "Taufa",      role: "employee",      companyCode: "thc001", passwordHash: DEMO_HASH },
+  { id: "user-thc-manager-001",     email: "semisi.pio@tuvaluhighcomm.demo",        firstName: "Semisi",  lastName: "Pio",        role: "manager",       companyCode: "thc001", passwordHash: DEMO_HASH },
+  // ── Kiribati High Commission (khc001) ──
+  { id: "user-khc-employee-001",    email: "tearia.tabai@kiribatihighcomm.demo",    firstName: "Tearia",  lastName: "Tabai",      role: "employee",      companyCode: "khc001", passwordHash: DEMO_HASH },
+  { id: "user-khc-manager-001",     email: "bwere.ieang@kiribatihighcomm.demo",     firstName: "Bwere",   lastName: "Ieang",      role: "manager",       companyCode: "khc001", passwordHash: DEMO_HASH },
 ];
 
 async function seedUsers(): Promise<number> {
@@ -765,18 +690,28 @@ async function verify() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
+async function cleanupCdp(): Promise<void> {
+  await db.delete(expenseClaims).where(eq(expenseClaims.companyCode, "cdp001"));
+  await db.delete(travelRequests).where(eq(travelRequests.companyCode, "cdp001"));
+  await db.delete(refSequences).where(eq(refSequences.companyCode, "cdp001"));
+  await db.delete(users).where(eq(users.companyCode, "cdp001"));
+  console.log("  cdp001 data      : purged (if any existed)");
+}
+
 async function main() {
   console.log("Tokani TripFlow — seed.ts");
   console.log("────────────────────────────────────────────────────────");
 
+  await cleanupCdp();
+
   const usersInserted = await seedUsers();
-  console.log(`  users            : ${usersInserted} inserted (${11 - usersInserted} already existed)`);
+  console.log(`  users            : ${usersInserted} inserted (${10 - usersInserted} already existed)`);
 
   const reqsInserted = await seedTravelRequests();
-  console.log(`  travel_requests  : ${reqsInserted} inserted (${21 - reqsInserted} already existed)`);
+  console.log(`  travel_requests  : ${reqsInserted} inserted (${19 - reqsInserted} already existed)`);
 
   const claimsInserted = await seedExpenseClaims();
-  console.log(`  expense_claims   : ${claimsInserted} inserted (${5 - claimsInserted} already existed)`);
+  console.log(`  expense_claims   : ${claimsInserted} inserted (${2 - claimsInserted} already existed)`);
 
   const policiesInserted = await seedQuotePolicy();
   console.log(`  quote_policies   : ${policiesInserted} inserted (${1 - policiesInserted} already existed)`);

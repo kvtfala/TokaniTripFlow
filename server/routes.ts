@@ -226,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       name: [u.firstName, u.lastName].filter(Boolean).join(" "),
       employeeNumber: `EMP${String(idx + 1).padStart(3, "0")}`,
       position: roleToPosition[u.role ?? "employee"] ?? "Staff",
-      department: u.companyCode === "cdp001" ? "CDP Couriers" : "Island Travel Tech",
+      department: u.companyCode === "thc001" ? "Tuvalu High Commission" : u.companyCode === "khc001" ? "Kiribati High Commission" : "Island Travel Tech",
       manager: roleToMgr[u.role ?? "employee"] ?? "Manager",
     }));
 
@@ -255,8 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let requests = await storage.getTravelRequests();
 
     // Scope requests to the logged-in user's tenant (companyCode).
-    // Users with companyCode "cdp001" only see CDP requests.
-    // Users with companyCode "itt001" (or no code) see ITT / legacy requests only.
+    // Each user only sees requests belonging to their own organisation.
     let sessionUserId: string | null = null;
     if ((req as any).user?.claims?.sub) {
       sessionUserId = (req as any).user.claims.sub;

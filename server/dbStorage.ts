@@ -211,7 +211,12 @@ export class DbStorage implements IStorage {
   }
 
   private async generateTTRNumber(companyCode: string): Promise<string> {
-    const prefix = companyCode === "cdp001" ? "CDP" : "TTR";
+    const prefixMap: Record<string, string> = {
+      itt001: "TTR",
+      thc001: "THC",
+      khc001: "KHC",
+    };
+    const prefix = prefixMap[companyCode] ?? "TTR";
     const year = new Date().getFullYear();
     const counter = await this.nextRefCounter(companyCode, prefix, year);
     return `${prefix}-${year}-${String(counter).padStart(5, "0")}`;

@@ -175,22 +175,12 @@ function AppSidebar() {
 
 function AppHeader() {
   const tenant = useTenant();
-  const isCDP = tenant.companyCode === "cdp001";
 
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-50 bg-primary text-primary-foreground shadow-sm">
       <div className="flex items-center gap-3">
         <SidebarTrigger data-testid="button-sidebar-toggle" className="text-primary-foreground" />
-        {isCDP ? (
-          <img
-            src={tenant.logoPath!}
-            alt="CDP Couriers"
-            className="h-10 w-10 rounded-full object-cover flex-shrink-0"
-            data-testid="img-logo-cdp"
-          />
-        ) : (
-          <TokaniLogo variant="icon" className="h-14 w-14 flex-shrink-0" />
-        )}
+        <TokaniLogo variant="icon" className="h-14 w-14 flex-shrink-0" />
         <Badge
           variant="outline"
           className="border-current/30 text-current bg-current/10 text-xs font-semibold px-2 py-0.5"
@@ -200,7 +190,7 @@ function AppHeader() {
         </Badge>
         <div className="flex flex-col min-w-0">
           <h1 className="text-lg font-semibold whitespace-nowrap">
-            {isCDP ? "CDP Couriers" : "Bula! Tokani TripFlow"}
+            {tenant.companyName}
           </h1>
           <span className="text-xs opacity-80 whitespace-nowrap hidden sm:block">
             {tenant.tagline}
@@ -242,8 +232,11 @@ function Router() {
       <Switch>
         <Route path="/approve/:token" component={TokenApproval} />
         {/* Tenant-specific login pages — add new clients here: */}
-        <Route path="/cdp">
-          <TenantLoginPage companyCode="cdp001" companyName="CDP Couriers" />
+        <Route path="/thc">
+          <TenantLoginPage companyCode="thc001" companyName="Tuvalu High Commission" />
+        </Route>
+        <Route path="/khc">
+          <TenantLoginPage companyCode="khc001" companyName="Kiribati High Commission" />
         </Route>
         <Route path="/" component={LandingPage} />
         <Route component={LandingPage} />

@@ -8,7 +8,7 @@ import type { Express } from "express";
 import { storage } from "./storage";
 
 // Hardcoded baseline tenant codes — always valid regardless of env vars
-const BASELINE_CODES = ["itt001", "cdp001"];
+const BASELINE_CODES = ["itt001", "thc001", "khc001"];
 
 // DEMO_COMPANY_CODE env var can add extra codes; baseline codes are always included
 const VALID_COMPANY_CODES = new Set([

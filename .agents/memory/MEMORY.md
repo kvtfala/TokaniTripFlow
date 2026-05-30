@@ -1,0 +1,2 @@
+- [Demo org prefix map](demo-org-prefixes.md) — each org has its own TTR prefix; must update dbStorage.ts prefixMap when adding new tenants
+- [CDP purge pattern](cdp-purge.md) — seed.ts cleanupCdp() and dbInit.ts purgeCdpDemoData() both use companyCode='cdp001' DELETE; safe/idempotent

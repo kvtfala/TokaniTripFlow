@@ -4,53 +4,58 @@
  * Startup-safe idempotent initializer for DbStorage.
  *
  * Called once at server boot BEFORE any routes are registered.
- * Ensures the demo users required for /api/demo-login exist in the database
- * so that demo credentials work on a fresh database environment without
- * requiring a manual seed script run.
+ * 1. Purges any remaining cdp001 demo data (safe – idempotent DELETE).
+ * 2. Ensures the demo users required for /api/demo-login exist in the database
+ *    so that demo credentials work on a fresh database environment without
+ *    requiring a manual seed script run.
  *
- * Safe to call multiple times — uses ON CONFLICT DO NOTHING.
+ * Safe to call multiple times — uses ON CONFLICT DO NOTHING for inserts.
  */
 
 import { db } from "./db";
-import { users } from "@shared/schema";
-import { count } from "drizzle-orm";
-import { randomUUID } from "crypto";
+import { users, travelRequests, expenseClaims, refSequences } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
-// These hashes were generated with bcrypt (cost 10).
-// ITT plaintext password: itt1235*
-// CDP plaintext password: see CDP demo login credentials
+// All demo orgs share one password: itt1235*
+// Hash generated with bcrypt cost 10.
 const DEMO_HASH = "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS";
-const CDP_DEMO_HASH = "$2b$10$DOF5lGyFep2rEma0gSVYn./NHcD2TFRKE8Av.d/aY1ZinHcu5UNUe";
 
 const DEMO_USERS = [
   // ── Island Travel Technologies (itt001) ──────────────────────────────────
-  { id: "user-itt-manager-001", email: "desmond.bale@islandtraveltech.com",     firstName: "Desmond",   lastName: "Bale",      role: "super_admin",   companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-employee-001", email: "jone.ratudina@islandtraveltech.com",   firstName: "Jone",      lastName: "Ratudina",  role: "employee",      companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-coordinator-001", email: "litia.vuniyayawa@islandtraveltech.com", firstName: "Litia", lastName: "Vuniyayawa", role: "coordinator", companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-manager-002", email: "tomasi.ravouvou@islandtraveltech.com",  firstName: "Tomasi",    lastName: "Ravouvou",  role: "manager",       companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-finance-001", email: "mere.delana@islandtraveltech.com",      firstName: "Mere",      lastName: "Delana",    role: "finance_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
-  { id: "user-itt-travel-001",  email: "nemani.tui@islandtraveltech.com",       firstName: "Nemani",    lastName: "Tui",       role: "travel_admin",  companyCode: "itt001", passwordHash: DEMO_HASH },
-  // ── CDP Couriers (cdp001) ─────────────────────────────────────────────────
-  { id: "user-cdp-md-001",  email: "sashi.singh@cdpcouriers.demo",   firstName: "Sashi",     lastName: "Singh", role: "super_admin",   companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-ceo-001", email: "rajnil.singh@cdpcouriers.demo",  firstName: "Rajnil",    lastName: "Singh", role: "super_admin",   companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-gm-001",  email: "george.singh@cdpcouriers.demo",  firstName: "George",    lastName: "Singh", role: "manager",       companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-fin-001", email: "ashwin.ram@cdpcouriers.demo",    firstName: "Ashwin",    lastName: "Ram",   role: "finance_admin", companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
-  { id: "user-cdp-arr-001", email: "rajneelta@cdpcouriers.demo",     firstName: "Rajneelta", lastName: null,    role: "coordinator",   companyCode: "cdp001", passwordHash: CDP_DEMO_HASH },
+  { id: "user-itt-manager-001",     email: "desmond.bale@islandtraveltech.com",     firstName: "Desmond",  lastName: "Bale",       role: "super_admin",   companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-employee-001",    email: "jone.ratudina@islandtraveltech.com",    firstName: "Jone",     lastName: "Ratudina",   role: "employee",      companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-coordinator-001", email: "litia.vuniyayawa@islandtraveltech.com", firstName: "Litia",    lastName: "Vuniyayawa", role: "coordinator",   companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-manager-002",     email: "tomasi.ravouvou@islandtraveltech.com",  firstName: "Tomasi",   lastName: "Ravouvou",   role: "manager",       companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-finance-001",     email: "mere.delana@islandtraveltech.com",      firstName: "Mere",     lastName: "Delana",     role: "finance_admin", companyCode: "itt001", passwordHash: DEMO_HASH },
+  { id: "user-itt-travel-001",      email: "nemani.tui@islandtraveltech.com",       firstName: "Nemani",   lastName: "Tui",        role: "travel_admin",  companyCode: "itt001", passwordHash: DEMO_HASH },
+  // ── Tuvalu High Commission (thc001) ──────────────────────────────────────
+  { id: "user-thc-employee-001",    email: "peni.taufa@tuvaluhighcomm.demo",        firstName: "Peni",     lastName: "Taufa",      role: "employee",      companyCode: "thc001", passwordHash: DEMO_HASH },
+  { id: "user-thc-manager-001",     email: "semisi.pio@tuvaluhighcomm.demo",        firstName: "Semisi",   lastName: "Pio",        role: "manager",       companyCode: "thc001", passwordHash: DEMO_HASH },
+  // ── Kiribati High Commission (khc001) ────────────────────────────────────
+  { id: "user-khc-employee-001",    email: "tearia.tabai@kiribatihighcomm.demo",    firstName: "Tearia",   lastName: "Tabai",      role: "employee",      companyCode: "khc001", passwordHash: DEMO_HASH },
+  { id: "user-khc-manager-001",     email: "bwere.ieang@kiribatihighcomm.demo",     firstName: "Bwere",    lastName: "Ieang",      role: "manager",       companyCode: "khc001", passwordHash: DEMO_HASH },
 ] as const;
 
 /**
- * Ensure all 11 demo users required for /api/demo-login exist in the database.
+ * Removes all cdp001 demo data that may still exist from a previous seed run.
+ * Safe and idempotent — does nothing if no cdp001 rows exist.
+ * Scoped strictly to company_code = 'cdp001'.
+ */
+async function purgeCdpDemoData(): Promise<void> {
+  await db.delete(expenseClaims).where(eq(expenseClaims.companyCode, "cdp001"));
+  await db.delete(travelRequests).where(eq(travelRequests.companyCode, "cdp001"));
+  await db.delete(refSequences).where(eq(refSequences.companyCode, "cdp001"));
+  await db.delete(users).where(eq(users.companyCode, "cdp001"));
+}
+
+/**
+ * Ensure all demo users required for /api/demo-login exist in the database.
  * Uses INSERT … ON CONFLICT DO NOTHING so existing rows are never overwritten
  * and the function is safe to call regardless of how many other users exist.
- * Runs in < 200ms (single batch insert of 11 rows).
  */
-export async function ensureDemoUsers(): Promise<void> {
+async function ensureDemoUsers(): Promise<void> {
   const now = new Date("2025-01-01T00:00:00Z");
 
-  // Always attempt the batch insert — ON CONFLICT DO NOTHING makes this safe
-  // even when some or all demo users already exist.  We cannot rely on a total
-  // user count because the DB may already hold non-demo users from Replit Auth
-  // or previous sessions, causing a count-based early exit to skip required rows.
   const result = await db
     .insert(users)
     .values(
@@ -75,4 +80,9 @@ export async function ensureDemoUsers(): Promise<void> {
   if (result.length > 0) {
     console.log(`[dbInit] Inserted ${result.length} missing demo user(s).`);
   }
+}
+
+export async function initializeDatabase(): Promise<void> {
+  await purgeCdpDemoData();
+  await ensureDemoUsers();
 }

@@ -1,0 +1,238 @@
+TASK 15 — REPLACE CDP DEMO TENANT WITH HIGH COMMISSION DEMO TENANTS
+
+Context:
+TripFlow is now being positioned for Tokani Travel Coordination, a managed travel coordination service for diplomatic high commissions, NGOs, regional organisations, and government-linked offices.
+
+CDP Couriers is being retired as a demo tenant. ITT must remain unchanged.
+
+Goal:
+Replace the CDP demo tenant with two new high commission demo tenants:
+
+1. Tuvalu High Commission
+   companyCode: thc001
+
+2. Kiribati High Commission
+   companyCode: khc001
+
+Each new organisation should have:
+
+* 2 demo users
+* 3–5 realistic travel requests
+* tenant branding
+* login route
+* isolated data visibility
+
+Important:
+
+* Do not change ITT data, users, routes, or branding.
+* Do not change approval logic.
+* Do not add TTC Phase 1 fields yet.
+* Do not add new roles or permissions.
+* Do not add logos or image assets.
+* Keep this task focused on demo tenant replacement only.
+* Avoid broad refactors.
+* Do not fix unrelated TypeScript errors unless directly blocking this task.
+
+PART A — CDP DEMO CLEANUP
+
+Remove CDP demo data from PostgreSQL for companyCode cdp001:
+
+* users
+* travel_requests
+* travel_quotes if linked to CDP requests
+* expense_claims
+* delegate_assignments
+* quote_policies
+* ref_sequences
+
+Important:
+Do this as a controlled seed/demo cleanup operation, not as an uncontrolled destructive production startup action.
+
+Preferred approach:
+
+* Put CDP cleanup inside server/seed.ts or a clearly named demo cleanup helper.
+* If any cleanup is added to server/dbInit.ts, make it safe, idempotent, and clearly limited to demo tenant code cdp001.
+* Do not delete any ITT records.
+
+PART B — DEMO USERS
+
+Update server/dbInit.ts:
+
+* Remove CDP demo users.
+* Add 4 new demo users:
+
+  * Tuvalu High Commission traveller/employee
+  * Tuvalu High Commission manager/approver
+  * Kiribati High Commission traveller/employee
+  * Kiribati High Commission manager/approver
+
+Use realistic Pacific names.
+Use companyCode thc001 for Tuvalu users.
+Use companyCode khc001 for Kiribati users.
+Use existing roles only:
+
+* employee
+* manager
+
+Use the same shared demo password as ITT:
+itt1235*
+
+Use the same bcrypt hash approach already used for ITT demo users.
+
+server/dbInit.ts should ensure the 4 new users exist on startup using INSERT ... ON CONFLICT DO NOTHING or equivalent.
+
+PART C — SEED DATA
+
+Update server/seed.ts:
+
+* Remove CDP request sections.
+* Remove CDP claim sections.
+* Remove CDP ref_sequence entries.
+* Add Tuvalu High Commission demo data.
+* Add Kiribati High Commission demo data.
+
+Each new organisation should have 3–5 realistic sample travel requests.
+
+Tuvalu sample request themes:
+
+* Official consultation in Suva or Funafuti
+* Medical/escort-related travel coordination to India or Fiji
+* Pacific Islands Forum or regional meeting attendance
+* Consular assistance visit
+* Bilateral government meeting
+
+Kiribati sample request themes:
+
+* Official travel to Tarawa
+* Regional climate/ocean meeting
+* Consular visit
+* UN/Pacific regional meeting
+* Training or donor-funded official travel
+
+Include mixed statuses:
+
+* submitted
+* in_review
+* approved
+* awaiting_quotes
+* ticketed
+
+Add at least one approved or ticketed request per organisation.
+
+Claims and per diems:
+Keep claims and per diems relevant in the system.
+For each new organisation, add at least one simple expense claim linked to an approved/ticketed request if the existing model supports it cleanly.
+The claim should reflect official travel expenses or post-trip acquittal.
+Do not overbuild claim logic.
+
+Add ref_sequences for:
+
+* thc001
+* khc001
+
+Ensure TTR/TCL numbering will continue without duplicates.
+
+PART D — BASELINE CODES
+
+Update server/routes.ts:
+Change BASELINE_CODES from:
+["itt001", "cdp001"]
+
+to:
+["itt001", "thc001", "khc001"]
+
+Do not change other route logic.
+
+PART E — TENANT BRANDING
+
+Update TenantContext.tsx:
+
+* Remove cdp001 config.
+* Add thc001 config:
+
+  * Name: Tuvalu High Commission
+  * Palette: dignified navy/gold
+* Add khc001 config:
+
+  * Name: Kiribati High Commission
+  * Palette: deep blue/ocean green
+
+Do not add new logos or images.
+Use existing branding structure.
+
+PART F — LOGIN ROUTES
+
+Update App.tsx:
+
+* Remove /cdp route.
+* Add /thc route pointing to TenantLoginPage with companyCode thc001 and companyName Tuvalu High Commission.
+* Add /khc route pointing to TenantLoginPage with companyCode khc001 and companyName Kiribati High Commission.
+* Remove CDP-specific branding checks such as isCDP if they exist.
+* Replace them with generic tenant-aware checks or high-commission-neutral wording where needed.
+
+PART G — DEMO LOGIN UI
+
+Update DemoLogin.tsx:
+
+* Replace placeholder hints for cdp001.
+* Show valid demo company codes:
+
+  * itt001
+  * thc001
+  * khc001
+
+If demo credentials are displayed, include:
+
+* ITT demo user unchanged.
+* Tuvalu demo traveller/manager.
+* Kiribati demo traveller/manager.
+
+PART H — DATABASE / SEED RUN
+
+Run the updated seed process.
+
+Confirm:
+
+* CDP users are gone.
+* CDP travel requests are gone.
+* CDP expense claims are gone.
+* CDP ref_sequences are gone.
+* THC users exist.
+* KHC users exist.
+* THC travel requests exist.
+* KHC travel requests exist.
+* THC/KHC ref_sequences exist.
+* ITT records remain unchanged.
+
+PART I — SMOKE TESTS
+
+Test:
+
+1. ITT login still works normally.
+2. /thc login route works.
+3. /khc login route works.
+4. THC traveller login shows only thc001 requests.
+5. THC manager login shows only thc001 approval/workflow data.
+6. KHC traveller login shows only khc001 requests.
+7. KHC manager login shows only khc001 approval/workflow data.
+8. ITT user cannot see THC or KHC data.
+9. THC user cannot see ITT or KHC data.
+10. KHC user cannot see ITT or THC data.
+11. Reports respect tenant scoping.
+12. Travel Watch respects tenant scoping.
+13. Expense claims respect tenant scoping.
+14. Admin/vendor pages still load.
+
+Output required:
+
+* Files changed.
+* Database rows removed for CDP.
+* New users created for THC/KHC.
+* New travel requests created for THC/KHC.
+* New claims created, if any.
+* New ref_sequences created.
+* Login routes confirmed.
+* Tenant isolation test results.
+* Any unresolved risks.
+
+Stop after this task and wait for approval before TTC Phase 1.
