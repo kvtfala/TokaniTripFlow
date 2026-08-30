@@ -1013,6 +1013,7 @@ export default function RequestDetail() {
   const getStatusBadge = (status: RequestStatus) => {
     const variants: Record<RequestStatus, { variant: "default" | "secondary" | "destructive" | "outline", icon: any }> = {
       draft: { variant: "secondary", icon: Clock },
+      pending: { variant: "outline", icon: Clock },
       submitted: { variant: "outline", icon: Clock },
       in_review: { variant: "default", icon: Clock },
       awaiting_quotes: { variant: "outline", icon: DollarSign },

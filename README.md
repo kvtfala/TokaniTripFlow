@@ -1,28 +1,33 @@
 # TripFlow
 
-TripFlow is a multi-tenant travel management, coordination and control platform. The current application is a demonstration build being evolved toward production through the controlled Phase 0 foundation work in [`docs/phase-0`](docs/phase-0/README.md).
+TripFlow is a multi-tenant travel management, coordination and control
+platform. The current application is a demonstration build being evolved toward
+production through the controlled Phase 0 foundation work in
+[`docs/phase-0`](docs/phase-0/README.md).
 
-## Local start
+Quick demo start (local)
 
-Prerequisites:
+Prerequisites
+- Node 18+ and npm
 
-- Node 18+
-- npm
+Install dependencies
 
-Install dependencies and start the development server:
-
-```bash
 npm ci
+
+Start the development server
+
 npm run dev
-```
 
-The server requires the environment variables used by the selected database and authentication mode. Do not commit credentials or production secrets.
+The server requires the environment variables used by the selected database and
+authentication mode. Do not commit credentials or production secrets.
 
-## Quality checks
+Quality checks
 
 ```bash
 npm run check
 npm run build
 ```
 
-Phase 0 baseline and architecture decisions are recorded under `docs/`. Replit-specific development information remains available in `replit.md`.
+Notes
+- Phase 0 baseline and architecture decisions are recorded under `docs/`.
+- Replit-specific development information remains available in `replit.md`.

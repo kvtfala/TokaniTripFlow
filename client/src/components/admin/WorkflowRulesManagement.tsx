@@ -320,8 +320,8 @@ export function WorkflowRulesManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {workflow.triggerConditions?.type
-                      ? TRIGGER_TYPES.find(t => t.value === workflow.triggerConditions.type)?.label || workflow.triggerConditions.type
+                    {typeof workflow.triggerConditions?.type === "string"
+                      ? TRIGGER_TYPES.find(t => t.value === workflow.triggerConditions.type)?.label || String(workflow.triggerConditions.type)
                       : "N/A"}
                   </TableCell>
                   <TableCell>
@@ -429,16 +429,16 @@ function WorkflowForm({
 
   const defaultTrigger: TriggerState = existingWorkflow?.triggerConditions
     ? {
-        type: existingWorkflow.triggerConditions.type || "cost_threshold",
-        operator: existingWorkflow.triggerConditions.operator || "greater_than",
+        type: typeof existingWorkflow.triggerConditions.type === "string" ? existingWorkflow.triggerConditions.type : "cost_threshold",
+        operator: typeof existingWorkflow.triggerConditions.operator === "string" ? existingWorkflow.triggerConditions.operator : "greater_than",
         value: existingWorkflow.triggerConditions.value?.toString() || "5000",
       }
     : { type: "cost_threshold", operator: "greater_than", value: "5000" };
 
   const defaultEscalation: EscalationState = existingWorkflow?.escalationPath
     ? {
-        timeoutHours: existingWorkflow.escalationPath.timeout_hours || 48,
-        escalateTo: existingWorkflow.escalationPath.escalate_to || "super_admin",
+        timeoutHours: existingWorkflow.escalationPath.timeoutHours || 48,
+        escalateTo: existingWorkflow.escalationPath.escalateTo || "super_admin",
       }
     : { timeoutHours: 48, escalateTo: "super_admin" };
 

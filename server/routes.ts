@@ -59,13 +59,13 @@ function asyncHandler(
 }
 
 // Helper function to validate request body with Zod schema using safeParse
-function validateRequest<T>(schema: any, data: any): { success: true; data: T } | { success: false; error: string } {
+function validateRequest<S extends z.AnyZodObject>(schema: S, data: unknown): { success: true; data: z.infer<S> } | { success: false; error: string } {
   // Always apply strict() to reject unknown fields and prevent schema bypass
   const strictSchema = schema.strict();
   const result = strictSchema.safeParse(data);
   
   if (result.success) {
-    return { success: true, data: result.data as T };
+    return { success: true, data: result.data };
   } else {
     const message = result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
     return { success: false, error: message };
@@ -83,6 +83,7 @@ async function logAudit(params: {
   previousValue?: any;
   newValue?: any;
   metadata?: any;
+  changes?: any;
 }) {
   // Compute field-level changes, handling null/undefined and nested objects safely
   let changes: any = null;
@@ -331,13 +332,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid TTC fields", details: parsed.error.flatten() });
     }
 
-    const updates: Partial<import("@shared/types").TravelRequest> = { ...parsed.data };
+    const updates: Partial<import("@shared/types").TravelRequest> = {
+      ...parsed.data,
+      ttcCaseType: parsed.data.ttcCaseType ?? undefined,
+      nextAction: parsed.data.nextAction ?? undefined,
+      followUpDueDate: parsed.data.followUpDueDate ?? undefined,
+      caseOwner: parsed.data.caseOwner ?? undefined,
+    };
 
     // Append a history entry so the change is traceable
-    const historyEntry = {
+    const historyEntry: import("@shared/types").HistoryEntry = {
       ts: new Date().toISOString(),
       actor: actor.displayName,
-      action: "TTC_UPDATED",
+      action: "COMMENT",
       note: `TTC fields updated by ${actor.displayName}`,
     };
     updates.history = [...(request.history ?? []), historyEntry];
@@ -1244,6 +1251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const rate = await storage.createPerDiemRate({
       ...validation.data,
+      dailyRate: String(validation.data.dailyRate),
       companyCode: req.currentUser.companyCode,
       createdBy: req.currentUser.id,
     });
@@ -1280,7 +1288,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     const previousSnapshot = structuredClone(previousRate);
 
-    await storage.updatePerDiemRate(req.params.id, validation.data);
+    await storage.updatePerDiemRate(req.params.id, {
+      ...validation.data,
+      dailyRate: validation.data.dailyRate === undefined ? undefined : String(validation.data.dailyRate),
+    });
     
     // Re-fetch complete entity after update to capture all server-populated fields
     const rate = await storage.getPerDiemRate(req.params.id);

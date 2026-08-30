@@ -75,8 +75,10 @@ export function getRoleName(role: UserRole): string {
   const roleNames: Record<UserRole, string> = {
     employee: "Employee",
     coordinator: "Travel Coordinator",
+    approver: "Approver",
     manager: "Manager",
     finance_admin: "Finance Admin",
+    travel_desk: "Travel Desk",
     travel_admin: "Travel Admin",
     super_admin: "Super Admin",
   };

@@ -106,7 +106,7 @@ export function VendorManagement() {
   const [deletingVendor, setDeletingVendor] = useState<Vendor | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const isFinanceAdmin = ["finance_admin", "manager", "super_admin", "travel_admin"].includes(currentUser.role);
+  const isFinanceAdmin = ["finance_admin", "manager", "super_admin", "travel_admin"].includes(currentUser.role ?? "");
 
   const { data: vendors = [], isLoading } = useQuery<Vendor[]>({
     queryKey: ["/api/admin/vendors"],
@@ -543,10 +543,10 @@ function VendorEditForm({
   type EditValues = z.infer<typeof editSchema>;
 
   const form = useForm<EditValues>({
-    resolver: zodResolver(editSchema),
+    resolver: zodResolver(editSchema) as any,
     defaultValues: {
       name: vendor.name,
-      category: vendor.category || "Other",
+      category: vendorCategorySchema.parse(vendor.category || "Other"),
       contactEmail: vendor.contactEmail,
       contactPhone: vendor.contactPhone || "",
       services: vendor.services.join(', '),

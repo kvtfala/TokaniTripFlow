@@ -1,15 +1,22 @@
 # Phase 0: Production foundations
 
-Phase 0 converts the current TripFlow demonstration into a controlled base for production development. It does not add broad end-user functionality. Its job is to make the product model, tenant boundary, lifecycle, security controls and migration path explicit before feature work expands.
+Phase 0 converts the current TripFlow demonstration into a controlled base for
+production development. It does not add broad end-user functionality. Its job
+is to make the product model, tenant boundary, lifecycle, security controls and
+migration path explicit before feature work expands.
 
 ## Approved direction
 
 - A travel case is the universal coordination record.
 - A case contains one or more independently managed service components.
-- An organisation ID is the authoritative tenant boundary. `companyCode` remains a temporary compatibility alias while existing data is migrated.
-- The case lifecycle is separate from approval, authority-to-proceed, payment, provider-confirmation and fulfilment states.
-- Material events and document versions are append-only or superseded; they are not silently overwritten.
-- The existing application will be evolved using expand, migrate and contract changes rather than replaced in a big-bang rewrite.
+- An organisation ID is the authoritative tenant boundary. `companyCode`
+  remains a temporary compatibility alias while existing data is migrated.
+- The case lifecycle is separate from approval, authority-to-proceed, payment,
+  provider-confirmation and fulfilment states.
+- Material events and document versions are append-only or superseded; they
+  are not silently overwritten.
+- The existing application will be evolved using expand, migrate and contract
+  changes rather than replaced in a big-bang rewrite.
 
 ## Work packages
 
@@ -36,3 +43,4 @@ Phase 0 converts the current TripFlow demonstration into a controlled base for p
 7. Remove compatibility fields only after verification and rollback review.
 
 Production feature work must not bypass these foundations.
+
