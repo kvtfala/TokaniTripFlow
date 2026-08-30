@@ -567,6 +567,94 @@ export type TravelCase = typeof travelCases.$inferSelect;
 export type ServiceComponent = typeof serviceComponents.$inferSelect;
 export type CaseEvent = typeof caseEvents.$inferSelect;
 
+export const approvalDecisions = pgTable(
+  "approval_decisions",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    sequence: integer("sequence").notNull(),
+    approverMembershipId: varchar("approver_membership_id").notNull().references(() => organisationMemberships.id),
+    status: varchar("status", { length: 30 }).notNull().default("pending"),
+    comment: text("comment"),
+    decidedAt: timestamp("decided_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("UQ_approval_case_sequence").on(table.travelCaseId, table.sequence),
+    index("IDX_approval_org_case").on(table.organisationId, table.travelCaseId),
+  ],
+);
+
+export const authoritiesToProceed = pgTable(
+  "authorities_to_proceed",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    issuedByMembershipId: varchar("issued_by_membership_id").notNull().references(() => organisationMemberships.id),
+    status: varchar("status", { length: 30 }).notNull().default("issued"),
+    reference: varchar("reference", { length: 100 }),
+    issuedAt: timestamp("issued_at").notNull().defaultNow(),
+    revokedAt: timestamp("revoked_at"),
+    reason: text("reason"),
+  },
+  (table) => [index("IDX_authority_org_case").on(table.organisationId, table.travelCaseId)],
+);
+
+export const caseDocuments = pgTable(
+  "case_documents",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    documentType: varchar("document_type", { length: 80 }).notNull(),
+    classification: varchar("classification", { length: 30 }).notNull().default("internal"),
+    currentVersion: integer("current_version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("IDX_case_documents_org_case").on(table.organisationId, table.travelCaseId)],
+);
+
+export const documentVersions = pgTable(
+  "document_versions",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    documentId: varchar("document_id").notNull().references(() => caseDocuments.id),
+    version: integer("version").notNull(),
+    storageKey: varchar("storage_key", { length: 500 }).notNull(),
+    fileName: varchar("file_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 150 }).notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    checksum: varchar("checksum", { length: 128 }).notNull(),
+    uploadedByMembershipId: varchar("uploaded_by_membership_id").notNull().references(() => organisationMemberships.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("UQ_document_version").on(table.documentId, table.version),
+    index("IDX_document_versions_org_document").on(table.organisationId, table.documentId),
+  ],
+);
+
+export const billingEvents = pgTable(
+  "billing_events",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    eventType: varchar("event_type", { length: 80 }).notNull(),
+    amount: decimal("amount", { precision: 12, scale: 2 }),
+    currency: varchar("currency", { length: 3 }).notNull().default("FJD"),
+    occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+  },
+  (table) => [
+    uniqueIndex("UQ_billing_case_event").on(table.travelCaseId, table.eventType),
+    index("IDX_billing_events_org_time").on(table.organisationId, table.occurredAt),
+  ],
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Travel Quotes table — persists vendor quotes collected during the RFQ workflow.

@@ -60,7 +60,7 @@
     "cmdk": "^1.1.1",
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
-    "drizzle-orm": "^0.39.1",
+    "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.7.1",
     "embla-carousel-react": "^8.6.0",
     "exceljs": "^4.4.0",
@@ -90,7 +90,7 @@
     "react-simple-maps": "^3.0.0",
     "recharts": "^2.15.2",
     "rollup": "^4.59.0",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "topojson-client": "^3.1.0",
@@ -103,6 +103,7 @@
     "zod-validation-error": "^3.5.4"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@replit/vite-plugin-cartographer": "^0.3.1",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
@@ -131,5 +132,8 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
+  },
+  "overrides": {
+    "d3-color": "3.1.0"
   }
 }
