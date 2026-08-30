@@ -1,5 +1,6 @@
 export type RequestStatus = 
   | "draft" 
+  | "pending"            // Legacy demo status; normalized during migration
   | "submitted"           // Initial submission
   | "in_review"           // Approval in progress
   | "awaiting_quotes"     // Pre-approved to collect vendor quotes
@@ -8,7 +9,7 @@ export type RequestStatus =
   | "rejected" 
   | "ticketed";           // Travel Desk processed
 export type VisaStatus = "OK" | "WARNING" | "ACTION";
-export type UserRole = "employee" | "coordinator" | "manager" | "finance_admin" | "travel_admin" | "super_admin";
+export type UserRole = "employee" | "coordinator" | "approver" | "manager" | "finance_admin" | "travel_desk" | "travel_admin" | "super_admin";
 export type FundingType = "advance" | "reimbursement";
 export type HistoryAction = "SUBMIT" | "APPROVE" | "REJECT" | "ESCALATE" | "COMMENT" | "TICKET" | "QUOTE";
 export type TripType = "one-way" | "return" | "multi-city";
@@ -69,6 +70,8 @@ export interface TravelRequest {
   destination: Location;
   startDate: string;
   endDate: string;
+  /** Compatibility alias used by older expense and reporting screens. */
+  departureDate?: string;
   purpose: string;
   perDiem: PerDiemCalculation;
   visaCheck: VisaCheckResult;
@@ -99,6 +102,8 @@ export interface TravelRequest {
   // Enhanced fields (Phase 3)
   preferredRoute?: string;          // e.g. "NAN → SYD via AKL"
   totalEstimatedBudget?: number;    // Total budget in FJD
+  /** Compatibility alias; new code should use totalEstimatedBudget. */
+  estimatedCost?: number;
 
   // RFQ and Quotes (Phase 3)
   rfqRecipients?: Array<{vendorName: string; email: string; sentAt: string}>;
@@ -174,6 +179,9 @@ export interface ExpenseLineItem {
   receiptUrl?: string;
   merchantName?: string;
   receiptDate?: string;
+  /** Compatibility aliases used by the legacy claims table. */
+  merchant?: string;
+  date?: string;
   ocrConfidence?: "high" | "medium" | "low";
   notes?: string;
 }
@@ -183,6 +191,7 @@ export interface ExpenseClaim {
   tclNumber?: string;
   requestId: string;
   travelRequestRef?: string;
+  companyCode?: string;
   employeeId: string;
   employeeName: string;
   lineItems: ExpenseLineItem[];

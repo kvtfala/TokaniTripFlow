@@ -55,7 +55,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, Clock, Ban, Star, X } from "lucide-react";
-import { useForm, type UseFormReturn } from "react-hook-form";
+import { useForm, type Resolver, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVendorSchema, vendorCategorySchema } from "@shared/schema";
 import { z } from "zod";
@@ -106,7 +106,7 @@ export function VendorManagement() {
   const [deletingVendor, setDeletingVendor] = useState<Vendor | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const isFinanceAdmin = ["finance_admin", "manager", "super_admin", "travel_admin"].includes(currentUser.role);
+  const isFinanceAdmin = ["finance_admin", "manager", "super_admin", "travel_admin"].includes(currentUser.role ?? "");
 
   const { data: vendors = [], isLoading } = useQuery<Vendor[]>({
     queryKey: ["/api/admin/vendors"],
@@ -543,10 +543,10 @@ function VendorEditForm({
   type EditValues = z.infer<typeof editSchema>;
 
   const form = useForm<EditValues>({
-    resolver: zodResolver(editSchema),
+    resolver: zodResolver(editSchema) as Resolver<EditValues>,
     defaultValues: {
       name: vendor.name,
-      category: vendor.category || "Other",
+      category: vendorCategorySchema.parse(vendor.category || "Other"),
       contactEmail: vendor.contactEmail,
       contactPhone: vendor.contactPhone || "",
       services: vendor.services.join(', '),

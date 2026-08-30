@@ -1,0 +1,5 @@
+exclude_paths:
+  # PostgreSQL migrations are executed by the PGlite integration test. Codacy's
+  # SQL analyzer currently applies SQL Server-only QUOTED_IDENTIFIER and table
+  # compression rules to these files, producing incompatible false positives.
+  - "migrations/*.sql"

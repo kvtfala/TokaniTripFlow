@@ -9,6 +9,9 @@ export default function ApprovalDialogExample() {
   const mockRequest: TravelRequest = {
     id: "1",
     employeeName: "Jone Vakatawa",
+    employeeNumber: "EMP001",
+    position: "Programme Officer",
+    department: "Operations",
     employeeId: "EMP001",
     destination: { code: "SYD", city: "Sydney", country: "Australia" },
     startDate: "2025-11-15",
@@ -25,6 +28,11 @@ export default function ApprovalDialogExample() {
     visaCheck: { status: "ACTION", message: "Visa required" },
     status: "pending",
     submittedAt: "2025-10-20T10:00:00Z",
+    costCentre: { code: "OPS", name: "Operations" },
+    fundingType: "advance",
+    approverFlow: ["manager"],
+    approverIndex: 0,
+    history: [],
   };
 
   return (

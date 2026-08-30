@@ -37,7 +37,7 @@ export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
 // Role type for validation
-export const userRoleSchema = z.enum(["employee", "coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]);
+export const userRoleSchema = z.enum(["employee", "coordinator", "approver", "manager", "finance_admin", "travel_desk", "travel_admin", "super_admin"]);
 export type UserRole = z.infer<typeof userRoleSchema>;
 
 // Vendor status enum
@@ -136,7 +136,7 @@ export const insertPerDiemRateSchema = createInsertSchema(perDiemRates).omit({ i
 });
 
 // Policy type enum
-export const policyTypeSchema = z.enum(["advance_booking", "cost_threshold", "visa_requirement", "approval_flow", "expense_limit"]);
+export const policyTypeSchema = z.enum(["advance_booking", "cost_threshold", "visa_requirement", "approval_flow", "expense_limit", "transport_mode", "accommodation_cap"]);
 export type PolicyType = z.infer<typeof policyTypeSchema>;
 
 // Travel Policies table - Business rules and thresholds
@@ -283,6 +283,7 @@ export const insertCostCentreSchema = createInsertSchema(costCentres).omit({ id:
 // RequestStatus enum — mirrors RequestStatus in shared/types.ts
 export const requestStatusSchema = z.enum([
   "draft",
+  "pending",
   "submitted",
   "in_review",
   "awaiting_quotes",
@@ -439,6 +440,220 @@ export const insertTravelRequestSchema = createInsertSchema(travelRequests).omit
   status: requestStatusSchema.optional(),
   fundingType: fundingTypeSchema.optional(),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASE 0 PRODUCTION CORE (ADDITIVE)
+// These organisation-owned tables are introduced alongside the demo-oriented
+// travel_requests model. Existing reads and writes remain unchanged until data
+// has been backfilled, reconciled and moved behind a feature flag.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const membershipRoleSchema = z.enum([
+  "employee", "coordinator", "approver", "manager", "finance_admin",
+  "travel_desk", "travel_admin", "organisation_admin",
+]);
+export type MembershipRole = z.infer<typeof membershipRoleSchema>;
+
+export const caseStatusSchema = z.enum([
+  "draft", "submitted", "in_review", "authorised", "coordinating",
+  "ready_to_travel", "in_travel", "completed", "cancelled",
+]);
+export type CaseStatusDb = z.infer<typeof caseStatusSchema>;
+
+export const serviceComponentTypeSchema = z.enum([
+  "flight", "accommodation", "transfer", "ground_transport", "visa",
+  "venue", "insurance", "other",
+]);
+export type ServiceComponentType = z.infer<typeof serviceComponentTypeSchema>;
+
+export const organisations = pgTable("organisations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  timezone: varchar("timezone", { length: 100 }).notNull().default("Pacific/Fiji"),
+  defaultCurrency: varchar("default_currency", { length: 3 }).notNull().default("FJD"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const organisationMemberships = pgTable(
+  "organisation_memberships",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    userId: varchar("user_id").notNull().references(() => users.id),
+    role: varchar("role", { length: 50 }).$type<MembershipRole>().notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("UQ_organisation_membership_user").on(table.organisationId, table.userId),
+    index("IDX_organisation_memberships_user").on(table.userId),
+  ],
+);
+
+export const travelCases = pgTable(
+  "travel_cases",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    referenceNumber: varchar("reference_number", { length: 50 }).notNull(),
+    legacyRequestId: varchar("legacy_request_id", { length: 100 }),
+    travellerUserId: varchar("traveller_user_id").references(() => users.id),
+    title: varchar("title", { length: 255 }).notNull(),
+    purpose: text("purpose").notNull(),
+    status: varchar("status", { length: 40 }).$type<CaseStatusDb>().notNull().default("draft"),
+    priority: varchar("priority", { length: 20 }).notNull().default("normal"),
+    startDate: timestamp("start_date"),
+    endDate: timestamp("end_date"),
+    ownerMembershipId: varchar("owner_membership_id").references(() => organisationMemberships.id),
+    submittedAt: timestamp("submitted_at"),
+    closedAt: timestamp("closed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("UQ_travel_cases_org_reference").on(table.organisationId, table.referenceNumber),
+    uniqueIndex("UQ_travel_cases_legacy_request").on(table.legacyRequestId),
+    index("IDX_travel_cases_org_status").on(table.organisationId, table.status),
+  ],
+);
+
+export const serviceComponents = pgTable(
+  "service_components",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    type: varchar("type", { length: 40 }).$type<ServiceComponentType>().notNull(),
+    status: varchar("status", { length: 40 }).notNull().default("required"),
+    sequence: integer("sequence").notNull().default(0),
+    requirements: jsonb("requirements").notNull().default(sql`'{}'::jsonb`),
+    providerId: varchar("provider_id").references(() => vendors.id),
+    providerReference: varchar("provider_reference", { length: 100 }),
+    estimatedAmount: decimal("estimated_amount", { precision: 12, scale: 2 }),
+    currency: varchar("currency", { length: 3 }).notNull().default("FJD"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("IDX_service_components_org_case").on(table.organisationId, table.travelCaseId),
+  ],
+);
+
+export const caseEvents = pgTable(
+  "case_events",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    actorMembershipId: varchar("actor_membership_id").references(() => organisationMemberships.id),
+    eventType: varchar("event_type", { length: 100 }).notNull(),
+    fromStatus: varchar("from_status", { length: 40 }),
+    toStatus: varchar("to_status", { length: 40 }),
+    payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("IDX_case_events_org_case_time").on(table.organisationId, table.travelCaseId, table.occurredAt),
+  ],
+);
+
+export type Organisation = typeof organisations.$inferSelect;
+export type OrganisationMembership = typeof organisationMemberships.$inferSelect;
+export type TravelCase = typeof travelCases.$inferSelect;
+export type ServiceComponent = typeof serviceComponents.$inferSelect;
+export type CaseEvent = typeof caseEvents.$inferSelect;
+
+export const approvalDecisions = pgTable(
+  "approval_decisions",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    sequence: integer("sequence").notNull(),
+    approverMembershipId: varchar("approver_membership_id").notNull().references(() => organisationMemberships.id),
+    status: varchar("status", { length: 30 }).notNull().default("pending"),
+    comment: text("comment"),
+    decidedAt: timestamp("decided_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("UQ_approval_case_sequence").on(table.travelCaseId, table.sequence),
+    index("IDX_approval_org_case").on(table.organisationId, table.travelCaseId),
+  ],
+);
+
+export const authoritiesToProceed = pgTable(
+  "authorities_to_proceed",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    issuedByMembershipId: varchar("issued_by_membership_id").notNull().references(() => organisationMemberships.id),
+    status: varchar("status", { length: 30 }).notNull().default("issued"),
+    reference: varchar("reference", { length: 100 }),
+    issuedAt: timestamp("issued_at").notNull().defaultNow(),
+    revokedAt: timestamp("revoked_at"),
+    reason: text("reason"),
+  },
+  (table) => [index("IDX_authority_org_case").on(table.organisationId, table.travelCaseId)],
+);
+
+export const caseDocuments = pgTable(
+  "case_documents",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    documentType: varchar("document_type", { length: 80 }).notNull(),
+    classification: varchar("classification", { length: 30 }).notNull().default("internal"),
+    currentVersion: integer("current_version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("IDX_case_documents_org_case").on(table.organisationId, table.travelCaseId)],
+);
+
+export const documentVersions = pgTable(
+  "document_versions",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    documentId: varchar("document_id").notNull().references(() => caseDocuments.id),
+    version: integer("version").notNull(),
+    storageKey: varchar("storage_key", { length: 500 }).notNull(),
+    fileName: varchar("file_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 150 }).notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    checksum: varchar("checksum", { length: 128 }).notNull(),
+    uploadedByMembershipId: varchar("uploaded_by_membership_id").notNull().references(() => organisationMemberships.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("UQ_document_version").on(table.documentId, table.version),
+    index("IDX_document_versions_org_document").on(table.organisationId, table.documentId),
+  ],
+);
+
+export const billingEvents = pgTable(
+  "billing_events",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    organisationId: varchar("organisation_id").notNull().references(() => organisations.id),
+    travelCaseId: varchar("travel_case_id").notNull().references(() => travelCases.id),
+    eventType: varchar("event_type", { length: 80 }).notNull(),
+    amount: decimal("amount", { precision: 12, scale: 2 }),
+    currency: varchar("currency", { length: 3 }).notNull().default("FJD"),
+    occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+  },
+  (table) => [
+    uniqueIndex("UQ_billing_case_event").on(table.travelCaseId, table.eventType),
+    index("IDX_billing_events_org_time").on(table.organisationId, table.occurredAt),
+  ],
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
