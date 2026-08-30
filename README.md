@@ -1,26 +1,28 @@
-# TokaniTripFlow — Demo
+# TripFlow
 
-This repository contains a demo build of TokaniTripFlow.
+TripFlow is a multi-tenant travel management, coordination and control platform. The current application is a demonstration build being evolved toward production through the controlled Phase 0 foundation work in [`docs/phase-0`](docs/phase-0/README.md).
 
-Quick demo start (local)
+## Local start
 
-Prerequisites
-- Node 18+ and npm
+Prerequisites:
 
-Install dependencies
+- Node 18+
+- npm
 
+Install dependencies and start the development server:
+
+```bash
 npm ci
+npm run dev
+```
 
-Start the demo server
+The server requires the environment variables used by the selected database and authentication mode. Do not commit credentials or production secrets.
 
-npm run demo
+## Quality checks
 
-This runs the server in demo mode using safe, example environment values from .env.demo.
+```bash
+npm run check
+npm run build
+```
 
-Demo credentials
-- email: demo@example.com
-- password: demopass
-
-Notes
-- .env.demo contains safe demo values. Do NOT use these for production.
-- For development (editing UI) you may run the frontend build or use Replit as described in replit.md.
+Phase 0 baseline and architecture decisions are recorded under `docs/`. Replit-specific development information remains available in `replit.md`.
