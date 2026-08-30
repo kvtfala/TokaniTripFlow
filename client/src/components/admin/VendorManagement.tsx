@@ -55,7 +55,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, Clock, Ban, Star, X } from "lucide-react";
-import { useForm, type UseFormReturn } from "react-hook-form";
+import { useForm, type Resolver, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVendorSchema, vendorCategorySchema } from "@shared/schema";
 import { z } from "zod";
@@ -543,7 +543,7 @@ function VendorEditForm({
   type EditValues = z.infer<typeof editSchema>;
 
   const form = useForm<EditValues>({
-    resolver: zodResolver(editSchema) as any,
+    resolver: zodResolver(editSchema) as Resolver<EditValues>,
     defaultValues: {
       name: vendor.name,
       category: vendorCategorySchema.parse(vendor.category || "Other"),

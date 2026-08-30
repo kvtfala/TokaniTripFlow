@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { describe, expect, it } from "vitest";
 
@@ -24,19 +23,24 @@ INSERT INTO travel_requests VALUES (
 );
 `;
 
-function migration(name: string): string {
-  return readFileSync(resolve(process.cwd(), "migrations", name), "utf8");
-}
+const productionCoreMigration = readFileSync(
+  "migrations/0001_phase0_production_core.sql", "utf8",
+);
+const controlsMigration = readFileSync(
+  "migrations/0003_phase0_controls.sql", "utf8",
+);
+const backfillMigration = readFileSync(
+  "migrations/0002_phase0_backfill.sql", "utf8",
+);
 
 describe("Phase 0 migrations", () => {
   it("migrates and reconciles a legacy tenant twice without duplication", async () => {
     const db = new PGlite();
     await db.exec(fixture);
-    await db.exec(migration("0001_phase0_production_core.sql"));
-    await db.exec(migration("0003_phase0_controls.sql"));
-    const backfill = migration("0002_phase0_backfill.sql");
-    await db.exec(backfill);
-    await db.exec(backfill);
+    await db.exec(productionCoreMigration);
+    await db.exec(controlsMigration);
+    await db.exec(backfillMigration);
+    await db.exec(backfillMigration);
 
     const cases = await db.query<{ count: number }>("SELECT count(*)::int AS count FROM travel_cases");
     const components = await db.query<{ count: number }>("SELECT count(*)::int AS count FROM service_components");
@@ -47,4 +51,3 @@ describe("Phase 0 migrations", () => {
     await db.close();
   }, 20_000);
 });
-

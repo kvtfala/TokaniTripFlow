@@ -12,20 +12,19 @@ export const caseStatuses = [
 
 export type CaseStatus = (typeof caseStatuses)[number];
 
-const transitions: Readonly<Record<CaseStatus, readonly CaseStatus[]>> = {
-  draft: ["submitted", "cancelled"],
-  submitted: ["in_review", "cancelled"],
-  in_review: ["authorised", "cancelled"],
-  authorised: ["coordinating", "cancelled"],
-  coordinating: ["ready_to_travel", "cancelled"],
-  ready_to_travel: ["in_travel", "cancelled"],
-  in_travel: ["completed"],
-  completed: [],
-  cancelled: [],
-};
-
 export function canTransitionCase(from: CaseStatus, to: CaseStatus): boolean {
-  return transitions[from].includes(to);
+  switch (from) {
+    case "draft": return to === "submitted" || to === "cancelled";
+    case "submitted": return to === "in_review" || to === "cancelled";
+    case "in_review": return to === "authorised" || to === "cancelled";
+    case "authorised": return to === "coordinating" || to === "cancelled";
+    case "coordinating": return to === "ready_to_travel" || to === "cancelled";
+    case "ready_to_travel": return to === "in_travel" || to === "cancelled";
+    case "in_travel": return to === "completed";
+    case "completed":
+    case "cancelled":
+      return false;
+  }
 }
 
 export function assertCaseTransition(from: CaseStatus, to: CaseStatus): void {
@@ -42,4 +41,3 @@ export function assertTenantOwnership(
     throw new Error("Tenant access denied");
   }
 }
-

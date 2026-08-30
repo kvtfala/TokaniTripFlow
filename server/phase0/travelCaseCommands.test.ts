@@ -28,40 +28,39 @@ function travelCase(overrides: Partial<TravelCase> = {}): TravelCase {
   };
 }
 
-function repository(current: TravelCase | undefined): TravelCaseRepository {
-  return {
-    findById: vi.fn().mockResolvedValue(current),
-    list: vi.fn().mockResolvedValue(current ? [current] : []),
-    transition: vi.fn().mockImplementation(async (_org, _id, _actor, _from, to) =>
-      current ? travelCase({ ...current, status: to }) : undefined),
-  };
+function repository(current: TravelCase | undefined) {
+  const findById = vi.fn().mockResolvedValue(current);
+  const list = vi.fn().mockResolvedValue(current ? [current] : []);
+  const transition = vi.fn().mockImplementation(async (_org, _id, _actor, _from, to) =>
+    current ? travelCase({ ...current, status: to }) : undefined);
+  const repo: TravelCaseRepository = { findById, list, transition };
+  return { repo, findById, transition };
 }
 
 describe("travel case commands", () => {
   it("does nothing while the production core flag is disabled", async () => {
-    const repo = repository(travelCase());
+    const { repo, findById } = repository(travelCase());
     await expect(transitionTravelCase(repo, false, {
       organisationId: "org-a", caseId: "case-1", actorMembershipId: "member-1", to: "in_review",
     })).rejects.toBeInstanceOf(ProductionCoreDisabledError);
-    expect(repo.findById).not.toHaveBeenCalled();
+    expect(findById).not.toHaveBeenCalled();
   });
 
   it("performs a tenant-scoped valid transition", async () => {
-    const repo = repository(travelCase());
+    const { repo, transition } = repository(travelCase());
     const updated = await transitionTravelCase(repo, true, {
       organisationId: "org-a", caseId: "case-1", actorMembershipId: "member-1", to: "in_review",
     });
     expect(updated.status).toBe("in_review");
-    expect(repo.transition).toHaveBeenCalledWith(
+    expect(transition).toHaveBeenCalledWith(
       "org-a", "case-1", "member-1", "submitted", "in_review",
     );
   });
 
   it("cannot discover another tenant's case", async () => {
-    const repo = repository(undefined);
+    const { repo } = repository(undefined);
     await expect(transitionTravelCase(repo, true, {
       organisationId: "org-b", caseId: "case-1", actorMembershipId: "member-2", to: "in_review",
     })).rejects.toThrow("Travel case not found");
   });
 });
-

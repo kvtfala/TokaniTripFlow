@@ -13,17 +13,16 @@ describe("travel case lifecycle", () => {
   });
 
   it("rejects skipped and terminal transitions", () => {
-    expect(() => assertCaseTransition("draft", "authorised")).toThrow();
-    expect(() => assertCaseTransition("completed", "in_travel")).toThrow();
-    expect(() => assertCaseTransition("cancelled", "submitted")).toThrow();
+    expect(() => { assertCaseTransition("draft", "authorised"); }).toThrow();
+    expect(() => { assertCaseTransition("completed", "in_travel"); }).toThrow();
+    expect(() => { assertCaseTransition("cancelled", "submitted"); }).toThrow();
   });
 });
 
 describe("tenant ownership", () => {
   it("allows access only inside the active organisation", () => {
-    expect(() => assertTenantOwnership("org-a", "org-a")).not.toThrow();
-    expect(() => assertTenantOwnership("org-a", "org-b")).toThrow("Tenant access denied");
-    expect(() => assertTenantOwnership("", "org-a")).toThrow("Tenant access denied");
+    expect(() => { assertTenantOwnership("org-a", "org-a"); }).not.toThrow();
+    expect(() => { assertTenantOwnership("org-a", "org-b"); }).toThrow("Tenant access denied");
+    expect(() => { assertTenantOwnership("", "org-a"); }).toThrow("Tenant access denied");
   });
 });
-
