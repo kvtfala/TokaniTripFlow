@@ -12,6 +12,9 @@ const secureProductionEnvironment: NodeJS.ProcessEnv = {
   SUPABASE_URL: "https://tripflow.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_example_key_value",
   SUPABASE_SECRET_KEY: "sb_secret_example_key_value_server_only",
+  PUBLIC_APP_URL: "https://tripflow.example.com",
+  AUTH_ALLOWED_ORIGINS: "https://tripflow.example.com",
+  PASSWORD_RESET_REDIRECT_URL: "https://tripflow.example.com/reset-password",
   DEMO_AUTH_ENABLED: "false",
 };
 
