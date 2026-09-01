@@ -22,8 +22,8 @@ export default function TravelCaseDetailPage() {
           <span className="w-fit rounded-full bg-muted px-3 py-1 text-xs font-semibold">{detail.status.replaceAll("_", " ")}</span>
         </div>
         <dl className="mt-7 grid gap-4 border-t pt-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div><dt className="text-xs text-muted-foreground">Traveller</dt><dd className="mt-1 text-sm font-semibold">{detail.travellerDisplayName}</dd></div>
-          <div><dt className="text-xs text-muted-foreground">Destination</dt><dd className="mt-1 flex items-center gap-1 text-sm font-semibold"><MapPin className="h-4 w-4" aria-hidden="true" />{detail.destinationDisplayName}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Traveller</dt><dd className="mt-1 text-sm font-semibold">{detail.travellerDisplayName ?? "Traveller pending"}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Destination</dt><dd className="mt-1 flex items-center gap-1 text-sm font-semibold"><MapPin className="h-4 w-4" aria-hidden="true" />{detail.destinationDisplayName ?? "Destination pending"}</dd></div>
           <div><dt className="text-xs text-muted-foreground">Current dependency</dt><dd className="mt-1 text-sm font-semibold">{detail.currentDependency ?? "None recorded"}</dd></div>
           <div><dt className="text-xs text-muted-foreground">Next action</dt><dd className="mt-1 text-sm font-semibold">{detail.nextAction ?? "None recorded"}</dd></div>
         </dl>
