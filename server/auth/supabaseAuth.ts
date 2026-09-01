@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Express, Request, Response } from "express";
+import type { Express, Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
 const signInSchema = z.object({
@@ -30,6 +30,24 @@ export interface SupabaseAuthConfig {
   publishableKey: string;
   production: boolean;
   allowedOrigins: string[];
+}
+
+export interface TripFlowRequestIdentity {
+  id: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+  role: string;
+  companyCode: string | null;
+  isActive: boolean;
+  memberships: Array<Record<string, unknown>>;
+}
+
+declare module "express-serve-static-core" {
+  interface Request {
+    tripflowIdentity?: TripFlowRequestIdentity;
+  }
 }
 
 export function readSupabaseAuthConfig(environment: NodeJS.ProcessEnv = process.env): SupabaseAuthConfig | null {
@@ -114,7 +132,7 @@ async function authRequest(fetchImpl: Fetch, config: SupabaseAuthConfig, path: s
   });
 }
 
-async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, accessToken: string) {
+async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, accessToken: string): Promise<TripFlowRequestIdentity | null> {
   const userResponse = await authRequest(fetchImpl, config, "/user", {
     method: "GET", headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -155,6 +173,50 @@ async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, access
       status: membership.status,
       activatedAt: membership.activated_at,
     })),
+  };
+}
+
+async function identityFromCookies(
+  request: Request,
+  response: Response,
+  config: SupabaseAuthConfig,
+  fetchImpl: Fetch,
+): Promise<TripFlowRequestIdentity | null> {
+  const names = cookieNames(config.production);
+  const accessToken = cookieValue(request, names.access);
+  const refreshToken = cookieValue(request, names.refresh);
+  let identity = accessToken ? await safeIdentity(fetchImpl, config, accessToken) : null;
+  if (identity || !refreshToken) return identity;
+  const upstream = await authRequest(fetchImpl, config, "/token?grant_type=refresh_token", {
+    method: "POST", body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  if (!upstream.ok) {
+    clearSessionCookies(response, config);
+    return null;
+  }
+  const session = tokenResponseSchema.parse(await upstream.json());
+  setSessionCookies(response, config, session);
+  identity = await safeIdentity(fetchImpl, config, session.access_token);
+  return identity;
+}
+
+export function createSupabaseIdentityMiddleware(
+  config: SupabaseAuthConfig,
+  fetchImpl: Fetch = globalThis.fetch,
+): RequestHandler {
+  return async (request, response, next) => {
+    if (!request.path.startsWith("/api") || request.path.startsWith("/api/v1/auth/")) return next();
+    const names = cookieNames(config.production);
+    if (!cookieValue(request, names.access) && !cookieValue(request, names.refresh)) return next();
+    try {
+      const identity = await identityFromCookies(request, response, config, fetchImpl);
+      if (identity?.isActive) request.tripflowIdentity = identity;
+      else clearSessionCookies(response, config);
+      return next();
+    } catch {
+      clearSessionCookies(response, config);
+      return response.status(503).json({ error: { code: "service_unavailable", message: "Authentication service unavailable", correlationId: correlationId(request) } });
+    }
   };
 }
 
@@ -238,4 +300,3 @@ export function registerSupabaseAuthRoutes(app: Express, config: SupabaseAuthCon
     return response.status(202).json({ accepted: true });
   });
 }
-
