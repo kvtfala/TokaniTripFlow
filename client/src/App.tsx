@@ -57,10 +57,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { AuthSplash } from "@/components/layout/AuthSplash";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { UserAvatarMenu } from "@/components/layout/UserAvatarMenu";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { useRole } from "@/contexts/RoleContext";
+import { phaseOneTravelCasesEnabled } from "@/features/travel-cases/featureFlags";
+
+const TravelCaseListPage = lazy(() => import("@/features/travel-cases/pages/TravelCaseListPage"));
+const CreateTravelCaseDraftPage = lazy(() => import("@/features/travel-cases/pages/CreateTravelCaseDraftPage"));
+const TravelCaseDetailPage = lazy(() => import("@/features/travel-cases/pages/TravelCaseDetailPage"));
 
 const ALL_ROLES = ["employee", "coordinator", "manager", "finance_admin", "travel_admin", "super_admin"] as const;
+const phaseOneCasesEnabled = phaseOneTravelCasesEnabled();
+
+function PhaseOneRouteFallback({ label }: { label: string }) {
+  return <div className="p-8" role="status">{label}</div>;
+}
 
 const menuItems: { title: string; subtitle?: string; url: string; icon: React.FC<TokaniIconProps>; allowedRoles: readonly string[] }[] = [
   {
@@ -83,6 +93,13 @@ const menuItems: { title: string; subtitle?: string; url: string; icon: React.FC
     icon: IconTrips,
     allowedRoles: ALL_ROLES,
   },
+  ...(phaseOneCasesEnabled ? [{
+    title: "Travel Cases",
+    subtitle: "Phase 1 production",
+    url: "/cases",
+    icon: IconTrips,
+    allowedRoles: ALL_ROLES,
+  }] : []),
   {
     title: "Approvals",
     url: "/approvals",
@@ -268,6 +285,27 @@ function Router() {
                 </ProtectedRoute>
               </Route>
               <Route path="/my-trips" component={MyTrips} />
+              {phaseOneCasesEnabled && (
+                <Route path="/cases/new">
+                  <Suspense fallback={<PhaseOneRouteFallback label="Loading case form" />}>
+                    <CreateTravelCaseDraftPage />
+                  </Suspense>
+                </Route>
+              )}
+              {phaseOneCasesEnabled && (
+                <Route path="/cases/:caseId">
+                  <Suspense fallback={<PhaseOneRouteFallback label="Loading travel case" />}>
+                    <TravelCaseDetailPage />
+                  </Suspense>
+                </Route>
+              )}
+              {phaseOneCasesEnabled && (
+                <Route path="/cases">
+                  <Suspense fallback={<PhaseOneRouteFallback label="Loading travel cases" />}>
+                    <TravelCaseListPage />
+                  </Suspense>
+                </Route>
+              )}
               <Route path="/expenses">
                 <ProtectedRoute allowedRoles={["employee", "manager", "finance_admin", "super_admin"]}>
                   <ExpenseClaims />

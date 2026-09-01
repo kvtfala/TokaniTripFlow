@@ -10,6 +10,7 @@
     "check": "tsc",
     "test": "vitest run --root .",
     "verify": "npm run check && npm run test && npm run build",
+    "quality:gate": "npm run verify && npm audit --omit=dev --audit-level=high",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
