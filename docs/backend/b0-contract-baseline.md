@@ -1,6 +1,6 @@
 # Backend Phase B0 contract baseline
 
-Status: in progress  
+Status: accepted for B1 foundation work
 Repository baseline: `38a166ac55047f9c55899d05b67583394bb87ae4`  
 Implementation branch: `backend-b0-contract-reconciliation`
 
@@ -91,14 +91,14 @@ they do not by themselves constitute certification.
 - Forced dependency downgrade is prohibited because the available automatic
   remediation is breaking.
 
-## Remaining B0 work
+## B0 completion
 
-- Implement the defined route-to-capability policies in the Express handlers.
-- Implement persistence for standardized errors, audit events and idempotency
-  receipts during B1/B3.
-- Add the backend API implementation plan for all six Phase 1 routes.
-- Review and reconcile the remaining legacy frontend screens.
-- Complete the B0 acceptance checklist before beginning B1.
+- The six-route implementation specification is recorded.
+- The Phase 1 API client implements all six transport contracts.
+- Remaining legacy frontend screens have an explicit migration disposition.
+- The acceptance record authorizes B1 foundation work.
+- Express handlers and persistence for errors, audit events and idempotency
+  receipts are implementation work for B3, not unresolved B0 design.
 
 ## Decisions established in the second B0 increment
 
