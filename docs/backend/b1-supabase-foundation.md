@@ -51,7 +51,7 @@ environments.
 - Project name: `TokaniTripFlow`.
 - Project health: active and healthy.
 - PostgreSQL: 17, general availability channel.
-- Region: `ap-south-1` (Mumbai).
+- Region: `ap-southeast-2` (Sydney).
 - Public application tables: none before B2/B3.
 - Applied migrations: `b1_security_foundation`.
 - Anonymous execution of `public.rls_auto_enable()`: denied.
@@ -63,12 +63,10 @@ environments.
 
 ## Before B2
 
-1. Confirm whether the Mumbai region is accepted for Fiji/Pacific pilot latency
-   and data-residency needs or recreate the empty project in Sydney.
-2. Record the project owner, environment and data classification.
-3. Configure protected deployment secrets outside Git.
-4. Confirm administrative MFA and recovery ownership.
-5. Retain migration and advisor results as control evidence.
+1. Record the project owner, environment and data classification.
+2. Configure protected deployment secrets outside Git.
+3. Confirm administrative MFA and recovery ownership.
+4. Retain migration and advisor results as control evidence.
 
 Production project creation is not combined with development setup. A
 separate production-change approval is required before any production project,
