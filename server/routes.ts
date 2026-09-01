@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote, ExpenseClaim } from "@shared/types";
 import { extractReceiptData } from "./services/receiptOcr";
 import { setupAuth, setupPassportSession, isAuthenticated, isLoggedIn } from "./replitAuth";
+import { readSupabaseAuthConfig, registerSupabaseAuthRoutes } from "./auth/supabaseAuth";
 import { setupDemoAuth } from "./demoAuth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { getApprovalTokenSecret } from "./config/securityEnvironment";
@@ -145,6 +146,8 @@ function assertAdminTenantRecord(req: any, record: { companyCode?: string | null
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const supabaseAuth = readSupabaseAuthConfig();
+  if (supabaseAuth) registerSupabaseAuthRoutes(app, supabaseAuth);
   // Replit Auth Integration - DISABLED (Demo-only mode)
   // Setup Passport session management for demo login (without Replit OIDC routes)
   setupPassportSession(app);
@@ -174,6 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth User Endpoint - Works with both Replit Auth and Demo sessions
   app.get('/api/auth/user', asyncHandler(async (req: any, res) => {
+    if (supabaseAuth) {
+      return res.redirect(307, "/api/v1/auth/session");
+    }
     // Check if user is authenticated (either via Replit Auth or Demo login)
     if (!req.user || !req.user.claims) {
       return res.status(401).json({ error: "Not authenticated" });
