@@ -5,11 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
 export function useAuth() {
+  const productionAuth = import.meta.env.VITE_AUTH_MODE === "supabase";
   const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ["/api/auth/user"],
+    queryKey: [productionAuth ? "/api/v1/auth/session" : "/api/auth/user"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/auth/user", {
+        const response = await fetch(productionAuth ? "/api/v1/auth/session" : "/api/auth/user", {
           credentials: "include", // Important for session cookies
         });
         

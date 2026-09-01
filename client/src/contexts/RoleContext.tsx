@@ -29,11 +29,12 @@ const DEFAULT_USER: User = {
 };
 
 export function RoleProvider({ children }: { children: ReactNode }) {
+  const productionAuth = import.meta.env.VITE_AUTH_MODE === "supabase";
   // Derive currentUser directly from the query — no useEffect/useState race condition.
   // When the TanStack Query cache is warm (shared with useAuth), this returns the
   // actual user on the very first render with no intermediate "default user" state.
   const { data: authUser, isLoading } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
+    queryKey: [productionAuth ? "/api/v1/auth/session" : "/api/auth/user"],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

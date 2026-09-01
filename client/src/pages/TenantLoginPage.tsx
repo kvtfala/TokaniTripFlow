@@ -25,6 +25,7 @@ interface TenantLoginPageProps {
 
 export default function TenantLoginPage({ companyCode, companyName }: TenantLoginPageProps) {
   const { toast } = useToast();
+  const productionAuth = import.meta.env.VITE_AUTH_MODE === "supabase";
 
   const form = useForm<TenantLoginInput>({
     resolver: zodResolver(tenantLoginSchema),
@@ -36,11 +37,8 @@ export default function TenantLoginPage({ companyCode, companyName }: TenantLogi
 
   const loginMutation = useMutation({
     mutationFn: async (data: TenantLoginInput) => {
-      return await apiRequest("POST", "/api/demo-login", {
-        companyCode,
-        email: data.email,
-        password: data.password,
-      });
+      return await apiRequest("POST", productionAuth ? "/api/v1/auth/sign-in" : "/api/demo-login",
+        productionAuth ? data : { companyCode, ...data });
     },
     onSuccess: () => {
       toast({
