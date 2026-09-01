@@ -19,5 +19,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run supabase:version
+      - run: npm run security:env
       - run: npm run verify
       - run: npm audit --omit=dev --audit-level=high
