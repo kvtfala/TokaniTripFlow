@@ -28,4 +28,30 @@ describe("TravelCaseListView", () => {
     expect(failed).toContain('role="alert"');
     expect(failed).toContain("No data has been changed");
   });
+
+  it("renders and searches an incomplete draft without a traveller or destination", () => {
+    const incompleteDraft = {
+      id: "case-1",
+      referenceNumber: "DRAFT-0001",
+      title: "Regional planning workshop",
+      status: "draft" as const,
+      priority: "normal" as const,
+      travellerDisplayName: null,
+      destinationDisplayName: null,
+      startDate: null,
+      endDate: null,
+      currentDependency: null,
+      nextAction: "Complete case details",
+      version: 0,
+      updatedAt: "2026-09-01T10:31:25.000Z",
+    };
+
+    const html = renderToStaticMarkup(
+      <TravelCaseListView {...baseProps} cases={[incompleteDraft]} query="regional" />,
+    );
+
+    expect(html).toContain("Traveller pending");
+    expect(html).toContain("Destination pending");
+    expect(html).toContain("Regional planning workshop");
+  });
 });
