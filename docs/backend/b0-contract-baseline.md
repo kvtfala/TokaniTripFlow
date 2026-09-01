@@ -93,13 +93,23 @@ they do not by themselves constitute certification.
 
 ## Remaining B0 work
 
-- Complete the canonical role-to-capability matrix for every existing route.
-- Define standard API error envelopes and correlation identifiers.
-- Define command audit effects and idempotency storage.
-- Define the legacy-to-production route and table migration map.
-- Define composite tenant constraints for every production child table.
-- Define the case status versus approval, authority, provider and finance fact
-  mapping.
+- Implement the defined route-to-capability policies in the Express handlers.
+- Implement persistence for standardized errors, audit events and idempotency
+  receipts during B1/B3.
 - Add the backend API implementation plan for all six Phase 1 routes.
 - Review and reconcile the remaining legacy frontend screens.
 - Complete the B0 acceptance checklist before beginning B1.
+
+## Decisions established in the second B0 increment
+
+- All API failures use a validated error code, safe message and correlation ID.
+- The six Phase 1 frontend routes map to stable capabilities and authorization
+  scopes in executable shared policy.
+- Case-specific routes use neutral not-found behavior.
+- Every material command defines its audit effect; component creation and
+  submission require both idempotency and optimistic concurrency.
+- Legacy migration follows expand, rehearse, migrate, verify, cut over and
+  contract stages with tenant, document and finance reconciliation gates.
+- Every operational child uses a composite tenant-parent relationship.
+- Approval, Authority to Proceed, provider fulfilment and finance remain
+  separate facts from the case lifecycle projection.
