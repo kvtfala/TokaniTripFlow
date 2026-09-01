@@ -13,6 +13,9 @@ export type DocumentClassification = (typeof documentClassifications)[number];
 export type CaseAction =
   | "case:create"
   | "case:read"
+  | "case:edit"
+  | "case:submit"
+  | "component:create"
   | "case:coordinate"
   | "case:approve"
   | "authority:issue"
@@ -22,16 +25,24 @@ export type CaseAction =
   | "tenant:admin";
 
 const roleCapabilities: Record<MembershipRole, readonly CaseAction[]> = {
-  employee: ["case:create", "case:read", "document:upload", "document:read"],
+  employee: [
+    "case:create", "case:read", "case:edit", "case:submit", "component:create",
+    "document:upload", "document:read",
+  ],
   coordinator: [
-    "case:create", "case:read", "case:coordinate", "document:upload", "document:read",
+    "case:create", "case:read", "case:edit", "case:submit", "component:create",
+    "case:coordinate", "document:upload", "document:read",
   ],
   approver: ["case:read", "case:approve", "document:read"],
   manager: ["case:read", "case:approve", "authority:issue", "document:read"],
   finance_admin: ["case:read", "finance:manage", "document:upload", "document:read"],
-  travel_desk: ["case:read", "case:coordinate", "document:upload", "document:read"],
+  travel_desk: [
+    "case:read", "case:edit", "component:create", "case:coordinate",
+    "document:upload", "document:read",
+  ],
   travel_admin: [
-    "case:create", "case:read", "case:coordinate", "authority:issue",
+    "case:create", "case:read", "case:edit", "case:submit", "component:create",
+    "case:coordinate", "authority:issue",
     "document:upload", "document:read",
   ],
   // Tenant administration does not imply operational case or document access.
