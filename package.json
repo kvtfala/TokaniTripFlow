@@ -11,7 +11,13 @@
     "test": "vitest run --root .",
     "verify": "npm run check && npm run test && npm run build",
     "quality:gate": "npm run verify && npm audit --omit=dev --audit-level=high",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "supabase:version": "supabase --version",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:reset": "supabase db reset --local",
+    "security:env": "vitest run server/config/securityEnvironment.test.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
@@ -125,6 +131,7 @@
     "drizzle-kit": "^0.31.7",
     "esbuild": "^0.27.0",
     "postcss": "^8.4.47",
+    "supabase": "2.116.0",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
