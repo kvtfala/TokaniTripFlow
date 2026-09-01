@@ -170,6 +170,7 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if ((req as any).tripflowIdentity) return next();
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {
@@ -210,7 +211,8 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
  * without attempting OIDC token refresh (safe for demo environments).
  */
 export const isLoggedIn: RequestHandler = (req, res, next) => {
-  if (req.isAuthenticated()) return next();
+  if ((req as any).tripflowIdentity) return next();
+  if (typeof req.isAuthenticated === "function" && req.isAuthenticated()) return next();
   // Fallback: accept requests that carry a valid session user but no Passport
   // session (e.g. legacy unauthenticated dev calls that still have req.session.user)
   const sessionUser = (req.session as any)?.user;
