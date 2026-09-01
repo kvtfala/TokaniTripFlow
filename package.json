@@ -11,7 +11,7 @@
     "test": "vitest run --root .",
     "verify": "npm run check && npm run test && npm run build",
     "quality:gate": "npm run verify && npm audit --omit=dev --audit-level=high",
-    "db:push": "drizzle-kit push",
+    "db:push": "node scripts/blocked-db-push.mjs",
     "supabase:version": "npx --yes supabase@2.116.0 --version",
     "supabase:start": "npx --yes supabase@2.116.0 start",
     "supabase:stop": "npx --yes supabase@2.116.0 stop",
