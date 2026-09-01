@@ -1,14 +1,14 @@
 # Backend Phase B1 Supabase foundation
 
-Status: repository foundation implemented; remote project linking pending
+Status: repository and remote security foundation implemented
 
 Reviewed frontend baseline: `38a166ac55047f9c55899d05b67583394bb87ae4`
 
 ## Outcome
 
-B1 establishes a reproducible, fail-closed Supabase development foundation
-without changing a live database. The connected Supabase account currently has
-no TripFlow project, so the unrelated project was not accessed or modified.
+B1 establishes a reproducible, fail-closed Supabase development foundation.
+The dedicated `TokaniTripFlow` project was verified healthy before the first
+controlled migration. The unrelated `Quote My Job` project was not modified.
 
 ## Implemented controls
 
@@ -27,6 +27,12 @@ no TripFlow project, so the unrelated project was not accessed or modified.
 - The legacy hard-coded approval-token secret has been removed.
 - Demonstration authentication is prohibited in production configuration.
 - CI verifies the pinned Supabase CLI and production environment controls.
+- The first remote migration removes anonymous and authenticated execution of
+  the platform-provided `SECURITY DEFINER` RLS event-trigger function.
+- A private application schema is inaccessible to browser database roles.
+- Untrusted roles cannot create objects in the public schema.
+- Supabase security and performance advisors report no findings after the
+  migration.
 
 ## Environment separation
 
@@ -40,19 +46,29 @@ No environment shares database credentials, cryptographic secrets, storage
 objects or Auth users. Production data must not be copied into local or preview
 environments.
 
-## Required remote completion
+## Remote completion evidence
 
-When a dedicated TripFlow Supabase project is approved:
+- Project name: `TokaniTripFlow`.
+- Project health: active and healthy.
+- PostgreSQL: 17, general availability channel.
+- Region: `ap-south-1` (Mumbai).
+- Public application tables: none before B2/B3.
+- Applied migrations: `b1_security_foundation`.
+- Anonymous execution of `public.rls_auto_enable()`: denied.
+- Authenticated execution of `public.rls_auto_enable()`: denied.
+- Anonymous/authenticated use of `app_private`: denied.
+- Public creation in the `public` schema: denied.
+- Security advisor: clear.
+- Performance advisor: clear.
 
-1. create or select a TripFlow development project in an approved region;
-2. record the project owner, environment and data classification;
-3. link the CLI using a secret stored outside Git;
-4. inspect the remote project before pulling or applying any schema;
-5. run database and security advisors;
-6. create the first migration with `supabase migration new`;
-7. verify a clean local reset and migration list;
-8. configure protected CI secrets; and
-9. retain screenshots/logs as B1 control evidence.
+## Before B2
+
+1. Confirm whether the Mumbai region is accepted for Fiji/Pacific pilot latency
+   and data-residency needs or recreate the empty project in Sydney.
+2. Record the project owner, environment and data classification.
+3. Configure protected deployment secrets outside Git.
+4. Confirm administrative MFA and recovery ownership.
+5. Retain migration and advisor results as control evidence.
 
 Production project creation is not combined with development setup. A
 separate production-change approval is required before any production project,
@@ -60,7 +76,6 @@ credentials or data are introduced.
 
 ## B1 acceptance boundary
 
-Repository controls may be reviewed and merged now. B2 authentication coding
-can begin against the local contract, but remote integration testing remains
-blocked until a dedicated TripFlow development project exists. No existing
-non-TripFlow Supabase project may be reused.
+Repository and database foundation controls may be reviewed and merged. B2
+authentication coding can begin after the region and administrative-account
+controls are confirmed. No non-TripFlow Supabase project may be reused.
