@@ -39,7 +39,13 @@ export function TravelCaseListView({
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const visibleCases = normalizedQuery
     ? cases.filter((travelCase) =>
-        [travelCase.referenceNumber, travelCase.title, travelCase.travellerDisplayName]
+        [
+          travelCase.referenceNumber,
+          travelCase.title,
+          travelCase.travellerDisplayName,
+          travelCase.destinationDisplayName,
+        ]
+          .filter((value): value is string => value !== null)
           .some((value) => value.toLocaleLowerCase().includes(normalizedQuery)),
       )
     : cases;
@@ -99,7 +105,7 @@ export function TravelCaseListView({
                   className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-4 p-4 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[1fr_1fr_auto_1rem] sm:items-center"
                   aria-label={`Open ${travelCase.referenceNumber}: ${travelCase.title}`}
                 >
-                  <span className="min-w-0"><strong className="block truncate text-sm">{travelCase.referenceNumber} · {travelCase.title}</strong><small className="mt-1 block text-muted-foreground">{travelCase.travellerDisplayName}</small></span>
+                  <span className="min-w-0"><strong className="block truncate text-sm">{travelCase.referenceNumber} · {travelCase.title}</strong><small className="mt-1 block text-muted-foreground">{travelCase.travellerDisplayName ?? "Traveller pending"}</small></span>
                   <span className="hidden min-w-0 sm:block"><strong className="block truncate text-sm">{travelCase.destinationDisplayName ?? "Destination pending"}</strong><small className="mt-1 block text-muted-foreground">{travelCase.nextAction ?? "No action recorded"}</small></span>
                   <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold">{statusLabels[travelCase.status] ?? travelCase.status}</span>
                   <ArrowRight className="hidden h-4 w-4 text-muted-foreground sm:block" aria-hidden="true" />

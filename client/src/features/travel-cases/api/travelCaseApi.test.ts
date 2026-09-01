@@ -22,4 +22,26 @@ describe("travelCaseApi", () => {
 
     await expect(travelCaseApi.list()).rejects.toMatchObject({ name: "ZodError" });
   });
+
+  it("preserves a safe server error and correlation identifier", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+      error: {
+        code: "conflict",
+        message: "The case changed before this command completed.",
+        correlationId: "req_01J7YV7M3B6BRK",
+      },
+    }, { status: 409 })));
+
+    await expect(travelCaseApi.detail("case-1")).rejects.toMatchObject({
+      status: 409,
+      code: "conflict",
+      correlationId: "req_01J7YV7M3B6BRK",
+    });
+  });
+
+  it("implements every route in the six-route client contract", () => {
+    expect(Object.keys(travelCaseApi).sort()).toEqual([
+      "addComponent", "createDraft", "detail", "list", "submit", "updateDraft",
+    ]);
+  });
 });

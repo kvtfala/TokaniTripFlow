@@ -5,40 +5,69 @@ export const documentClassifications = [
 ] as const;
 export type DocumentClassification = (typeof documentClassifications)[number];
 
+/**
+ * Stable capability names are authoritative. Display roles may change by
+ * tenant, but the server evaluates these actions together with membership,
+ * case scope, delegation and data classification.
+ */
 export type CaseAction =
-  | "case:create" | "case:read" | "case:coordinate" | "case:approve"
-  | "case:authorise" | "case:finance" | "document:upload" | "document:read"
+  | "case:create"
+  | "case:read"
+  | "case:edit"
+  | "case:submit"
+  | "component:create"
+  | "case:coordinate"
+  | "case:approve"
+  | "authority:issue"
+  | "finance:manage"
+  | "document:upload"
+  | "document:read"
   | "tenant:admin";
 
-const restrictedReaders: readonly MembershipRole[] = [
-  "manager", "travel_admin", "organisation_admin",
-];
+const roleCapabilities: Record<MembershipRole, readonly CaseAction[]> = {
+  employee: [
+    "case:create", "case:read", "case:edit", "case:submit", "component:create",
+    "document:upload", "document:read",
+  ],
+  coordinator: [
+    "case:create", "case:read", "case:edit", "case:submit", "component:create",
+    "case:coordinate", "document:upload", "document:read",
+  ],
+  approver: ["case:read", "case:approve", "document:read"],
+  manager: ["case:read", "case:approve", "authority:issue", "document:read"],
+  finance_admin: ["case:read", "finance:manage", "document:upload", "document:read"],
+  travel_desk: [
+    "case:read", "case:edit", "component:create", "case:coordinate",
+    "document:upload", "document:read",
+  ],
+  travel_admin: [
+    "case:create", "case:read", "case:edit", "case:submit", "component:create",
+    "case:coordinate", "authority:issue",
+    "document:upload", "document:read",
+  ],
+  // Tenant administration does not imply operational case or document access.
+  organisation_admin: ["tenant:admin"],
+};
 
 export function canPerform(role: MembershipRole, action: CaseAction): boolean {
-  switch (role) {
-    case "employee":
-      return ["case:create", "case:read", "document:upload", "document:read"].includes(action);
-    case "coordinator":
-      return ["case:create", "case:read", "case:coordinate", "document:upload", "document:read"].includes(action);
-    case "approver":
-      return ["case:read", "case:approve", "document:read"].includes(action);
-    case "manager":
-      return ["case:read", "case:approve", "case:authorise", "document:read"].includes(action);
-    case "finance_admin":
-      return ["case:read", "case:finance", "document:upload", "document:read"].includes(action);
-    case "travel_desk":
-      return ["case:read", "case:coordinate", "document:upload", "document:read"].includes(action);
-    case "travel_admin":
-      return ["case:create", "case:read", "case:coordinate", "case:authorise", "document:upload", "document:read"].includes(action);
-    case "organisation_admin":
-      return true;
-  }
+  return roleCapabilities[role].includes(action);
+}
+
+export interface ClassificationAccessContext {
+  /**
+   * Must come from an authoritative server-side permission assignment after
+   * tenant and case scope have been evaluated. It must not come from the UI or
+   * user-editable identity metadata.
+   */
+  hasRestrictedDataPermission?: boolean;
 }
 
 export function canReadClassification(
   role: MembershipRole,
   classification: DocumentClassification,
+  context: ClassificationAccessContext = {},
 ): boolean {
   if (!canPerform(role, "document:read")) return false;
-  return classification !== "restricted" || restrictedReaders.includes(role);
+  if (classification !== "restricted") return true;
+  return context.hasRestrictedDataPermission === true;
 }
