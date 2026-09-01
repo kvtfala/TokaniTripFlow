@@ -1,0 +1,3 @@
+-- B1 intentionally contains no users, personal information or business data.
+-- Deterministic, fictional development fixtures will be added with the B2
+-- authentication and membership schema.
