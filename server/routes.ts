@@ -8,9 +8,9 @@ import { extractReceiptData } from "./services/receiptOcr";
 import { setupAuth, setupPassportSession, isAuthenticated, isLoggedIn } from "./replitAuth";
 import { setupDemoAuth } from "./demoAuth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { getApprovalTokenSecret } from "./config/securityEnvironment";
 
-// HMAC token secret — in production, load from env
-const APPROVAL_TOKEN_SECRET = process.env.APPROVAL_TOKEN_SECRET || "tokani-tripflow-secret-2025";
+const APPROVAL_TOKEN_SECRET = getApprovalTokenSecret();
 
 function generateApprovalToken(requestId: string, approverId: string): string {
   const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
