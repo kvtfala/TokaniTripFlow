@@ -1,10 +1,18 @@
 # Backend Phase B2 authentication and membership foundation
 
-Status: database foundation implemented; application sign-in integration pending
+Status: database foundation and server-managed application sign-in boundary implemented
 
 Project: `TokaniTripFlow`, Sydney (`ap-southeast-2`)
 
 ## Implemented
+
+- Password sign-in, server-validated sessions, refresh, sign-out and password
+  reset initiation are implemented behind `VITE_AUTH_MODE=supabase`.
+- Access and refresh tokens are kept in `HttpOnly`, `SameSite=Lax` cookies;
+  production cookies are also `Secure` and use the `__Host-` prefix.
+- Every authentication response is `private, no-store`; the browser receives
+  only a safe identity/membership projection resolved under Supabase RLS.
+- Mutating authentication routes enforce an allowed same-origin boundary.
 
 - `auth.users` remains the authoritative identity store managed by Supabase.
 - `user_profiles` contains non-authoritative display preferences only.
@@ -51,12 +59,10 @@ Project: `TokaniTripFlow`, Sydney (`ap-southeast-2`)
 
 ## Remaining B2 implementation
 
-1. Add the pinned Supabase JavaScript client and server verification adapter.
-2. Implement sign-in, sign-out, session refresh and password reset UI.
-3. Replace production use of demo/Replit authentication behind a feature flag.
-4. Implement server-managed organisation creation and invitation acceptance.
-5. Require MFA for privileged roles before pilot production access.
-6. Test two users across two organisations, suspended membership, expired
+1. Add password-reset completion UI and validate the full email recovery flow.
+2. Implement server-managed organisation creation and invitation acceptance.
+3. Require MFA for privileged roles before pilot production access.
+4. Test two users across two organisations, suspended membership, expired
    invitation, revoked session and cross-tenant access attempts.
 
 Application authentication must not be enabled for pilot users until these
