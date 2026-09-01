@@ -15,6 +15,8 @@
 import { db } from "./db";
 import { users, travelRequests, expenseClaims, refSequences } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
+import { isDemoAuthEnabled } from "./security/httpSecurity";
 
 // All demo orgs share one password: itt1235*
 // Hash generated with bcrypt cost 10.
@@ -84,5 +86,9 @@ async function ensureDemoUsers(): Promise<void> {
 
 export async function initializeDatabase(): Promise<void> {
   await purgeCdpDemoData();
-  await ensureDemoUsers();
+  if (isDemoAuthEnabled()) {
+    await ensureDemoUsers();
+    return;
+  }
+  await db.delete(users).where(inArray(users.id, DEMO_USERS.map((user) => user.id)));
 }
