@@ -36,7 +36,7 @@ export const fundingSelectionSchema = z.object({
 // Compatibility name for consumers while B0 replaces legacy text fields.
 export const fundingSchema = fundingSelectionSchema;
 
-export const createTravelCaseDraftSchema = z.object({
+const createTravelCaseDraftFieldsSchema = z.object({
   title: z.string().trim().min(1).max(255),
   purpose: z.string().trim().min(1).max(4_000),
   caseType: caseTypeSchema.optional(),
@@ -47,19 +47,12 @@ export const createTravelCaseDraftSchema = z.object({
   destination: destinationSchema.optional(),
   funding: fundingSelectionSchema.partial().optional(),
   requiredComponentTypes: z.array(serviceComponentTypeSchema).min(1).optional(),
-}).superRefine((value, context) => {
-  if (value.startDate && value.endDate && value.endDate < value.startDate) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["endDate"],
-      message: "End date cannot be before start date",
-    });
-  }
 });
 
-export const updateTravelCaseDraftSchema = createTravelCaseDraftSchema.partial().extend({
-  expectedVersion: z.number().int().nonnegative(),
-}).superRefine((value, context) => {
+function validateDateRange(
+  value: { startDate?: string; endDate?: string },
+  context: z.RefinementCtx,
+): void {
   if (value.startDate && value.endDate && value.endDate < value.startDate) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
@@ -67,7 +60,15 @@ export const updateTravelCaseDraftSchema = createTravelCaseDraftSchema.partial()
       message: "End date cannot be before start date",
     });
   }
-});
+}
+
+export const createTravelCaseDraftSchema =
+  createTravelCaseDraftFieldsSchema.superRefine(validateDateRange);
+
+export const updateTravelCaseDraftSchema =
+  createTravelCaseDraftFieldsSchema.partial().extend({
+    expectedVersion: z.number().int().nonnegative(),
+  }).superRefine(validateDateRange);
 
 export const submitTravelCaseSchema = z.object({
   expectedStatus: z.literal("draft"),
@@ -81,15 +82,7 @@ export const submitTravelCaseSchema = z.object({
   destination: destinationSchema,
   funding: fundingSelectionSchema,
   requiredComponentTypes: z.array(serviceComponentTypeSchema).min(1),
-}).superRefine((value, context) => {
-  if (value.endDate < value.startDate) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["endDate"],
-      message: "End date cannot be before start date",
-    });
-  }
-});
+}).superRefine(validateDateRange);
 
 export const serviceComponentDraftSchema = z.object({
   type: serviceComponentTypeSchema,
