@@ -627,8 +627,8 @@ async function seedRefSequences(): Promise<number> {
 
 // ── Demo Users ────────────────────────────────────────────────────────────────
 
-// All demo orgs share one password: itt1235*
-const DEMO_HASH = "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS";
+// Demo credentials are deliberately supplied outside source control.
+const DEMO_HASH = process.env.DEMO_PASSWORD_HASH ?? "";
 
 const demoUsers = [
   // ── Island Travel Technologies (itt001) ──
@@ -647,6 +647,9 @@ const demoUsers = [
 ];
 
 async function seedUsers(): Promise<number> {
+  if (!/^\$2[aby]\$\d{2}\$.{53}$/.test(DEMO_HASH)) {
+    throw new Error("DEMO_PASSWORD_HASH must be an explicitly configured bcrypt hash");
+  }
   let inserted = 0;
   const now = new Date("2025-01-01T00:00:00Z");
   for (const u of demoUsers) {

@@ -26,6 +26,20 @@ export function apiOriginProtection(environment: NodeJS.ProcessEnv = process.env
   };
 }
 
+export function retireLegacyApiWhenSupabaseEnabled(enabled: boolean): RequestHandler {
+  return (request, response, next) => {
+    if (!enabled || !request.path.startsWith("/api")) return next();
+    const apiPath = request.path.slice(4) || "/";
+    if (apiPath.startsWith("/v1/") || apiPath === "/auth/user") return next();
+    return response.status(410).json({
+      error: {
+        code: "legacy_endpoint_retired",
+        message: "This legacy endpoint is unavailable when the production Supabase backend is active",
+      },
+    });
+  };
+}
+
 interface RateLimitOptions {
   windowMs: number;
   limit: number;

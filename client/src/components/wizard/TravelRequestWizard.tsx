@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -51,30 +51,6 @@ export function TravelRequestWizard({ onSubmit, onSaveDraft, isPending = false }
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<WizardFormData>(INITIAL_FORM_DATA);
 
-  // Load from localStorage if exists (autosave)
-  useEffect(() => {
-    const saved = localStorage.getItem("ttf_wizard_draft");
-    if (saved) {
-      try {
-        const parsedData = JSON.parse(saved);
-        // Don't load attachments from localStorage as File objects can't be serialized
-        setFormData({ ...parsedData, attachments: [] });
-      } catch (e) {
-        console.error("Failed to load draft:", e);
-      }
-    }
-  }, []);
-
-  // Autosave to localStorage
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const dataToSave = { ...formData, attachments: [] }; // Exclude File objects
-      localStorage.setItem("ttf_wizard_draft", JSON.stringify(dataToSave));
-    }, 1000); // Debounce 1 second
-
-    return () => clearTimeout(timer);
-  }, [formData]);
-
   const updateFormData = (updates: Partial<WizardFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
   };
@@ -93,7 +69,6 @@ export function TravelRequestWizard({ onSubmit, onSaveDraft, isPending = false }
 
   const handleSubmit = () => {
     onSubmit(formData);
-    localStorage.removeItem("ttf_wizard_draft");
   };
 
   const handleSaveDraft = () => {

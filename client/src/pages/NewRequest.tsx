@@ -82,7 +82,7 @@ export default function NewRequest() {
   });
 
   const handleSaveDraft = (data: WizardFormData) => {
-    // For now, just save to localStorage (already done in wizard)
+    // The legacy wizard keeps drafts in memory only; production drafts use the authenticated API.
     // In production, this would save to the backend
     toast({
       title: "Draft Saved",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertProductionSecurityEnvironment,
   getApprovalTokenSecret,
+  isMfaRequiredForRole,
 } from "./securityEnvironment";
 
 const secureProductionEnvironment: NodeJS.ProcessEnv = {
@@ -16,6 +17,7 @@ const secureProductionEnvironment: NodeJS.ProcessEnv = {
   AUTH_ALLOWED_ORIGINS: "https://tripflow.example.com",
   PASSWORD_RESET_REDIRECT_URL: "https://tripflow.example.com/reset-password",
   DEMO_AUTH_ENABLED: "false",
+  LEGACY_API_ENABLED: "false",
 };
 
 describe("production security environment", () => {
@@ -25,6 +27,13 @@ describe("production security environment", () => {
 
   it("fails closed when production secrets are absent", () => {
     expect(() => assertProductionSecurityEnvironment({ NODE_ENV: "production" })).toThrow();
+  });
+
+  it("rejects attempts to enable the legacy API in production", () => {
+    expect(() => assertProductionSecurityEnvironment({
+      ...secureProductionEnvironment,
+      LEGACY_API_ENABLED: "true",
+    })).toThrow();
   });
 
   it("rejects shared cryptographic secrets", () => {
@@ -45,5 +54,11 @@ describe("production security environment", () => {
     expect(() => getApprovalTokenSecret({
       APPROVAL_TOKEN_SECRET: "tokani-tripflow-secret-2025",
     })).toThrow();
+  });
+
+  it("requires MFA for privileged roles by default and supports explicit policy", () => {
+    expect(isMfaRequiredForRole("manager", {})).toBe(true);
+    expect(isMfaRequiredForRole("employee", {})).toBe(false);
+    expect(isMfaRequiredForRole("employee", { MFA_REQUIRED_ROLES: "employee,manager" })).toBe(true);
   });
 });

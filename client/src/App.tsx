@@ -67,6 +67,7 @@ const TravelCaseDetailPage = lazy(() => import("@/features/travel-cases/pages/Tr
 
 const ALL_ROLES = ["employee", "coordinator", "manager", "finance_admin", "travel_admin", "super_admin"] as const;
 const phaseOneCasesEnabled = phaseOneTravelCasesEnabled();
+const legacyDemoEnabled = import.meta.env.VITE_AUTH_MODE === "demo";
 
 function PhaseOneRouteFallback({ label }: { label: string }) {
   return <div className="p-8" role="status">{label}</div>;
@@ -247,7 +248,7 @@ function Router() {
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
-        <Route path="/approve/:token" component={TokenApproval} />
+        {legacyDemoEnabled && <Route path="/approve/:token" component={TokenApproval} />}
         {/* Tenant-specific login pages — add new clients here: */}
         <Route path="/thc">
           <TenantLoginPage companyCode="thc001" companyName="Tuvalu High Commission" />
@@ -331,7 +332,7 @@ function Router() {
                   <AdminPortal />
                 </ProtectedRoute>
               </Route>
-              <Route path="/approve/:token" component={TokenApproval} />
+              {legacyDemoEnabled && <Route path="/approve/:token" component={TokenApproval} />}
               <Route component={NotFound} />
             </Switch>
           </main>

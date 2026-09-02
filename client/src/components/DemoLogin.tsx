@@ -32,14 +32,12 @@ const KHC_ACCOUNTS = [
 function AccountTable({
   accounts,
   companyCode,
-  password,
   onFill,
   accentClass,
 }: {
   accounts: { role: string; name: string; email: string }[];
   companyCode: string;
-  password: string;
-  onFill: (email: string, code: string, pw: string) => void;
+  onFill: (email: string, code: string) => void;
   accentClass: string;
 }) {
   return (
@@ -60,7 +58,7 @@ function AccountTable({
               <td className="px-2 py-1.5 text-right">
                 <button
                   type="button"
-                  onClick={() => onFill(acct.email, companyCode, password)}
+                  onClick={() => onFill(acct.email, companyCode)}
                   className={`${accentClass} underline underline-offset-2`}
                   data-testid={`button-fill-${companyCode}-${acct.role.toLowerCase().replace(/[\s()\/]+/g, "-")}`}
                 >
@@ -112,10 +110,10 @@ export function DemoLogin() {
     loginMutation.mutate(data);
   };
 
-  const fillCredentials = (email: string, companyCode: string, password: string) => {
+  const fillCredentials = (email: string, companyCode: string) => {
     form.setValue("companyCode", companyCode);
     form.setValue("email", email);
-    form.setValue("password", password);
+    form.setValue("password", "");
   };
 
   return (
@@ -217,13 +215,12 @@ export function DemoLogin() {
                     Island Travel Technologies
                   </p>
                   <span className="text-xs text-muted-foreground ml-auto">
-                    <code className="bg-muted px-1 rounded">itt001</code> · <code className="bg-muted px-1 rounded">itt1235*</code>
+                    <code className="bg-muted px-1 rounded">itt001</code>
                   </span>
                 </div>
                 <AccountTable
                   accounts={ITT_ACCOUNTS}
                   companyCode="itt001"
-                  password="itt1235*"
                   onFill={fillCredentials}
                   accentClass="text-[#2274D1] hover:text-[#2274D1]/80"
                 />
@@ -237,13 +234,12 @@ export function DemoLogin() {
                     Tuvalu High Commission
                   </p>
                   <span className="text-xs text-muted-foreground ml-auto">
-                    <code className="bg-muted px-1 rounded">thc001</code> · <code className="bg-muted px-1 rounded">itt1235*</code>
+                    <code className="bg-muted px-1 rounded">thc001</code>
                   </span>
                 </div>
                 <AccountTable
                   accounts={THC_ACCOUNTS}
                   companyCode="thc001"
-                  password="itt1235*"
                   onFill={fillCredentials}
                   accentClass="text-[#1A3A6B] hover:text-[#1A3A6B]/80"
                 />
@@ -257,13 +253,12 @@ export function DemoLogin() {
                     Kiribati High Commission
                   </p>
                   <span className="text-xs text-muted-foreground ml-auto">
-                    <code className="bg-muted px-1 rounded">khc001</code> · <code className="bg-muted px-1 rounded">itt1235*</code>
+                    <code className="bg-muted px-1 rounded">khc001</code>
                   </span>
                 </div>
                 <AccountTable
                   accounts={KHC_ACCOUNTS}
                   companyCode="khc001"
-                  password="itt1235*"
                   onFill={fillCredentials}
                   accentClass="text-[#1B4F8A] hover:text-[#1B4F8A]/80"
                 />

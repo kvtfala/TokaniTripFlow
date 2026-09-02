@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Express, Request, RequestHandler, Response } from "express";
 import { z } from "zod";
+import { isMfaRequiredForRole } from "../config/securityEnvironment";
 
 const signInSchema = z.object({
   email: z.string().trim().email().max(320).transform((value) => value.toLowerCase()),
@@ -42,6 +43,9 @@ export interface TripFlowRequestIdentity {
   companyCode: string | null;
   isActive: boolean;
   memberships: Array<Record<string, unknown>>;
+  authenticatorAssuranceLevel: "aal1" | "aal2";
+  mfaRequired: boolean;
+  mfaVerified: boolean;
 }
 
 declare module "express-serve-static-core" {
@@ -132,6 +136,17 @@ async function authRequest(fetchImpl: Fetch, config: SupabaseAuthConfig, path: s
   });
 }
 
+function assuranceLevel(accessToken: string): "aal1" | "aal2" {
+  try {
+    const encoded = accessToken.split(".")[1];
+    if (!encoded) return "aal1";
+    const claims = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as { aal?: unknown };
+    return claims.aal === "aal2" ? "aal2" : "aal1";
+  } catch {
+    return "aal1";
+  }
+}
+
 async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, accessToken: string): Promise<TripFlowRequestIdentity | null> {
   const userResponse = await authRequest(fetchImpl, config, "/user", {
     method: "GET", headers: { Authorization: `Bearer ${accessToken}` },
@@ -154,6 +169,8 @@ async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, access
   const [profile] = await profileResponse.json() as Array<Record<string, unknown>>;
   const memberships = await membershipResponse.json() as Array<Record<string, unknown>>;
   const primary = memberships[0];
+  const role = typeof primary?.role === "string" ? primary.role : "employee";
+  const aal = assuranceLevel(accessToken);
   const names = typeof profile?.display_name === "string" ? profile.display_name.trim().split(/\s+/, 2) : [];
 
   return {
@@ -162,7 +179,7 @@ async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, access
     firstName: names[0] ?? null,
     lastName: names[1] ?? null,
     profileImageUrl: null,
-    role: typeof primary?.role === "string" ? primary.role : "employee",
+    role,
     companyCode: typeof primary?.organisation_id === "string" ? primary.organisation_id : null,
     isActive: Boolean(primary),
     memberships: memberships.map((membership) => ({
@@ -173,6 +190,9 @@ async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, access
       status: membership.status,
       activatedAt: membership.activated_at,
     })),
+    authenticatorAssuranceLevel: aal,
+    mfaRequired: isMfaRequiredForRole(role),
+    mfaVerified: aal === "aal2",
   };
 }
 

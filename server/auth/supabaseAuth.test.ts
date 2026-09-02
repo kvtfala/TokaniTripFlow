@@ -67,7 +67,14 @@ describe("Supabase authentication boundary", () => {
     expect(cookies.every((cookie) => /SameSite=Lax/i.test(cookie))).toBe(true);
     expect(body).not.toContain(session.access_token);
     expect(body).not.toContain(session.refresh_token);
-    expect(JSON.parse(body)).toMatchObject({ id: session.user.id, role: "super_admin", isActive: true });
+    expect(JSON.parse(body)).toMatchObject({
+      id: session.user.id,
+      role: "super_admin",
+      isActive: true,
+      authenticatorAssuranceLevel: "aal1",
+      mfaRequired: true,
+      mfaVerified: false,
+    });
   });
 
   it("uses a generic response for password reset requests", async () => {

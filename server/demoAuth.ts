@@ -117,5 +117,9 @@ export function setupDemoAuth(app: Express) {
 }
 
 export async function hashDemoPassword(): Promise<string> {
-  return await bcrypt.hash(process.env.DEMO_PASSWORD ?? "itt1235*", 10);
+  const password = process.env.DEMO_PASSWORD;
+  if (!password || password.length < 12) {
+    throw new Error("DEMO_PASSWORD must be explicitly configured with at least 12 characters");
+  }
+  return await bcrypt.hash(password, 10);
 }

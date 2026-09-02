@@ -22,6 +22,7 @@ const productionSecurityEnvironmentSchema = z.object({
   ),
   PASSWORD_RESET_REDIRECT_URL: z.string().url().startsWith("https://"),
   DEMO_AUTH_ENABLED: z.enum(["false", "0"]).default("false"),
+  LEGACY_API_ENABLED: z.enum(["false", "0"]).default("false"),
 }).superRefine((environment, context) => {
   if (environment.SESSION_SECRET === environment.APPROVAL_TOKEN_SECRET) {
     context.addIssue({
@@ -49,4 +50,14 @@ export function getApprovalTokenSecret(
   environment: NodeJS.ProcessEnv = process.env,
 ): string {
   return nonPlaceholderSecret.parse(environment.APPROVAL_TOKEN_SECRET);
+}
+
+export const PRIVILEGED_MFA_ROLES = ["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"] as const;
+
+export function isMfaRequiredForRole(role: string, environment: NodeJS.ProcessEnv = process.env): boolean {
+  const configuredRoles = (environment.MFA_REQUIRED_ROLES ?? PRIVILEGED_MFA_ROLES.join(","))
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return configuredRoles.includes(role);
 }

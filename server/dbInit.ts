@@ -18,9 +18,8 @@ import { eq } from "drizzle-orm";
 import { inArray } from "drizzle-orm";
 import { isDemoAuthEnabled } from "./security/httpSecurity";
 
-// All demo orgs share one password: itt1235*
-// Hash generated with bcrypt cost 10.
-const DEMO_HASH = "$2b$10$btwIziGooE5YvHpoZJxjjeYgqya3zJPk2EWmSmW.p2/Ck6r64rUGS";
+// Demo credentials are deliberately supplied outside source control.
+const DEMO_HASH = process.env.DEMO_PASSWORD_HASH ?? "";
 
 const DEMO_USERS = [
   // ── Island Travel Technologies (itt001) ──────────────────────────────────
@@ -56,6 +55,9 @@ async function purgeCdpDemoData(): Promise<void> {
  * and the function is safe to call regardless of how many other users exist.
  */
 async function ensureDemoUsers(): Promise<void> {
+  if (!/^\$2[aby]\$\d{2}\$.{53}$/.test(DEMO_HASH)) {
+    throw new Error("DEMO_PASSWORD_HASH must be an explicitly configured bcrypt hash");
+  }
   const now = new Date("2025-01-01T00:00:00Z");
 
   const result = await db
