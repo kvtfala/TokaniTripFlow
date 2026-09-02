@@ -8,6 +8,8 @@ import { extractReceiptData } from "./services/receiptOcr";
 import { setupAuth, setupPassportSession, isAuthenticated, isLoggedIn } from "./replitAuth";
 import { createSupabaseIdentityMiddleware, readSupabaseAuthConfig, registerSupabaseAuthRoutes } from "./auth/supabaseAuth";
 import { isDemoAuthEnabled } from "./security/httpSecurity";
+import { createSupabaseTravelCaseStore } from "./phase1/supabaseTravelCaseStore";
+import { registerTravelCaseRoutes } from "./phase1/travelCaseRoutes";
 import { setupDemoAuth } from "./demoAuth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { getApprovalTokenSecret } from "./config/securityEnvironment";
@@ -162,6 +164,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     });
+    if (process.env.SUPABASE_SECRET_KEY) {
+      registerTravelCaseRoutes(app, createSupabaseTravelCaseStore({
+        url: supabaseAuth.url,
+        secretKey: process.env.SUPABASE_SECRET_KEY,
+      }));
+    }
   }
   if (demoAuth) setupDemoAuth(app);
 

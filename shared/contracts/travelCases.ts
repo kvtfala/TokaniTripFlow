@@ -47,7 +47,7 @@ const createTravelCaseDraftFieldsSchema = z.object({
   destination: destinationSchema.optional(),
   funding: fundingSelectionSchema.partial().optional(),
   requiredComponentTypes: z.array(serviceComponentTypeSchema).min(1).optional(),
-});
+}).strict();
 
 function validateDateRange(
   value: { startDate?: string; endDate?: string },
