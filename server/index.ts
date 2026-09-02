@@ -2,8 +2,13 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./dbInit";
+import { assertProductionSecurityEnvironment } from "./config/securityEnvironment";
+import { registerHttpSecurity } from "./security/httpSecurity";
+
+assertProductionSecurityEnvironment();
 
 const app = express();
+registerHttpSecurity(app);
 
 declare module 'http' {
   interface IncomingMessage {
@@ -32,10 +37,6 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
       if (logLine.length > 80) {
         logLine = logLine.slice(0, 79) + "…";
       }
@@ -48,8 +49,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Ensure demo users exist in the database before any routes are registered.
-  // This is a no-op if users already exist (runs in < 200ms).
+  // Demo identities are seeded only when explicit non-production demo mode is enabled.
   await initializeDatabase();
 
   const server = await registerRoutes(app);
@@ -57,16 +57,14 @@ app.use((req, res, next) => {
   // Global error handler for async routes (catches errors from asyncHandler)
   // Must be registered after all routes but before Vite middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    // Log error for debugging
-    console.error('[Error Handler]', err);
-    
+    const correlationId = _req.header("x-correlation-id") || "unassigned";
+    console.error('[Error Handler]', { correlationId, name: err?.name, status: err?.status || err?.statusCode || 500 });
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    const message = status >= 500 ? "Internal Server Error" : (err.message || "Request failed");
 
     // Return JSON error response
     res.status(status).json({ 
       error: message,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
   });
 

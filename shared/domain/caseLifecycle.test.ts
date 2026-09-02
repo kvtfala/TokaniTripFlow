@@ -9,6 +9,8 @@ describe("travel case lifecycle", () => {
   it("allows the approved forward lifecycle", () => {
     expect(canTransitionCase("draft", "submitted")).toBe(true);
     expect(canTransitionCase("authorised", "coordinating")).toBe(true);
+    expect(canTransitionCase("in_review", "information_required")).toBe(true);
+    expect(canTransitionCase("information_required", "submitted")).toBe(true);
     expect(canTransitionCase("in_travel", "completed")).toBe(true);
   });
 

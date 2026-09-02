@@ -455,7 +455,7 @@ export const membershipRoleSchema = z.enum([
 export type MembershipRole = z.infer<typeof membershipRoleSchema>;
 
 export const caseStatusSchema = z.enum([
-  "draft", "submitted", "in_review", "authorised", "coordinating",
+  "draft", "submitted", "in_review", "information_required", "authorised", "coordinating",
   "ready_to_travel", "in_travel", "completed", "cancelled",
 ]);
 export type CaseStatusDb = z.infer<typeof caseStatusSchema>;

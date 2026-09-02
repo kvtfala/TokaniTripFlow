@@ -6,11 +6,15 @@ import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote, ExpenseClaim } from "@shared/types";
 import { extractReceiptData } from "./services/receiptOcr";
 import { setupAuth, setupPassportSession, isAuthenticated, isLoggedIn } from "./replitAuth";
+import { createSupabaseIdentityMiddleware, readSupabaseAuthConfig, registerSupabaseAuthRoutes } from "./auth/supabaseAuth";
+import { isDemoAuthEnabled } from "./security/httpSecurity";
+import { createSupabaseTravelCaseStore } from "./phase1/supabaseTravelCaseStore";
+import { registerTravelCaseRoutes } from "./phase1/travelCaseRoutes";
 import { setupDemoAuth } from "./demoAuth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { getApprovalTokenSecret } from "./config/securityEnvironment";
 
-// HMAC token secret — in production, load from env
-const APPROVAL_TOKEN_SECRET = process.env.APPROVAL_TOKEN_SECRET || "tokani-tripflow-secret-2025";
+const APPROVAL_TOKEN_SECRET = getApprovalTokenSecret();
 
 function generateApprovalToken(requestId: string, approverId: string): string {
   const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -145,12 +149,29 @@ function assertAdminTenantRecord(req: any, record: { companyCode?: string | null
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Replit Auth Integration - DISABLED (Demo-only mode)
-  // Setup Passport session management for demo login (without Replit OIDC routes)
-  setupPassportSession(app);
-  
-  // Demo Login Integration - Setup demo login path (DEMO ONLY)
-  setupDemoAuth(app);
+  const supabaseAuth = readSupabaseAuthConfig();
+  const demoAuth = isDemoAuthEnabled();
+  if (demoAuth) setupPassportSession(app);
+  if (supabaseAuth) {
+    registerSupabaseAuthRoutes(app, supabaseAuth);
+    app.use(createSupabaseIdentityMiddleware(supabaseAuth));
+    app.use("/api", (req: any, res, next) => {
+      if (!req.tripflowIdentity || req.path.startsWith("/v1/") || req.path === "/auth/user") return next();
+      return res.status(503).json({
+        error: {
+          code: "service_unavailable",
+          message: "This endpoint is unavailable until its tenant authorization migration is complete",
+        },
+      });
+    });
+    if (process.env.SUPABASE_SECRET_KEY) {
+      registerTravelCaseRoutes(app, createSupabaseTravelCaseStore({
+        url: supabaseAuth.url,
+        secretKey: process.env.SUPABASE_SECRET_KEY,
+      }));
+    }
+  }
+  if (demoAuth) setupDemoAuth(app);
 
   // Object Storage — presigned URL upload + file serving
   registerObjectStorageRoutes(app);
@@ -174,6 +195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth User Endpoint - Works with both Replit Auth and Demo sessions
   app.get('/api/auth/user', asyncHandler(async (req: any, res) => {
+    if (supabaseAuth) {
+      return res.redirect(307, "/api/v1/auth/session");
+    }
     // Check if user is authenticated (either via Replit Auth or Demo login)
     if (!req.user || !req.user.claims) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -235,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Logout Endpoint - Destroys session and redirects to landing page
-  app.get("/api/logout", (req, res) => {
+  if (demoAuth) app.get("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
         console.error("Logout error:", err);
@@ -900,7 +924,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const requireRole = (allowedRoles: string[]) => {
     return async (req: any, res: any, next: any) => {
       try {
-        // Get user from session or demo session
+        const productionIdentity = req.tripflowIdentity;
+        if (productionIdentity) {
+          if (!allowedRoles.includes(productionIdentity.role)) {
+            return res.status(403).json({ error: "Forbidden - Insufficient permissions" });
+          }
+          req.currentUser = {
+            id: productionIdentity.id,
+            email: productionIdentity.email,
+            firstName: productionIdentity.firstName,
+            lastName: productionIdentity.lastName,
+            role: productionIdentity.role,
+            companyCode: productionIdentity.companyCode,
+            isActive: true,
+          };
+          return next();
+        }
+        // Non-production demo compatibility only.
         let userId: string;
         let userRole: string;
 
