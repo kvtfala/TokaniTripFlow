@@ -4,6 +4,24 @@ Status: database foundation and server-managed application sign-in boundary impl
 
 Project: `TokaniTripFlow`, Sydney (`ap-southeast-2`)
 
+## B2.1 security consolidation gate
+
+- Production can no longer register demo login, demo logout or Passport session
+  authentication, even if a demo flag is accidentally set.
+- Known demo identities are removed at startup whenever explicit non-production
+  demo mode is disabled; they are seeded only in explicit development demo mode.
+- Supabase sessions are resolved into one server-authoritative request identity
+  sourced from active RLS-protected organisation membership.
+- Legacy protected endpoints now fail closed for Supabase identities until each
+  endpoint is migrated to membership-based tenant authorization. This prevents
+  the old `companyCode` model from silently becoming a cross-tenant bypass.
+- Authentication, password recovery and approval-token routes have rate limits;
+  unsafe API requests reject cross-site browser origins.
+- Baseline CSP, anti-framing, MIME-sniffing, referrer, permissions and HSTS
+  headers are applied centrally.
+- API response bodies and raw server exception details are no longer written to
+  operational logs or returned for unexpected production errors.
+
 ## Implemented
 
 - Password sign-in, server-validated sessions, refresh, sign-out and password

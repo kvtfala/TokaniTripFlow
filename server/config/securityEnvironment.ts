@@ -13,6 +13,14 @@ const productionSecurityEnvironmentSchema = z.object({
   SUPABASE_URL: z.string().url().startsWith("https://"),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(20),
   SUPABASE_SECRET_KEY: z.string().min(20),
+  PUBLIC_APP_URL: z.string().url().startsWith("https://"),
+  AUTH_ALLOWED_ORIGINS: z.string().min(1).refine(
+    (value) => value.split(",").every((origin) => {
+      try { return new URL(origin.trim()).protocol === "https:"; } catch { return false; }
+    }),
+    "Every production allowed origin must be an HTTPS URL",
+  ),
+  PASSWORD_RESET_REDIRECT_URL: z.string().url().startsWith("https://"),
   DEMO_AUTH_ENABLED: z.enum(["false", "0"]).default("false"),
 }).superRefine((environment, context) => {
   if (environment.SESSION_SECRET === environment.APPROVAL_TOKEN_SECRET) {

@@ -38,6 +38,16 @@ function getFullName(firstName?: string | null, lastName?: string | null, email?
 
 export function UserAvatarMenu() {
   const { currentUser } = useRole();
+  const productionAuth = import.meta.env.VITE_AUTH_MODE === "supabase";
+
+  const signOut = async () => {
+    if (!productionAuth) {
+      window.location.href = "/api/logout";
+      return;
+    }
+    await fetch("/api/v1/auth/sign-out", { method: "POST", credentials: "include" });
+    window.location.href = "/";
+  };
 
   const initials = getInitials(currentUser?.firstName, currentUser?.lastName, currentUser?.email ?? undefined);
   const fullName = getFullName(currentUser?.firstName, currentUser?.lastName, currentUser?.email ?? undefined);
@@ -91,14 +101,15 @@ export function UserAvatarMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem asChild>
-          <a
-            href="/api/logout"
+          <button
+            type="button"
+            onClick={signOut}
             className="flex items-center gap-2 cursor-pointer w-full text-destructive focus:text-destructive"
             data-testid="menu-sign-out"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
-          </a>
+          </button>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

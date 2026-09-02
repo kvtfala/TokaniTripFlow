@@ -6,7 +6,10 @@ import { storage } from "./storage";
 import type { TravelRequest, HistoryEntry, TravelQuote, ExpenseClaim } from "@shared/types";
 import { extractReceiptData } from "./services/receiptOcr";
 import { setupAuth, setupPassportSession, isAuthenticated, isLoggedIn } from "./replitAuth";
-import { readSupabaseAuthConfig, registerSupabaseAuthRoutes } from "./auth/supabaseAuth";
+import { createSupabaseIdentityMiddleware, readSupabaseAuthConfig, registerSupabaseAuthRoutes } from "./auth/supabaseAuth";
+import { isDemoAuthEnabled } from "./security/httpSecurity";
+import { createSupabaseTravelCaseStore } from "./phase1/supabaseTravelCaseStore";
+import { registerTravelCaseRoutes } from "./phase1/travelCaseRoutes";
 import { setupDemoAuth } from "./demoAuth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { getApprovalTokenSecret } from "./config/securityEnvironment";
@@ -147,13 +150,28 @@ function assertAdminTenantRecord(req: any, record: { companyCode?: string | null
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const supabaseAuth = readSupabaseAuthConfig();
-  if (supabaseAuth) registerSupabaseAuthRoutes(app, supabaseAuth);
-  // Replit Auth Integration - DISABLED (Demo-only mode)
-  // Setup Passport session management for demo login (without Replit OIDC routes)
-  setupPassportSession(app);
-  
-  // Demo Login Integration - Setup demo login path (DEMO ONLY)
-  setupDemoAuth(app);
+  const demoAuth = isDemoAuthEnabled();
+  if (demoAuth) setupPassportSession(app);
+  if (supabaseAuth) {
+    registerSupabaseAuthRoutes(app, supabaseAuth);
+    app.use(createSupabaseIdentityMiddleware(supabaseAuth));
+    app.use("/api", (req: any, res, next) => {
+      if (!req.tripflowIdentity || req.path.startsWith("/v1/") || req.path === "/auth/user") return next();
+      return res.status(503).json({
+        error: {
+          code: "service_unavailable",
+          message: "This endpoint is unavailable until its tenant authorization migration is complete",
+        },
+      });
+    });
+    if (process.env.SUPABASE_SECRET_KEY) {
+      registerTravelCaseRoutes(app, createSupabaseTravelCaseStore({
+        url: supabaseAuth.url,
+        secretKey: process.env.SUPABASE_SECRET_KEY,
+      }));
+    }
+  }
+  if (demoAuth) setupDemoAuth(app);
 
   // Object Storage — presigned URL upload + file serving
   registerObjectStorageRoutes(app);
@@ -241,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Logout Endpoint - Destroys session and redirects to landing page
-  app.get("/api/logout", (req, res) => {
+  if (demoAuth) app.get("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
         console.error("Logout error:", err);
@@ -906,7 +924,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const requireRole = (allowedRoles: string[]) => {
     return async (req: any, res: any, next: any) => {
       try {
-        // Get user from session or demo session
+        const productionIdentity = req.tripflowIdentity;
+        if (productionIdentity) {
+          if (!allowedRoles.includes(productionIdentity.role)) {
+            return res.status(403).json({ error: "Forbidden - Insufficient permissions" });
+          }
+          req.currentUser = {
+            id: productionIdentity.id,
+            email: productionIdentity.email,
+            firstName: productionIdentity.firstName,
+            lastName: productionIdentity.lastName,
+            role: productionIdentity.role,
+            companyCode: productionIdentity.companyCode,
+            isActive: true,
+          };
+          return next();
+        }
+        // Non-production demo compatibility only.
         let userId: string;
         let userRole: string;
 
