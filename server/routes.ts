@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 23282)
-Total output lines: 2187
-
 import type { Express, Request, Response, NextFunction, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { createHmac, timingSafeEqual } from "crypto";
@@ -613,7 +610,1144 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/requests/:id/reject", isLoggedIn, asyncHandler(async (req: any, res) => {
     const { comment } = req.body;
-    const request …11282 tokens truncated…ror: "Action must be 'approve' or 'reject'" });
+    const request = await storage.getTravelRequest(req.params.id);
+    
+    if (!request) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Validate request status — can reject at any active approval stage
+    const rejectableStatuses = ["submitted", "in_review", "awaiting_quotes", "quotes_submitted"];
+    if (!rejectableStatuses.includes(request.status)) {
+      return res.status(400).json({ 
+        error: `Cannot reject request with status: ${request.status}` 
+      });
+    }
+
+    // Require rejection comment
+    if (!comment || !comment.trim()) {
+      return res.status(400).json({ error: "Rejection comment is required" });
+    }
+
+    const actor = await resolveActingUser(req);
+    if (!actor) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const isSuperAdmin = actor.role === "super_admin";
+    const currentApproverId = isSuperAdmin ? `${actor.displayName} (Super Admin)` : actor.displayName;
+    const expectedApproverId = request.approverFlow[request.approverIndex];
+    
+    // Super admin bypasses identity check; others must match expected approver
+    if (!isSuperAdmin && actor.id !== expectedApproverId) {
+      return res.status(403).json({ 
+        error: "Not authorized to reject this request at this stage" 
+      });
+    }
+
+    const historyEntry: HistoryEntry = {
+      ts: new Date().toISOString(),
+      actor: currentApproverId,
+      action: "REJECT",
+      note: comment,
+    };
+
+    const updates: Partial<TravelRequest> = {
+      status: "rejected",
+      history: [...request.history, historyEntry],
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: currentApproverId,
+      reviewComment: comment,
+    };
+
+    const updated = await storage.updateTravelRequest(req.params.id, updates);
+    res.json(updated);
+  }));
+
+  // Cancel a request (self-service by requester — draft or submitted only)
+  app.post("/api/requests/:id/cancel", isLoggedIn, asyncHandler(async (req: any, res) => {
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    if (request.status !== "draft" && request.status !== "submitted") {
+      return res.status(400).json({
+        error: `Cannot cancel a request with status: ${request.status}. Only draft or submitted requests can be cancelled.`,
+      });
+    }
+
+    const historyEntry: HistoryEntry = {
+      ts: new Date().toISOString(),
+      actor: req.currentUser?.id ?? "requester",
+      action: "REJECT",
+      note: "Request cancelled by requester",
+    };
+
+    const updated = await storage.updateTravelRequest(req.params.id, {
+      status: "rejected",
+      history: [...request.history, historyEntry],
+      reviewedAt: new Date().toISOString(),
+      reviewComment: "Cancelled by requester",
+    });
+
+    res.json(updated);
+  }));
+
+  // RFQ and Quotes Endpoints
+  
+  // Get all quotes for a request
+  app.get("/api/requests/:id/quotes", isLoggedIn, asyncHandler(async (req, res) => {
+    const quotes = await storage.getQuotes(req.params.id);
+    res.json(quotes);
+  }));
+
+  // Create a new quote
+  app.post("/api/requests/:id/quotes", isLoggedIn, asyncHandler(async (req, res) => {
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Validate request is in awaiting_quotes status
+    if (request.status !== "awaiting_quotes") {
+      return res.status(400).json({ 
+        error: `Cannot add quotes to request with status: ${request.status}` 
+      });
+    }
+
+    // TODO: Get current user from session
+    const rfqActor = await resolveActingUser(req); const currentUserId = rfqActor?.id ?? "coordinator";
+
+    const quote = await storage.createQuote({
+      requestId: req.params.id,
+      ...req.body,
+      createdBy: currentUserId,
+    });
+
+    // Add to history
+    const historyEntry: HistoryEntry = {
+      ts: new Date().toISOString(),
+      actor: currentUserId,
+      action: "QUOTE",
+      note: `Quote added from ${req.body.vendorName} - ${req.body.currency} ${req.body.quoteValue}`,
+    };
+
+    await storage.updateTravelRequest(req.params.id, {
+      history: [...request.history, historyEntry],
+    });
+
+    res.json(quote);
+  }));
+
+  // Update a quote
+  app.put("/api/requests/:requestId/quotes/:quoteId", isLoggedIn, asyncHandler(async (req, res) => {
+    const quote = await storage.updateQuote(req.params.quoteId, req.body);
+    if (!quote) {
+      return res.status(404).json({ error: "Quote not found" });
+    }
+    res.json(quote);
+  }));
+
+  // Delete a quote
+  app.delete("/api/requests/:requestId/quotes/:quoteId", isLoggedIn, asyncHandler(async (req, res) => {
+    const success = await storage.deleteQuote(req.params.quoteId);
+    if (!success) {
+      return res.status(404).json({ error: "Quote not found" });
+    }
+    res.json({ success: true });
+  }));
+
+  // Send RFQ to vendors
+  app.post("/api/requests/:id/send-rfq", isLoggedIn, asyncHandler(async (req, res) => {
+    const { vendors } = req.body; // Array of {vendorName, email}
+    const request = await storage.getTravelRequest(req.params.id);
+    
+    if (!request) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    if (request.status !== "awaiting_quotes") {
+      return res.status(400).json({ 
+        error: `Cannot send RFQ for request with status: ${request.status}` 
+      });
+    }
+
+    // TODO: Get current user from session
+    const rfqActor = await resolveActingUser(req); const currentUserId = rfqActor?.id ?? "coordinator";
+
+    const now = new Date().toISOString();
+    const rfqRecipients = vendors.map((v: any) => ({
+      vendorName: v.vendorName,
+      email: v.email,
+      sentAt: now,
+    }));
+
+    // TODO: Actually send emails to vendors
+    // For now, just log the RFQ sending
+    console.log(`RFQ sent to ${vendors.length} vendors for request ${req.params.id}`);
+
+    // Update request with RFQ recipients
+    const historyEntry: HistoryEntry = {
+      ts: now,
+      actor: currentUserId,
+      action: "COMMENT",
+      note: `RFQ sent to ${vendors.length} vendor(s): ${vendors.map((v: any) => v.vendorName).join(", ")}`,
+    };
+
+    const updated = await storage.updateTravelRequest(req.params.id, {
+      rfqRecipients: [...(request.rfqRecipients || []), ...rfqRecipients],
+      history: [...request.history, historyEntry],
+    });
+
+    res.json(updated);
+  }));
+
+  // Submit request with quotes for final approval
+  app.post("/api/requests/:id/submit-with-quotes", isLoggedIn, asyncHandler(async (req, res) => {
+    const { selectedQuoteId, quoteJustification } = req.body;
+    const request = await storage.getTravelRequest(req.params.id);
+    
+    if (!request) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    if (request.status !== "awaiting_quotes") {
+      return res.status(400).json({ 
+        error: `Cannot submit quotes for request with status: ${request.status}` 
+      });
+    }
+
+    // Get all quotes for this request
+    const quotes = await storage.getQuotes(req.params.id);
+
+    // Check minimum quote requirement
+    const policy = await storage.getQuotePolicy();
+    const isInternational = request.destination.country !== "Fiji";
+    const minQuotes = isInternational ? (policy?.minQuotesInternational || 3) : (policy?.minQuotesDomestic || 2);
+
+    if (quotes.length < minQuotes && !request.quoteRequirementOverridden) {
+      return res.status(400).json({ 
+        error: `Policy requires at least ${minQuotes} quotes (${isInternational ? 'international' : 'domestic'}). You have ${quotes.length}. Request override if needed.`
+      });
+    }
+
+    // Validate selected quote exists
+    const selectedQuote = quotes.find(q => q.id === selectedQuoteId);
+    if (!selectedQuote) {
+      return res.status(400).json({ error: "Selected quote not found" });
+    }
+
+    // Check if justification is required (not the cheapest)
+    const cheapestQuote = quotes.reduce((min, q) => q.quoteValue < min.quoteValue ? q : min);
+    if (selectedQuoteId !== cheapestQuote.id && !quoteJustification) {
+      return res.status(400).json({ 
+        error: "Justification required when not selecting the cheapest quote" 
+      });
+    }
+
+    // TODO: Get current user from session
+    const rfqActor = await resolveActingUser(req); const currentUserId = rfqActor?.id ?? "coordinator";
+
+    // Update request status to quotes_submitted
+    const historyEntry: HistoryEntry = {
+      ts: new Date().toISOString(),
+      actor: currentUserId,
+      action: "SUBMIT",
+      note: `Submitted with ${quotes.length} quotes for final approval. Selected: ${selectedQuote.vendorName} (${selectedQuote.currency} ${selectedQuote.quoteValue})`,
+    };
+
+    const updated = await storage.updateTravelRequest(req.params.id, {
+      status: "quotes_submitted",
+      selectedQuoteId,
+      quoteJustification: quoteJustification || undefined,
+      history: [...request.history, historyEntry],
+    });
+
+    res.json(updated);
+  }));
+
+  // Get quote policy
+  app.get("/api/quote-policy", asyncHandler(async (req, res) => {
+    const policy = await storage.getQuotePolicy();
+    res.json(policy);
+  }));
+
+  // Delegations
+  app.get("/api/delegations", isLoggedIn, asyncHandler(async (req, res) => {
+    const delegations = await storage.getDelegations();
+    res.json(delegations);
+  }));
+
+  app.post("/api/delegations", isLoggedIn, asyncHandler(async (req, res) => {
+    const delegation = await storage.createDelegation(req.body);
+    res.json(delegation);
+  }));
+
+  app.patch("/api/delegations/:id", isLoggedIn, asyncHandler(async (req, res) => {
+    const delegation = await storage.updateDelegation(req.params.id, req.body);
+    if (!delegation) {
+      return res.status(404).json({ error: "Delegation not found" });
+    }
+    res.json(delegation);
+  }));
+
+  app.delete("/api/delegations/:id", isLoggedIn, asyncHandler(async (req, res) => {
+    const success = await storage.deleteDelegation(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Delegation not found" });
+    }
+    res.json({ success: true });
+  }));
+
+  // Admin Portal - Role-Based Access Control Middleware
+  const requireRole = (allowedRoles: string[]) => {
+    return async (req: any, res: any, next: any) => {
+      try {
+        const productionIdentity = req.tripflowIdentity;
+        if (productionIdentity) {
+          if (!allowedRoles.includes(productionIdentity.role)) {
+            return res.status(403).json({ error: "Forbidden - Insufficient permissions" });
+          }
+          req.currentUser = {
+            id: productionIdentity.id,
+            email: productionIdentity.email,
+            firstName: productionIdentity.firstName,
+            lastName: productionIdentity.lastName,
+            role: productionIdentity.role,
+            companyCode: productionIdentity.companyCode,
+            isActive: true,
+          };
+          return next();
+        }
+        // Non-production demo compatibility only.
+        let userId: string;
+        let userRole: string;
+
+        if (req.user?.claims?.sub) {
+          // OIDC session
+          userId = req.user.claims.sub;
+        } else if (req.session?.user) {
+          // Demo session
+          userId = req.session.user.id;
+        } else {
+          return res.status(401).json({ error: "Unauthorized - Please log in" });
+        }
+
+        // Fetch user from storage
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(401).json({ error: "User not found" });
+        }
+
+        userRole = user.role || "employee";
+
+        // Check if user has required role
+        if (!allowedRoles.includes(userRole)) {
+          return res.status(403).json({ 
+            error: "Forbidden - Insufficient permissions",
+            required: allowedRoles,
+            current: userRole
+          });
+        }
+
+        // Attach user to request for use in route handlers
+        req.currentUser = user;
+        next();
+      } catch (error) {
+        console.error("Role check error:", error);
+        res.status(500).json({ error: "Authorization check failed" });
+      }
+    };
+  };
+
+  // Admin Portal - User Management
+  app.get("/api/admin/users", requireRole(["super_admin"]), async (req: any, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      // Tenant-scope: only return users in the same company (platform admins see all)
+      const userCode = req.currentUser?.companyCode;
+      const users = userCode ? allUsers.filter(u => u.companyCode === userCode) : allUsers;
+      // Sanitize: never expose password hashes or other internal fields to clients
+      const sanitized = users.map(({ passwordHash: _ph, ...safe }) => safe);
+      res.json(sanitized);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const targetUser = await storage.getUser(req.params.id);
+    if (!targetUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (!assertAdminTenantRecord(req, targetUser)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    // Whitelist mutable fields — prevent arbitrary overwrite of sensitive columns
+    const VALID_ROLES = ["employee", "coordinator", "manager", "finance_admin", "travel_admin", "super_admin"];
+    const { role, isActive } = req.body;
+    const safeUpdates: Record<string, unknown> = {};
+    if (role !== undefined) {
+      if (!VALID_ROLES.includes(role)) {
+        return res.status(400).json({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}` });
+      }
+      safeUpdates.role = role;
+    }
+    if (isActive !== undefined) {
+      if (typeof isActive !== "boolean") {
+        return res.status(400).json({ error: "isActive must be a boolean" });
+      }
+      safeUpdates.isActive = isActive;
+    }
+    if (Object.keys(safeUpdates).length === 0) {
+      return res.status(400).json({ error: "No updatable fields provided (allowed: role, isActive)" });
+    }
+    const updated = await storage.updateUser(req.params.id, safeUpdates);
+    if (!updated) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    // Audit log
+    await storage.createAuditLog({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "user",
+      entityId: req.params.id,
+      changes: safeUpdates,
+    });
+    
+    // Sanitize: strip passwordHash before returning
+    const { passwordHash: _ph, ...safeUser } = updated;
+    res.json(safeUser);
+  }));
+
+  // Admin Portal - Vendors
+  app.get("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const status = req.query.status as string | undefined;
+    const cc = req.currentUser.companyCode;
+    const vendors = await storage.getVendors(status, cc);
+    res.json(vendors);
+  }));
+
+  app.get("/api/admin/vendors/:id", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const vendor = await storage.getVendor(req.params.id);
+    if (!vendor) {
+      return res.status(404).json({ error: "Vendor not found" });
+    }
+    if (!assertAdminTenantRecord(req, vendor)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    res.json(vendor);
+  }));
+
+  app.post("/api/admin/vendors", requireRole(["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body
+    const validation = validateRequest(insertVendorSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    const vendor = await storage.createVendor({
+      ...validation.data,
+      companyCode: req.currentUser.companyCode,
+      proposedBy: req.currentUser.id,
+    });
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "create",
+      entityType: "vendor",
+      entityId: vendor.id,
+      newValue: vendor,
+      metadata: { vendorName: vendor.name },
+    });
+    
+    res.json(vendor);
+  }));
+
+  app.patch("/api/admin/vendors/:id", requireRole(["finance_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertVendorSchema.omit({ companyCode: true, proposedBy: true }).partial(), req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    // Get previous state for audit and clone to prevent mutation
+    const previousVendor = await storage.getVendor(req.params.id);
+    if (!previousVendor) {
+      return res.status(404).json({ error: "Vendor not found" });
+    }
+    if (!assertAdminTenantRecord(req, previousVendor)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    const previousSnapshot = structuredClone(previousVendor);
+
+    await storage.updateVendor(req.params.id, validation.data);
+    
+    // Re-fetch complete entity after update to capture all server-populated fields
+    const vendor = await storage.getVendor(req.params.id);
+    if (!vendor) {
+      return res.status(500).json({ error: "Failed to fetch updated vendor" });
+    }
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "vendor",
+      entityId: req.params.id,
+      previousValue: previousSnapshot,
+      newValue: vendor,
+      metadata: { vendorName: vendor.name },
+    });
+    
+    res.json(vendor);
+  }));
+
+  app.delete("/api/admin/vendors/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const vendorToDelete = await storage.getVendor(req.params.id);
+    if (!vendorToDelete) {
+      return res.status(404).json({ error: "Vendor not found" });
+    }
+    if (!assertAdminTenantRecord(req, vendorToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteVendor(req.params.id);
+    
+    // Audit log
+    await storage.createAuditLog({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "delete",
+      entityType: "vendor",
+      entityId: req.params.id,
+    });
+    
+    res.json({ success: true });
+  }));
+
+  // Admin Portal - Email Templates
+  app.get("/api/admin/templates", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const category = req.query.category as string | undefined;
+    const templates = await storage.getEmailTemplates(category, req.currentUser.companyCode);
+    res.json(templates);
+  }));
+
+  app.get("/api/admin/templates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const template = await storage.getEmailTemplate(req.params.id);
+    if (!template) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if (!assertAdminTenantRecord(req, template)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    res.json(template);
+  }));
+
+  app.post("/api/admin/templates", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body
+    const validation = validateRequest(insertEmailTemplateSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    const template = await storage.createEmailTemplate({
+      ...validation.data,
+      companyCode: req.currentUser.companyCode,
+      createdBy: req.currentUser.id,
+    });
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "create",
+      entityType: "email_template",
+      entityId: template.id,
+      newValue: template,
+      metadata: { templateName: template.name },
+    });
+    
+    res.json(template);
+  }));
+
+  app.patch("/api/admin/templates/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertEmailTemplateSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    // Get previous state for audit and clone to prevent mutation
+    const previousTemplate = await storage.getEmailTemplate(req.params.id);
+    if (!previousTemplate) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if (!assertAdminTenantRecord(req, previousTemplate)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    const previousSnapshot = structuredClone(previousTemplate);
+
+    await storage.updateEmailTemplate(req.params.id, validation.data);
+    
+    // Re-fetch complete entity after update to capture all server-populated fields
+    const template = await storage.getEmailTemplate(req.params.id);
+    if (!template) {
+      return res.status(500).json({ error: "Failed to fetch updated template" });
+    }
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "email_template",
+      entityId: req.params.id,
+      previousValue: previousSnapshot,
+      newValue: template,
+      metadata: { templateName: template.name },
+    });
+    
+    res.json(template);
+  }));
+
+  app.delete("/api/admin/templates/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const templateToDelete = await storage.getEmailTemplate(req.params.id);
+    if (!templateToDelete) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if (!assertAdminTenantRecord(req, templateToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteEmailTemplate(req.params.id);
+    
+    // Audit log
+    await storage.createAuditLog({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "delete",
+      entityType: "email_template",
+      entityId: req.params.id,
+    });
+    
+    res.json({ success: true });
+  }));
+
+  // Admin Portal - Per Diem Rates
+  app.get("/api/admin/rates", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const rates = await storage.getPerDiemRates(req.currentUser.companyCode);
+    res.json(rates);
+  }));
+
+  app.get("/api/admin/rates/:id", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const rate = await storage.getPerDiemRate(req.params.id);
+    if (!rate) {
+      return res.status(404).json({ error: "Rate not found" });
+    }
+    if (!assertAdminTenantRecord(req, rate)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    res.json(rate);
+  }));
+
+  app.post("/api/admin/rates", requireRole(["finance_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body
+    const validation = validateRequest(insertPerDiemRateSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    const rate = await storage.createPerDiemRate({
+      ...validation.data,
+      dailyRate: String(validation.data.dailyRate),
+      companyCode: req.currentUser.companyCode,
+      createdBy: req.currentUser.id,
+    });
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "create",
+      entityType: "per_diem_rate",
+      entityId: rate.id,
+      newValue: rate,
+      metadata: { location: rate.location, dailyRate: rate.dailyRate },
+    });
+    
+    res.json(rate);
+  }));
+
+  app.patch("/api/admin/rates/:id", requireRole(["finance_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertPerDiemRateSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    // Get previous state for audit and clone to prevent mutation
+    const previousRate = await storage.getPerDiemRate(req.params.id);
+    if (!previousRate) {
+      return res.status(404).json({ error: "Rate not found" });
+    }
+    if (!assertAdminTenantRecord(req, previousRate)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    const previousSnapshot = structuredClone(previousRate);
+
+    await storage.updatePerDiemRate(req.params.id, {
+      ...validation.data,
+      dailyRate: validation.data.dailyRate === undefined ? undefined : String(validation.data.dailyRate),
+    });
+    
+    // Re-fetch complete entity after update to capture all server-populated fields
+    const rate = await storage.getPerDiemRate(req.params.id);
+    if (!rate) {
+      return res.status(500).json({ error: "Failed to fetch updated rate" });
+    }
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "per_diem_rate",
+      entityId: req.params.id,
+      previousValue: previousSnapshot,
+      newValue: rate,
+      metadata: { location: rate.location },
+    });
+    
+    res.json(rate);
+  }));
+
+  app.delete("/api/admin/rates/:id", requireRole(["finance_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const rateToDelete = await storage.getPerDiemRate(req.params.id);
+    if (!rateToDelete) {
+      return res.status(404).json({ error: "Rate not found" });
+    }
+    if (!assertAdminTenantRecord(req, rateToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deletePerDiemRate(req.params.id);
+    
+    // Audit log
+    await storage.createAuditLog({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "delete",
+      entityType: "per_diem_rate",
+      entityId: req.params.id,
+    });
+    
+    res.json({ success: true });
+  }));
+
+  // Admin Portal - Travel Policies
+  app.get("/api/admin/policies", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const policies = await storage.getTravelPolicies(req.currentUser.companyCode);
+    res.json(policies);
+  }));
+
+  app.post("/api/admin/policies", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body
+    const validation = validateRequest(insertTravelPolicySchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    const policy = await storage.createTravelPolicy({
+      ...validation.data,
+      companyCode: req.currentUser.companyCode,
+      createdBy: req.currentUser.id,
+    });
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "create",
+      entityType: "travel_policy",
+      entityId: policy.id,
+      newValue: policy,
+      metadata: { policyName: policy.name },
+    });
+    
+    res.json(policy);
+  }));
+
+  app.patch("/api/admin/policies/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertTravelPolicySchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    // Get previous state for audit and clone to prevent mutation
+    const previousPolicy = await storage.getTravelPolicy(req.params.id);
+    if (!previousPolicy) {
+      return res.status(404).json({ error: "Policy not found" });
+    }
+    if (!assertAdminTenantRecord(req, previousPolicy)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    const previousSnapshot = structuredClone(previousPolicy);
+
+    await storage.updateTravelPolicy(req.params.id, validation.data);
+    
+    // Re-fetch complete entity after update to capture all server-populated fields
+    const policy = await storage.getTravelPolicy(req.params.id);
+    if (!policy) {
+      return res.status(500).json({ error: "Failed to fetch updated policy" });
+    }
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "travel_policy",
+      entityId: req.params.id,
+      previousValue: previousSnapshot,
+      newValue: policy,
+      metadata: { policyName: policy.name },
+    });
+    
+    res.json(policy);
+  }));
+
+  app.delete("/api/admin/policies/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const policyToDelete = await storage.getTravelPolicy(req.params.id);
+    if (!policyToDelete) {
+      return res.status(404).json({ error: "Policy not found" });
+    }
+    if (!assertAdminTenantRecord(req, policyToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteTravelPolicy(req.params.id);
+    
+    // Audit log
+    await storage.createAuditLog({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "delete",
+      entityType: "travel_policy",
+      entityId: req.params.id,
+    });
+    
+    res.json({ success: true });
+  }));
+
+  // Admin Portal - Workflow Rules
+  app.get("/api/admin/workflows", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const workflows = await storage.getWorkflowRules(req.currentUser.companyCode);
+    res.json(workflows);
+  }));
+
+  app.post("/api/admin/workflows", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body
+    const validation = validateRequest(insertWorkflowRuleSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    const workflow = await storage.createWorkflowRule({
+      ...validation.data,
+      companyCode: req.currentUser.companyCode,
+      createdBy: req.currentUser.id,
+    });
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "create",
+      entityType: "workflow_rule",
+      entityId: workflow.id,
+      newValue: workflow,
+      metadata: { workflowName: workflow.name },
+    });
+    
+    res.json(workflow);
+  }));
+
+  app.patch("/api/admin/workflows/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertWorkflowRuleSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    // Get previous state for audit and clone to prevent mutation
+    const previousWorkflow = await storage.getWorkflowRule(req.params.id);
+    if (!previousWorkflow) {
+      return res.status(404).json({ error: "Workflow not found" });
+    }
+    if (!assertAdminTenantRecord(req, previousWorkflow)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    const previousSnapshot = structuredClone(previousWorkflow);
+
+    await storage.updateWorkflowRule(req.params.id, validation.data);
+    
+    // Re-fetch complete entity after update to capture all server-populated fields
+    const workflow = await storage.getWorkflowRule(req.params.id);
+    if (!workflow) {
+      return res.status(500).json({ error: "Failed to fetch updated workflow" });
+    }
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "workflow_rule",
+      entityId: req.params.id,
+      previousValue: previousSnapshot,
+      newValue: workflow,
+      metadata: { workflowName: workflow.name },
+    });
+    
+    res.json(workflow);
+  }));
+
+  app.delete("/api/admin/workflows/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const workflowToDelete = await storage.getWorkflowRule(req.params.id);
+    if (!workflowToDelete) {
+      return res.status(404).json({ error: "Workflow not found" });
+    }
+    if (!assertAdminTenantRecord(req, workflowToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteWorkflowRule(req.params.id);
+    
+    // Audit log
+    await storage.createAuditLog({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "delete",
+      entityType: "workflow_rule",
+      entityId: req.params.id,
+    });
+    
+    res.json({ success: true });
+  }));
+
+  // Admin Portal - System Notifications
+  app.get("/api/admin/notifications", requireRole(["finance_admin", "travel_admin", "super_admin"]), asyncHandler(async (req: any, res) => {
+    const published = req.query.published === "true" ? true : req.query.published === "false" ? false : undefined;
+    const notifications = await storage.getSystemNotifications(published, req.currentUser.companyCode);
+    res.json(notifications);
+  }));
+
+  app.post("/api/admin/notifications", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body
+    const validation = validateRequest(insertSystemNotificationSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    const notification = await storage.createSystemNotification({
+      ...validation.data,
+      companyCode: req.currentUser.companyCode,
+      createdBy: req.currentUser.id,
+    });
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "create",
+      entityType: "system_notification",
+      entityId: notification.id,
+      newValue: notification,
+      metadata: { title: notification.title },
+    });
+    
+    res.json(notification);
+  }));
+
+  app.patch("/api/admin/notifications/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    // Validate request body — strip server-owned fields so tenants cannot reassign companyCode
+    const validation = validateRequest(insertSystemNotificationSchema.omit({ companyCode: true, createdBy: true }).partial(), req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    // Get previous state for audit and clone to prevent mutation
+    const previousNotification = await storage.getSystemNotification(req.params.id);
+    if (!previousNotification) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    if (!assertAdminTenantRecord(req, previousNotification)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    const previousSnapshot = structuredClone(previousNotification);
+
+    await storage.updateSystemNotification(req.params.id, validation.data);
+    
+    // Re-fetch complete entity after update to capture all server-populated fields
+    const notification = await storage.getSystemNotification(req.params.id);
+    if (!notification) {
+      return res.status(500).json({ error: "Failed to fetch updated notification" });
+    }
+    
+    // Enhanced audit log with before/after snapshots
+    await logAudit({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "update",
+      entityType: "system_notification",
+      entityId: req.params.id,
+      previousValue: previousSnapshot,
+      newValue: notification,
+      metadata: { title: notification.title },
+    });
+    
+    res.json(notification);
+  }));
+
+  app.delete("/api/admin/notifications/:id", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const notifToDelete = await storage.getSystemNotification(req.params.id);
+    if (!notifToDelete) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    if (!assertAdminTenantRecord(req, notifToDelete)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await storage.deleteSystemNotification(req.params.id);
+    
+    // Audit log
+    await storage.createAuditLog({
+      userId: req.currentUser.id,
+      userName: `${req.currentUser.firstName} ${req.currentUser.lastName}`,
+      companyCode: req.currentUser.companyCode,
+      action: "delete",
+      entityType: "system_notification",
+      entityId: req.params.id,
+    });
+    
+    res.json({ success: true });
+  }));
+
+  // Admin Portal - Audit Logs
+  app.get("/api/admin/audit-logs", requireRole(["super_admin"]), asyncHandler(async (req: any, res) => {
+    const entityType = req.query.entityType as string | undefined;
+    const entityId = req.query.entityId as string | undefined;
+    const logs = await storage.getAuditLogs(req.currentUser.companyCode, entityType, entityId);
+    res.json(logs);
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PUBLIC VENDOR LISTING (for RFQ selection – no admin role required)
+  // ──────────────────────────────────────────────────────────────────────
+  app.get("/api/vendors/approved", isAuthenticated, asyncHandler(async (req: any, res) => {
+    const category = req.query.category as string | undefined;
+    // Resolve tenant code from the acting user so we only return this tenant's vendors
+    const actor = await resolveActingUser(req);
+    const actorFull = actor?.id ? await storage.getUser(actor.id) : null;
+    const tenantCode = actorFull?.companyCode ?? null;
+    const vendors = await storage.getVendors("approved", tenantCode);
+    const filtered = category ? vendors.filter(v => v.category === category) : vendors;
+    res.json(filtered);
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // GENERATE APPROVAL TOKEN (called when moving to awaiting_quotes)
+  // Returns a tokenized URL to send to manager via email
+  // ──────────────────────────────────────────────────────────────────────
+  app.post("/api/requests/:id/generate-approval-token", isAuthenticated, asyncHandler(async (req: any, res) => {
+    const request = await storage.getTravelRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+    if (!await assertTenantAccess(req, request)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const approverId = request.approverFlow[request.approverIndex] || "manager";
+    const token = generateApprovalToken(req.params.id, approverId);
+    const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    await storage.updateTravelRequest(req.params.id, {
+      approvalToken: token,
+      approvalTokenExpiry: expiry,
+    });
+
+    const approvalUrl = `${req.protocol}://${req.get("host")}/approve/${token}`;
+    res.json({ token, approvalUrl, expiry });
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // TOKENIZED APPROVAL – GET (public, no login required)
+  // Returns request details + quotes for the manager to review
+  // ──────────────────────────────────────────────────────────────────────
+  app.get("/api/token-approve/:token", asyncHandler(async (req, res) => {
+    const parsed = verifyApprovalToken(req.params.token);
+    if (!parsed) return res.status(401).json({ error: "Invalid or expired approval link" });
+
+    const request = await storage.getTravelRequest(parsed.requestId);
+    if (!request) return res.status(404).json({ error: "Request not found" });
+
+    if (request.approvalToken !== req.params.token) {
+      return res.status(401).json({ error: "This approval link has been superseded" });
+    }
+
+    const quotes = await storage.getQuotes(parsed.requestId);
+    const allUsers = await storage.getAllUsers();
+    const approver = allUsers.find(u => u.id === parsed.approverId);
+
+    res.json({
+      request,
+      quotes,
+      approver: approver ? { id: approver.id, name: `${approver.firstName} ${approver.lastName}` } : null,
+    });
+  }));
+
+  // ──────────────────────────────────────────────────────────────────────
+  // TOKENIZED APPROVAL – POST (public, no login required)
+  // Manager submits approve or reject decision via the token link
+  // ──────────────────────────────────────────────────────────────────────
+  app.post("/api/token-approve/:token", asyncHandler(async (req, res) => {
+    const parsed = verifyApprovalToken(req.params.token);
+    if (!parsed) return res.status(401).json({ error: "Invalid or expired approval link" });
+
+    const { action, comment } = req.body as { action: "approve" | "reject"; comment?: string };
+    if (!action || !["approve", "reject"].includes(action)) {
+      return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
     }
     if (action === "reject" && !comment?.trim()) {
       return res.status(400).json({ error: "A rejection comment is required" });
