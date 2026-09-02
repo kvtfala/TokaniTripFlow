@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createTravelCaseDraftSchema,
+  issueAuthorityToProceedSchema,
   submitTravelCaseSchema,
   travelCaseDetailSchema,
   updateTravelCaseDraftSchema,
@@ -38,6 +39,7 @@ describe("B0 travel case contracts", () => {
       coordinatorMembershipId: null,
       informationRequests: [],
       approval: null,
+      authoritiesToProceed: [],
       availableActions: ["edit", "submit", "cancel"],
     });
 
@@ -113,6 +115,24 @@ describe("B0 travel case contracts", () => {
       attestation: false,
     });
     expect(result.success).toBe(false);
+  });
+
+  it("keeps Authority to Proceed within the approved option and PO/LPO rules", () => {
+    const base = {
+      expectedVersion: 4, idempotencyKey: "00000000-0000-4000-8000-000000000060",
+      providerId: "00000000-0000-4000-8000-000000000061",
+      scopeComponentIds: ["00000000-0000-4000-8000-000000000062"],
+      approvedOptionSource: "external_quote", approvedOptionReference: "QUOTE-1",
+      approvedOptionVersion: 1, optionValidUntil: "2026-10-02T00:00:00.000Z",
+      amountType: "exact", authorisedAmount: 1000, currency: "fjd",
+      fundingMethod: "lpo_po", lpoRequirement: "before_authority",
+      validUntil: "2026-10-01T00:00:00.000Z",
+    } as const;
+    expect(issueAuthorityToProceedSchema.safeParse(base).success).toBe(false);
+    expect(issueAuthorityToProceedSchema.safeParse({ ...base, fundingReference: "LPO-100" }).success).toBe(true);
+    expect(issueAuthorityToProceedSchema.safeParse({
+      ...base, fundingReference: "LPO-100", validUntil: "2026-10-03T00:00:00.000Z",
+    }).success).toBe(false);
   });
 
   it("requires at least one service component at submission", () => {

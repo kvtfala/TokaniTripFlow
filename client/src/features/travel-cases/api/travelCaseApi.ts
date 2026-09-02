@@ -1,13 +1,19 @@
 import {
   createTravelCaseDraftSchema,
   addServiceComponentSchema,
+  createOrganisationProviderSchema,
+  issueAuthorityToProceedSchema,
+  organisationProviderSchema,
   phaseOneTravelCaseRoutes,
   submitTravelCaseSchema,
   travelCaseDetailSchema,
   travelCaseSummarySchema,
   updateTravelCaseDraftSchema,
   type AddServiceComponent,
+  type CreateOrganisationProvider,
   type CreateTravelCaseDraft,
+  type IssueAuthorityToProceed,
+  type OrganisationProvider,
   type SubmitTravelCase,
   type TravelCaseDetail,
   type TravelCaseSummary,
@@ -17,6 +23,7 @@ import { apiErrorEnvelopeSchema, type ApiErrorEnvelope } from "@shared/contracts
 import { z } from "zod";
 
 const travelCaseListSchema = z.array(travelCaseSummarySchema);
+const providerListSchema = z.array(organisationProviderSchema);
 
 export class TravelCaseApiError extends Error {
   constructor(
@@ -88,6 +95,16 @@ function casePath(template: string, caseId: string): string {
 }
 
 export const travelCaseApi = {
+  listProviders(): Promise<OrganisationProvider[]> {
+    return requestJson(phaseOneTravelCaseRoutes.listProviders.path, providerListSchema);
+  },
+
+  createProvider(input: CreateOrganisationProvider): Promise<OrganisationProvider> {
+    const payload = createOrganisationProviderSchema.parse(input);
+    return requestJson(phaseOneTravelCaseRoutes.createProvider.path, organisationProviderSchema, {
+      method: phaseOneTravelCaseRoutes.createProvider.method, body: JSON.stringify(payload),
+    });
+  },
   list(): Promise<TravelCaseSummary[]> {
     return requestJson(phaseOneTravelCaseRoutes.list.path, travelCaseListSchema);
   },
@@ -132,6 +149,15 @@ export const travelCaseApi = {
       casePath(phaseOneTravelCaseRoutes.submit.path, caseId),
       travelCaseDetailSchema,
       { method: phaseOneTravelCaseRoutes.submit.method, body: JSON.stringify(payload) },
+    );
+  },
+
+  issueAuthorityToProceed(caseId: string, input: IssueAuthorityToProceed): Promise<TravelCaseDetail> {
+    const payload = issueAuthorityToProceedSchema.parse(input);
+    return requestJson(
+      casePath(phaseOneTravelCaseRoutes.issueAuthorityToProceed.path, caseId),
+      travelCaseDetailSchema,
+      { method: phaseOneTravelCaseRoutes.issueAuthorityToProceed.method, body: JSON.stringify(payload) },
     );
   },
 };

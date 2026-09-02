@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AddServiceComponent, ApprovalDecision, ApprovalWorkItem, ClaimTravelCaseReview, CompleteTravelCaseReview, CreateTravelCaseDraft, RequestTravelCaseInformation, SubmitTravelCase, TravelCaseDetail, TravelCaseSummary, UpdateServiceComponent, UpdateTravelCaseDraft } from "@shared/contracts/travelCases";
+import type { AddServiceComponent, ApprovalDecision, ApprovalWorkItem, ClaimTravelCaseReview, CompleteTravelCaseReview, CreateOrganisationProvider, CreateTravelCaseDraft, IssueAuthorityToProceed, OrganisationProvider, RequestTravelCaseInformation, SubmitTravelCase, TravelCaseDetail, TravelCaseSummary, UpdateServiceComponent, UpdateTravelCaseDraft } from "@shared/contracts/travelCases";
 
 interface StoreConfig { url: string; secretKey: string }
 interface ActorContext { userId: string; organisationId: string; membershipId: string; role: string; correlationId: string }
@@ -17,6 +17,9 @@ export interface SupabaseTravelCaseStore {
   completeReview(actor: ActorContext, caseId: string, input: CompleteTravelCaseReview): Promise<TravelCaseDetail>;
   recordApprovalDecision(actor: ActorContext, caseId: string, input: ApprovalDecision): Promise<TravelCaseDetail>;
   listApprovalWork(actor: ActorContext): Promise<ApprovalWorkItem[]>;
+  listProviders(actor: ActorContext): Promise<OrganisationProvider[]>;
+  createProvider(actor: ActorContext, input: CreateOrganisationProvider): Promise<OrganisationProvider>;
+  issueAuthorityToProceed(actor: ActorContext, caseId: string, input: IssueAuthorityToProceed): Promise<TravelCaseDetail>;
 }
 
 export type TravelCaseOperationFailure = "not_found" | "forbidden" | "conflict" | "validation" | "unavailable";
@@ -58,6 +61,7 @@ function availableActions(row: JsonRecord, actor: ActorContext) {
   if (["draft", "information_required"].includes(row.status) && row.owner_membership_id === actor.membershipId) return ["edit", "submit", "upload_document"] as const;
   if (["submitted", "in_review"].includes(row.status) && ["coordinator", "travel_desk", "travel_admin"].includes(actor.role)) return ["review", "request_information", "upload_document"] as const;
   if (row.status === "awaiting_approval" && ["approver", "manager", "finance_admin"].includes(actor.role)) return ["approve", "upload_document"] as const;
+  if (["approved", "authorised"].includes(row.status) && ["coordinator", "travel_admin"].includes(actor.role)) return ["authorise", "upload_document"] as const;
   return ["upload_document"] as const;
 }
 
@@ -111,16 +115,22 @@ async function detailFromRow(config: StoreConfig, actor: ActorContext, row: Json
     organisation_id: `eq.${actor.organisationId}`, travel_case_id: `eq.${row.id}`,
     order: "cycle_number.desc", limit: "1",
   });
-  const [componentResponse, assignmentResponse, informationResponse, approvalResponse] = await Promise.all([
+  const authorityParams = new URLSearchParams({
+    select: "id,authority_number,provider_id,provider_snapshot,scope_component_ids,approved_option_source,approved_option_reference,approved_option_version,amount_type,authorised_amount,permitted_variation_amount,currency,funding_method,funding_reference,lpo_requirement,conditions,valid_until,issued_at",
+    organisation_id: `eq.${actor.organisationId}`, travel_case_id: `eq.${row.id}`, order: "issued_at.desc",
+  });
+  const [componentResponse, assignmentResponse, informationResponse, approvalResponse, authorityResponse] = await Promise.all([
     request(config, `/rest/v1/service_components?${params}`),
     request(config, `/rest/v1/travel_case_review_assignments?${assignmentParams}`),
     request(config, `/rest/v1/travel_case_information_requests?${informationParams}`),
     request(config, `/rest/v1/approval_cycles?${approvalParams}`),
+    request(config, `/rest/v1/authorities_to_proceed?${authorityParams}`),
   ]);
   const components = await componentResponse.json() as JsonRecord[];
   const [assignment] = await assignmentResponse.json() as JsonRecord[];
   const informationRequests = await informationResponse.json() as JsonRecord[];
   const [approvalCycle] = await approvalResponse.json() as JsonRecord[];
+  const authorities = await authorityResponse.json() as JsonRecord[];
   return {
     ...summary(row),
     purpose: row.purpose,
@@ -146,12 +156,47 @@ async function detailFromRow(config: StoreConfig, actor: ActorContext, row: Json
         requiredRole: item.required_role, status: item.status, dueAt: item.due_at,
       })).sort((a: JsonRecord, b: JsonRecord) => a.stageSequence - b.stageSequence),
     } : null,
+    authoritiesToProceed: authorities.map((authority) => ({
+      id: authority.id, authorityNumber: authority.authority_number, providerId: authority.provider_id,
+      providerName: authority.provider_snapshot?.trading_name ?? authority.provider_snapshot?.legal_name ?? "Provider",
+      scopeComponentIds: authority.scope_component_ids, approvedOptionSource: authority.approved_option_source,
+      approvedOptionReference: authority.approved_option_reference, approvedOptionVersion: authority.approved_option_version,
+      amountType: authority.amount_type, authorisedAmount: Number(authority.authorised_amount),
+      permittedVariationAmount: Number(authority.permitted_variation_amount), currency: authority.currency,
+      fundingMethod: authority.funding_method, fundingReference: authority.funding_reference,
+      lpoRequirement: authority.lpo_requirement, conditions: authority.conditions,
+      validUntil: authority.valid_until, issuedAt: authority.issued_at,
+    })),
     availableActions: [...availableActions(row, actor)],
   };
 }
 
 export function createSupabaseTravelCaseStore(config: StoreConfig): SupabaseTravelCaseStore {
   return {
+    async listProviders(actor) {
+      const params = new URLSearchParams({
+        select: "id,legal_name,trading_name,external_reference,status",
+        organisation_id: `eq.${actor.organisationId}`, status: "eq.eligible", order: "legal_name.asc",
+      });
+      const response = await request(config, `/rest/v1/organisation_providers?${params}`);
+      return (await response.json() as JsonRecord[]).map((provider) => ({
+        id: provider.id, legalName: provider.legal_name, tradingName: provider.trading_name,
+        externalReference: provider.external_reference, status: provider.status,
+      }));
+    },
+    async createProvider(actor, input) {
+      const response = await request(config, "/rest/v1/rpc/create_organisation_provider", {
+        method: "POST", body: JSON.stringify({
+          target_organisation_id: actor.organisationId, actor_user_id: actor.userId,
+          actor_membership_id: actor.membershipId, provider_legal_name: input.legalName,
+          provider_trading_name: input.tradingName ?? null,
+          provider_external_reference: input.externalReference ?? null, correlation_id: actor.correlationId,
+        }),
+      });
+      const body = await response.json(); const provider = Array.isArray(body) ? body[0] : body;
+      return { id: provider.id, legalName: provider.legal_name, tradingName: provider.trading_name,
+        externalReference: provider.external_reference, status: provider.status };
+    },
     async listApprovalWork(actor) {
       const response = await request(config, "/rest/v1/rpc/list_pending_approval_work", {
         method: "POST", body: JSON.stringify({ target_organisation_id: actor.organisationId, actor_user_id: actor.userId, actor_membership_id: actor.membershipId }),
@@ -334,6 +379,26 @@ export function createSupabaseTravelCaseStore(config: StoreConfig): SupabaseTrav
           actor_membership_id: actor.membershipId, request_idempotency_key: input.idempotencyKey,
           requested_decision: input.decision, decision_reason: input.reason,
           correlation_id: actor.correlationId,
+        }),
+      });
+      const body = await response.json(); const row = Array.isArray(body) ? body[0] : body;
+      return detailFromRow(config, actor, row);
+    },
+    async issueAuthorityToProceed(actor, caseId, input) {
+      const response = await request(config, "/rest/v1/rpc/issue_authority_to_proceed", {
+        method: "POST", body: JSON.stringify({
+          target_organisation_id: actor.organisationId, target_case_id: caseId,
+          actor_user_id: actor.userId, actor_membership_id: actor.membershipId,
+          expected_version: input.expectedVersion, request_idempotency_key: input.idempotencyKey,
+          target_provider_id: input.providerId, requested_scope_component_ids: input.scopeComponentIds,
+          approved_option_source: input.approvedOptionSource,
+          approved_option_reference: input.approvedOptionReference,
+          approved_option_version: input.approvedOptionVersion, option_valid_until: input.optionValidUntil,
+          amount_type: input.amountType, authorised_amount: input.authorisedAmount,
+          permitted_variation_amount: input.permittedVariationAmount, currency: input.currency,
+          funding_method: input.fundingMethod, funding_reference: input.fundingReference ?? null,
+          lpo_requirement: input.lpoRequirement, authority_conditions: input.conditions,
+          authority_valid_until: input.validUntil, correlation_id: actor.correlationId,
         }),
       });
       const body = await response.json(); const row = Array.isArray(body) ? body[0] : body;

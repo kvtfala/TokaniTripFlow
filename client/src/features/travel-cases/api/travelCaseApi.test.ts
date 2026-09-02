@@ -39,9 +39,10 @@ describe("travelCaseApi", () => {
     });
   });
 
-  it("implements every route in the six-route client contract", () => {
+  it("implements every production travel-case client route", () => {
     expect(Object.keys(travelCaseApi).sort()).toEqual([
-      "addComponent", "createDraft", "detail", "list", "submit", "updateDraft",
+      "addComponent", "createDraft", "createProvider", "detail", "issueAuthorityToProceed",
+      "list", "listProviders", "submit", "updateDraft",
     ]);
   });
 });

@@ -2,6 +2,7 @@ import { useLocation, useRoute } from "wouter";
 import { AlertCircle, ArrowLeft, LoaderCircle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTravelCaseDetail } from "../hooks/useTravelCases";
+import { AuthorityToProceedPanel } from "../components/AuthorityToProceedPanel";
 
 export default function TravelCaseDetailPage() {
   const [, navigate] = useLocation();
@@ -28,6 +29,7 @@ export default function TravelCaseDetailPage() {
           <div><dt className="text-xs text-muted-foreground">Next action</dt><dd className="mt-1 text-sm font-semibold">{detail.nextAction ?? "None recorded"}</dd></div>
         </dl>
       </header>
+      <AuthorityToProceedPanel travelCase={detail} />
     </section>
   );
 }

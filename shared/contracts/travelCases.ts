@@ -157,6 +157,50 @@ export const approvalDecisionSchema = z.object({
   reason: z.string().trim().min(3).max(4_000),
 }).strict();
 
+export const organisationProviderSchema = z.object({
+  id: z.string().uuid(),
+  legalName: z.string(),
+  tradingName: z.string().nullable(),
+  externalReference: z.string().nullable(),
+  status: z.enum(["eligible", "suspended", "retired"]),
+});
+
+export const createOrganisationProviderSchema = z.object({
+  legalName: z.string().trim().min(2).max(200),
+  tradingName: z.string().trim().min(2).max(200).optional(),
+  externalReference: z.string().trim().min(1).max(100).optional(),
+}).strict();
+
+export const issueAuthorityToProceedSchema = z.object({
+  expectedVersion: z.number().int().nonnegative(),
+  idempotencyKey: z.string().uuid(),
+  providerId: z.string().uuid(),
+  scopeComponentIds: z.array(z.string().uuid()).min(1).max(100),
+  approvedOptionSource: z.enum(["quotation", "contracted_rate", "external_quote", "other"]),
+  approvedOptionReference: z.string().trim().min(1).max(255),
+  approvedOptionVersion: z.number().int().positive(),
+  optionValidUntil: z.string().datetime({ offset: true }),
+  amountType: z.enum(["exact", "ceiling"]),
+  authorisedAmount: z.number().nonnegative().max(999_999_999_999_999.99),
+  permittedVariationAmount: z.number().nonnegative().max(999_999_999_999_999.99).default(0),
+  currency: z.string().trim().regex(/^[A-Za-z]{3}$/).transform((value) => value.toUpperCase()),
+  fundingMethod: z.enum(["lpo_po", "account", "transfer", "card", "other"]),
+  fundingReference: z.string().trim().min(1).max(255).optional(),
+  lpoRequirement: z.enum(["before_authority", "after_authority", "not_required"]),
+  conditions: z.array(z.string().trim().min(1).max(500)).max(50).default([]),
+  validUntil: z.string().datetime({ offset: true }),
+}).strict().superRefine((value, context) => {
+  if (value.amountType === "exact" && value.permittedVariationAmount !== 0) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["permittedVariationAmount"], message: "Exact amounts cannot include a permitted variation" });
+  }
+  if (value.lpoRequirement === "before_authority" && !value.fundingReference) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["fundingReference"], message: "A PO/LPO reference is required before authority" });
+  }
+  if (new Date(value.validUntil) > new Date(value.optionValidUntil)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["validUntil"], message: "Authority cannot outlive the approved option" });
+  }
+});
+
 export const approvalWorkItemSchema = z.object({
   requirementId: z.string(), travelCaseId: z.string(), referenceNumber: z.string(), title: z.string(),
   stageSequence: z.number().int().positive(), subject: z.string(),
@@ -230,6 +274,17 @@ export const travelCaseDetailSchema = travelCaseSummarySchema.extend({
       dueAt: z.string().datetime().nullable(),
     })),
   }).nullable(),
+  authoritiesToProceed: z.array(z.object({
+    id: z.string(), authorityNumber: z.string(), providerId: z.string(),
+    providerName: z.string(), scopeComponentIds: z.array(z.string()),
+    approvedOptionSource: z.enum(["quotation", "contracted_rate", "external_quote", "other"]),
+    approvedOptionReference: z.string(), approvedOptionVersion: z.number().int().positive(),
+    amountType: z.enum(["exact", "ceiling"]), authorisedAmount: z.number(),
+    permittedVariationAmount: z.number(), currency: z.string(),
+    fundingMethod: z.string(), fundingReference: z.string().nullable(),
+    lpoRequirement: z.string(), conditions: z.array(z.string()),
+    validUntil: z.string().datetime(), issuedAt: z.string().datetime(),
+  })),
   availableActions: z.array(travelCaseActionSchema),
 });
 
@@ -242,6 +297,9 @@ export type ClaimTravelCaseReview = z.infer<typeof claimTravelCaseReviewSchema>;
 export type RequestTravelCaseInformation = z.infer<typeof requestTravelCaseInformationSchema>;
 export type CompleteTravelCaseReview = z.infer<typeof completeTravelCaseReviewSchema>;
 export type ApprovalDecision = z.infer<typeof approvalDecisionSchema>;
+export type OrganisationProvider = z.infer<typeof organisationProviderSchema>;
+export type CreateOrganisationProvider = z.infer<typeof createOrganisationProviderSchema>;
+export type IssueAuthorityToProceed = z.infer<typeof issueAuthorityToProceedSchema>;
 export type ApprovalWorkItem = z.infer<typeof approvalWorkItemSchema>;
 export type TravelCaseAction = z.infer<typeof travelCaseActionSchema>;
 export type TravelCaseSummary = z.infer<typeof travelCaseSummarySchema>;
@@ -260,4 +318,7 @@ export const phaseOneTravelCaseRoutes = {
   completeReview: { method: "POST", path: "/api/v1/travel-cases/:caseId/review-outcome" },
   recordApprovalDecision: { method: "POST", path: "/api/v1/travel-cases/:caseId/approval-decisions" },
   approvalWork: { method: "GET", path: "/api/v1/approval-requirements" },
+  listProviders: { method: "GET", path: "/api/v1/providers" },
+  createProvider: { method: "POST", path: "/api/v1/providers" },
+  issueAuthorityToProceed: { method: "POST", path: "/api/v1/travel-cases/:caseId/authority-to-proceed" },
 } as const;

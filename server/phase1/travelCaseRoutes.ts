@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { addServiceComponentSchema, approvalDecisionSchema, claimTravelCaseReviewSchema, completeTravelCaseReviewSchema, createTravelCaseDraftSchema, requestTravelCaseInformationSchema, submitTravelCaseSchema, updateServiceComponentSchema, updateTravelCaseDraftSchema } from "@shared/contracts/travelCases";
+import { addServiceComponentSchema, approvalDecisionSchema, claimTravelCaseReviewSchema, completeTravelCaseReviewSchema, createOrganisationProviderSchema, createTravelCaseDraftSchema, issueAuthorityToProceedSchema, requestTravelCaseInformationSchema, submitTravelCaseSchema, updateServiceComponentSchema, updateTravelCaseDraftSchema } from "@shared/contracts/travelCases";
 import { isMfaRequiredForRole } from "../config/securityEnvironment";
 import { TravelCaseOperationError, type SupabaseTravelCaseStore } from "./supabaseTravelCaseStore";
 
@@ -62,6 +62,20 @@ function operationError(request: Request, response: any, caught: unknown, fallba
 const caseIdSchema = z.string().uuid();
 
 export function registerTravelCaseRoutes(app: Express, store: SupabaseTravelCaseStore) {
+  app.get("/api/v1/providers", async (request, response) => {
+    const context = contextOrError(request, response); if (!context) return;
+    if (!["coordinator", "travel_admin"].includes(context.role)) return response.status(403).json(error(request, "forbidden", "Provider access is not permitted"));
+    try { return response.json(await store.listProviders(context)); }
+    catch (caught) { return operationError(request, response, caught, "Providers are temporarily unavailable"); }
+  });
+  app.post("/api/v1/providers", async (request, response) => {
+    const context = contextOrError(request, response); if (!context) return;
+    if (context.role !== "travel_admin") return response.status(403).json(error(request, "forbidden", "Provider administration is not permitted"));
+    const parsed = createOrganisationProviderSchema.safeParse(request.body);
+    if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Invalid provider", parsed.error.flatten().fieldErrors as Record<string, string[]>));
+    try { return response.status(201).json(await store.createProvider(context, parsed.data)); }
+    catch (caught) { return operationError(request, response, caught, "Provider could not be created"); }
+  });
   app.get("/api/v1/approval-requirements", async (request, response) => {
     const context = contextOrError(request, response); if (!context) return;
     try { return response.json(await store.listApprovalWork(context)); }
@@ -172,5 +186,14 @@ export function registerTravelCaseRoutes(app: Express, store: SupabaseTravelCase
     if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Invalid approval decision", parsed.error.flatten().fieldErrors as Record<string, string[]>));
     try { return response.status(201).json(await store.recordApprovalDecision(context, request.params.caseId, parsed.data)); }
     catch (caught) { return operationError(request, response, caught, "Approval decision could not be recorded"); }
+  });
+  app.post("/api/v1/travel-cases/:caseId/authority-to-proceed", async (request, response) => {
+    const context = contextOrError(request, response); if (!context) return;
+    if (!["coordinator", "travel_admin"].includes(context.role)) return response.status(403).json(error(request, "forbidden", "Authority to Proceed access is not permitted"));
+    if (!caseIdSchema.safeParse(request.params.caseId).success) return response.status(404).json(error(request, "not_found", "Travel case not found"));
+    const parsed = issueAuthorityToProceedSchema.safeParse(request.body);
+    if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Invalid Authority to Proceed", parsed.error.flatten().fieldErrors as Record<string, string[]>));
+    try { return response.status(201).json(await store.issueAuthorityToProceed(context, request.params.caseId, parsed.data)); }
+    catch (caught) { return operationError(request, response, caught, "Authority to Proceed could not be issued"); }
   });
 }

@@ -18,6 +18,7 @@ const detail: TravelCaseDetail = {
   travellerUserId: null, destination: null, funding: null, components: [],
   coordinatorMembershipId: null, informationRequests: [],
   approval: null,
+  authoritiesToProceed: [],
   availableActions: ["edit", "submit"],
 };
 const servers: Array<ReturnType<typeof createServer>> = [];
@@ -64,6 +65,9 @@ function fakeStore(): SupabaseTravelCaseStore {
     requestInformation: vi.fn().mockResolvedValue({ ...detail, status: "information_required", version: 3 }),
     completeReview: vi.fn().mockResolvedValue({ ...detail, status: "awaiting_approval", version: 3 }),
     recordApprovalDecision: vi.fn().mockResolvedValue({ ...detail, status: "approved", version: 4 }),
+    listProviders: vi.fn().mockResolvedValue([]),
+    createProvider: vi.fn().mockResolvedValue({ id: "00000000-0000-4000-8000-000000000050", legalName: "Provider", tradingName: null, externalReference: null, status: "eligible" }),
+    issueAuthorityToProceed: vi.fn().mockResolvedValue({ ...detail, status: "authorised", version: 5 }),
   };
 }
 
@@ -257,5 +261,30 @@ describe("membership-authorized travel-case routes", () => {
     });
     expect(response.status).toBe(201);
     expect(store.recordApprovalDecision).toHaveBeenCalledWith(expect.objectContaining({ role: "approver" }), caseId, payload);
+  });
+
+  it("issues a scoped Authority to Proceed through an AAL2 operational role", async () => {
+    const store = fakeStore(); const base = await appServer(store, true, [{ id: membershipId, organisationId, status: "active", role: "coordinator" }]);
+    const payload = {
+      expectedVersion: 4, idempotencyKey: "00000000-0000-4000-8000-000000000060",
+      providerId: "00000000-0000-4000-8000-000000000061",
+      scopeComponentIds: ["00000000-0000-4000-8000-000000000062"],
+      approvedOptionSource: "external_quote", approvedOptionReference: "QUOTE-1", approvedOptionVersion: 1,
+      optionValidUntil: "2026-10-02T00:00:00.000Z", amountType: "exact", authorisedAmount: 1000,
+      permittedVariationAmount: 0, currency: "FJD", fundingMethod: "account",
+      lpoRequirement: "after_authority", conditions: [], validUntil: "2026-10-01T00:00:00.000Z",
+    };
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/authority-to-proceed`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(201);
+    expect(store.issueAuthorityToProceed).toHaveBeenCalledWith(expect.objectContaining({ role: "coordinator" }), caseId, payload);
+  });
+
+  it("rejects Authority to Proceed from an unauthorised role", async () => {
+    const store = fakeStore(); const base = await appServer(store, true, [{ id: membershipId, organisationId, status: "active", role: "employee" }]);
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/authority-to-proceed`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+    expect(response.status).toBe(403);
+    expect(store.issueAuthorityToProceed).not.toHaveBeenCalled();
   });
 });
