@@ -3,6 +3,7 @@ import express from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TravelCaseDetail } from "@shared/contracts/travelCases";
 import { registerTravelCaseRoutes } from "./travelCaseRoutes";
+import { TravelCaseOperationError } from "./supabaseTravelCaseStore";
 import type { SupabaseTravelCaseStore } from "./supabaseTravelCaseStore";
 
 const organisationId = "00000000-0000-4000-8000-000000000010";
@@ -20,7 +21,11 @@ const detail: TravelCaseDetail = {
 const servers: Array<ReturnType<typeof createServer>> = [];
 afterEach(async () => Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve())))));
 
-async function appServer(store: SupabaseTravelCaseStore, authenticated = true) {
+async function appServer(
+  store: SupabaseTravelCaseStore,
+  authenticated = true,
+  memberships: Array<Record<string, unknown>> = [{ id: membershipId, organisationId, status: "active", role: "employee" }],
+) {
   const app = express();
   app.use(express.json());
   if (authenticated) app.use((request, _response, next) => {
@@ -28,7 +33,7 @@ async function appServer(store: SupabaseTravelCaseStore, authenticated = true) {
       id: "00000000-0000-4000-8000-000000000013", email: "user@example.com",
       firstName: "Trip", lastName: "User", profileImageUrl: null,
       role: "employee", companyCode: organisationId, isActive: true,
-      memberships: [{ id: membershipId, organisationId, status: "active", role: "employee" }],
+      memberships,
     };
     next();
   });
@@ -40,7 +45,13 @@ async function appServer(store: SupabaseTravelCaseStore, authenticated = true) {
 }
 
 function fakeStore(): SupabaseTravelCaseStore {
-  return { list: vi.fn().mockResolvedValue([detail]), detail: vi.fn().mockResolvedValue(detail), createDraft: vi.fn().mockResolvedValue(detail) };
+  return {
+    list: vi.fn().mockResolvedValue([detail]),
+    detail: vi.fn().mockResolvedValue(detail),
+    createDraft: vi.fn().mockResolvedValue(detail),
+    updateDraft: vi.fn().mockResolvedValue({ ...detail, version: 1 }),
+    addComponent: vi.fn().mockResolvedValue({ ...detail, version: 1 }),
+  };
 }
 
 describe("membership-authorized travel-case routes", () => {
@@ -71,5 +82,70 @@ describe("membership-authorized travel-case routes", () => {
   it("requires a validated active membership", async () => {
     const store = fakeStore(); const base = await appServer(store, false);
     expect((await fetch(`${base}/api/v1/travel-cases`)).status).toBe(401);
+  });
+
+  it("requires an explicit organisation context for multi-organisation users", async () => {
+    const secondOrganisation = "00000000-0000-4000-8000-000000000030";
+    const secondMembership = "00000000-0000-4000-8000-000000000031";
+    const memberships = [
+      { id: membershipId, organisationId, status: "active", role: "employee" },
+      { id: secondMembership, organisationId: secondOrganisation, status: "active", role: "coordinator" },
+    ];
+    const store = fakeStore(); const base = await appServer(store, true, memberships);
+    expect((await fetch(`${base}/api/v1/travel-cases`)).status).toBe(409);
+    const selected = await fetch(`${base}/api/v1/travel-cases`, {
+      headers: { "x-tripflow-organisation-id": secondOrganisation },
+    });
+    expect(selected.status).toBe(200);
+    expect(store.list).toHaveBeenCalledWith(expect.objectContaining({
+      organisationId: secondOrganisation,
+      membershipId: secondMembership,
+      role: "coordinator",
+    }));
+  });
+
+  it("updates drafts with optimistic concurrency data", async () => {
+    const store = fakeStore(); const base = await appServer(store);
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/draft`, {
+      method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "Updated trip", expectedVersion: 0 }),
+    });
+    expect(response.status).toBe(200);
+    expect(store.updateDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ organisationId, membershipId }),
+      caseId,
+      { title: "Updated trip", expectedVersion: 0 },
+    );
+  });
+
+  it("maps stale draft versions to a safe conflict response", async () => {
+    const store = fakeStore(); vi.mocked(store.updateDraft).mockRejectedValue(new TravelCaseOperationError("conflict"));
+    const base = await appServer(store);
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/draft`, {
+      method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "Updated trip", expectedVersion: 0 }),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.text()).not.toContain("Supabase");
+  });
+
+  it("requires an idempotency key when adding a component", async () => {
+    const store = fakeStore(); const base = await appServer(store);
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/components`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "flight", sequence: 0, requirements: {}, expectedVersion: 0 }),
+    });
+    expect(response.status).toBe(422);
+    expect(store.addComponent).not.toHaveBeenCalled();
+  });
+
+  it("adds components through the tenant-scoped store", async () => {
+    const store = fakeStore(); const base = await appServer(store);
+    const payload = { type: "flight", sequence: 0, requirements: {}, expectedVersion: 0, idempotencyKey: "00000000-0000-4000-8000-000000000020" };
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/components`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(201);
+    expect(store.addComponent).toHaveBeenCalledWith(expect.objectContaining({ organisationId }), caseId, payload);
   });
 });

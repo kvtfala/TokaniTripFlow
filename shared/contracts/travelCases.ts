@@ -41,7 +41,7 @@ const createTravelCaseDraftFieldsSchema = z.object({
   purpose: z.string().trim().min(1).max(4_000),
   caseType: caseTypeSchema.optional(),
   priority: casePrioritySchema.default("normal"),
-  travellerUserId: z.string().trim().min(1).optional(),
+  travellerUserId: z.string().uuid().optional(),
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
   destination: destinationSchema.optional(),
@@ -66,9 +66,27 @@ export const createTravelCaseDraftSchema =
   createTravelCaseDraftFieldsSchema.superRefine(validateDateRange);
 
 export const updateTravelCaseDraftSchema =
-  createTravelCaseDraftFieldsSchema.partial().extend({
+  z.object({
+    title: z.string().trim().min(1).max(255).optional(),
+    purpose: z.string().trim().min(1).max(4_000).optional(),
+    caseType: caseTypeSchema.nullable().optional(),
+    priority: casePrioritySchema.optional(),
+    travellerUserId: z.string().uuid().nullable().optional(),
+    startDate: z.string().date().nullable().optional(),
+    endDate: z.string().date().nullable().optional(),
+    destination: destinationSchema.nullable().optional(),
+    funding: fundingSelectionSchema.partial().nullable().optional(),
+    requiredComponentTypes: z.array(serviceComponentTypeSchema).min(1).optional(),
     expectedVersion: z.number().int().nonnegative(),
-  }).superRefine(validateDateRange);
+  }).strict().superRefine((value, context) => {
+    validateDateRange({
+      startDate: value.startDate ?? undefined,
+      endDate: value.endDate ?? undefined,
+    }, context);
+    if (Object.keys(value).every((key) => key === "expectedVersion")) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "At least one draft field must change" });
+    }
+  });
 
 export const submitTravelCaseSchema = z.object({
   expectedStatus: z.literal("draft"),
@@ -88,12 +106,12 @@ export const serviceComponentDraftSchema = z.object({
   type: serviceComponentTypeSchema,
   sequence: z.number().int().nonnegative(),
   requirements: z.record(z.unknown()),
-});
+}).strict();
 
 export const addServiceComponentSchema = serviceComponentDraftSchema.extend({
   expectedVersion: z.number().int().nonnegative(),
   idempotencyKey: z.string().uuid(),
-});
+}).strict();
 
 export const travelCaseActionSchema = z.enum([
   "edit",

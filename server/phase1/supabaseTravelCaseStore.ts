@@ -1,13 +1,20 @@
 import { randomUUID } from "node:crypto";
-import type { CreateTravelCaseDraft, TravelCaseDetail, TravelCaseSummary } from "@shared/contracts/travelCases";
+import type { AddServiceComponent, CreateTravelCaseDraft, TravelCaseDetail, TravelCaseSummary, UpdateTravelCaseDraft } from "@shared/contracts/travelCases";
 
 interface StoreConfig { url: string; secretKey: string }
-interface ActorContext { organisationId: string; membershipId: string; role: string; correlationId: string }
+interface ActorContext { userId: string; organisationId: string; membershipId: string; role: string; correlationId: string }
 
 export interface SupabaseTravelCaseStore {
   list(actor: ActorContext): Promise<TravelCaseSummary[]>;
   detail(actor: ActorContext, caseId: string): Promise<TravelCaseDetail | null>;
   createDraft(actor: ActorContext, input: CreateTravelCaseDraft): Promise<TravelCaseDetail>;
+  updateDraft(actor: ActorContext, caseId: string, input: UpdateTravelCaseDraft): Promise<TravelCaseDetail>;
+  addComponent(actor: ActorContext, caseId: string, input: AddServiceComponent): Promise<TravelCaseDetail>;
+}
+
+export type TravelCaseOperationFailure = "not_found" | "forbidden" | "conflict" | "validation" | "unavailable";
+export class TravelCaseOperationError extends Error {
+  constructor(readonly failure: TravelCaseOperationFailure) { super(failure); }
 }
 
 type JsonRecord = Record<string, any>;
@@ -48,7 +55,17 @@ function availableActions(row: JsonRecord, actor: ActorContext) {
 
 async function request(config: StoreConfig, path: string, init: RequestInit = {}) {
   const response = await fetch(`${config.url}${path}`, { ...init, headers: { ...headers(config), ...init.headers } });
-  if (!response.ok) throw new Error(`Supabase travel-case operation failed (${response.status})`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({})) as JsonRecord;
+    const marker = String(body.message ?? body.code ?? "");
+    const failure: TravelCaseOperationFailure =
+      marker.includes("not_found") ? "not_found" :
+      marker.includes("forbidden") || marker.includes("membership_required") || body.code === "42501" ? "forbidden" :
+      marker.includes("version_conflict") || marker.includes("draft_status_required") || body.code === "40001" || body.code === "55000" || body.code === "23505" ? "conflict" :
+      marker.includes("empty_patch") || marker.includes("unknown_patch") || marker.includes("traveller_membership") || body.code === "23514" ? "validation" :
+      "unavailable";
+    throw new TravelCaseOperationError(failure);
+  }
   return response;
 }
 
@@ -113,6 +130,7 @@ export function createSupabaseTravelCaseStore(config: StoreConfig): SupabaseTrav
         headers: headers(config, true),
         body: JSON.stringify({
           target_organisation_id: actor.organisationId,
+          actor_user_id: actor.userId,
           actor_membership_id: actor.membershipId,
           reference_number: reference,
           title: input.title,
@@ -131,6 +149,44 @@ export function createSupabaseTravelCaseStore(config: StoreConfig): SupabaseTrav
       const body = await response.json();
       const row = Array.isArray(body) ? body[0] : body;
       return detailFromRow(config, actor, row);
+    },
+    async updateDraft(actor, caseId, input) {
+      const { expectedVersion, ...patch } = input;
+      const response = await request(config, "/rest/v1/rpc/update_travel_case_draft", {
+        method: "POST",
+        body: JSON.stringify({
+          target_organisation_id: actor.organisationId,
+          target_case_id: caseId,
+          actor_user_id: actor.userId,
+          actor_membership_id: actor.membershipId,
+          expected_version: expectedVersion,
+          patch,
+          correlation_id: actor.correlationId,
+        }),
+      });
+      const body = await response.json();
+      const row = Array.isArray(body) ? body[0] : body;
+      return detailFromRow(config, actor, row);
+    },
+    async addComponent(actor, caseId, input) {
+      await request(config, "/rest/v1/rpc/add_service_component", {
+        method: "POST",
+        body: JSON.stringify({
+          target_organisation_id: actor.organisationId,
+          target_case_id: caseId,
+          actor_user_id: actor.userId,
+          actor_membership_id: actor.membershipId,
+          expected_version: input.expectedVersion,
+          request_idempotency_key: input.idempotencyKey,
+          component_type: input.type,
+          component_sequence: input.sequence,
+          requirements: input.requirements,
+          correlation_id: actor.correlationId,
+        }),
+      });
+      const updated = await this.detail(actor, caseId);
+      if (!updated) throw new TravelCaseOperationError("not_found");
+      return updated;
     },
   };
 }

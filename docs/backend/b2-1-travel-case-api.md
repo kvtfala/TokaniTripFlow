@@ -10,7 +10,7 @@ Implemented endpoints:
 - `GET /api/v1/travel-cases/:caseId`
 - `POST /api/v1/travel-cases`
 
-Updates, service-component changes, submission, workflow transitions, and approvals remain intentionally outside this increment.
+Draft updates and initial service-component creation were added in B2.2. Submission, later component lifecycle changes, workflow transitions, and approvals remain intentionally outside this increment.
 
 ## Security design
 
@@ -23,6 +23,10 @@ Updates, service-component changes, submission, workflow transitions, and approv
 - Browser roles have no direct DML grants on the travel-case tables.
 - Row-level security is enabled and forced on travel cases, service components, and case events.
 - Draft creation and its audit event are committed atomically by a server-only database function.
+- Draft updates use optimistic version checks so two browser sessions cannot silently overwrite each other.
+- Component creation requires an idempotency key, preventing duplicate services when a request is retried.
+- Every write function verifies that the authenticated user, membership and organisation belong together, providing database-level defence against an application-layer scoping mistake.
+- Users belonging to multiple organisations must explicitly select an organisation context; the server will not silently choose one.
 - The Supabase secret key remains server-side and is never included in frontend code.
 
 These controls support the secure-development, identity, access-control, logging, and tenant-isolation objectives relevant to ISO/IEC 27001 and ISO/IEC 27002. They are implementation evidence, not a claim of ISO certification.
@@ -33,16 +37,19 @@ These controls support the secure-development, identity, access-control, logging
 - `public.service_components`
 - `public.case_events`
 - `public.create_travel_case_draft(...)`
+- `public.update_travel_case_draft(...)`
+- `public.add_service_component(...)`
 
 Migration history:
 
 - `20260902031803_b2_1_travel_case_security_foundation`
 - `20260902031957_b2_1_travel_case_contract_alignment`
+- `20260902034827_b2_2_draft_component_transactions`
 
 ## Verification record
 
 - Strict TypeScript check: passed.
-- Automated tests: 53 passed across 15 files.
+- Automated tests: 58 passed across 15 files.
 - Production build: passed.
 - Supabase security advisor: zero findings after migration.
 - RLS: enabled and forced on all three tables.
@@ -58,4 +65,4 @@ All later travel-case endpoints must reuse the same request identity, strict con
 
 ## Next increment
 
-Implement authenticated draft updates and service-component management, then add workflow submission as a separate atomic transition. Each endpoint must ship with tenant-isolation, role, validation, audit, and negative-path tests before the phase advances.
+Implement submission as a separate atomic transition that records an immutable submission snapshot, validates tenant-configurable minimum fields, creates the formal submitted event, and prevents incomplete cases from appearing complete. Component update/removal rules must be finalised before post-submission coordination endpoints are introduced.
