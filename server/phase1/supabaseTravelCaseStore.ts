@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AddServiceComponent, CreateTravelCaseDraft, TravelCaseDetail, TravelCaseSummary, UpdateTravelCaseDraft } from "@shared/contracts/travelCases";
+import type { AddServiceComponent, CreateTravelCaseDraft, SubmitTravelCase, TravelCaseDetail, TravelCaseSummary, UpdateTravelCaseDraft } from "@shared/contracts/travelCases";
 
 interface StoreConfig { url: string; secretKey: string }
 interface ActorContext { userId: string; organisationId: string; membershipId: string; role: string; correlationId: string }
@@ -10,6 +10,7 @@ export interface SupabaseTravelCaseStore {
   createDraft(actor: ActorContext, input: CreateTravelCaseDraft): Promise<TravelCaseDetail>;
   updateDraft(actor: ActorContext, caseId: string, input: UpdateTravelCaseDraft): Promise<TravelCaseDetail>;
   addComponent(actor: ActorContext, caseId: string, input: AddServiceComponent): Promise<TravelCaseDetail>;
+  submit(actor: ActorContext, caseId: string, input: SubmitTravelCase): Promise<TravelCaseDetail>;
 }
 
 export type TravelCaseOperationFailure = "not_found" | "forbidden" | "conflict" | "validation" | "unavailable";
@@ -69,12 +70,16 @@ async function request(config: StoreConfig, path: string, init: RequestInit = {}
   return response;
 }
 
-function caseQuery(organisationId: string, caseId?: string) {
+const BROAD_CASE_ROLES = new Set(["coordinator", "travel_desk", "travel_admin", "organisation_admin"]);
+function caseQuery(actor: ActorContext, caseId?: string) {
   const params = new URLSearchParams({
     select: "id,organisation_id,reference_number,traveller_user_id,title,purpose,case_type,status,priority,start_date,end_date,destination,funding,required_component_types,owner_membership_id,current_dependency,next_action,version,submitted_at,closed_at,created_at,updated_at",
-    organisation_id: `eq.${organisationId}`,
+    organisation_id: `eq.${actor.organisationId}`,
     order: "updated_at.desc",
   });
+  if (!BROAD_CASE_ROLES.has(actor.role)) {
+    params.set("or", `(owner_membership_id.eq.${actor.membershipId},traveller_user_id.eq.${actor.userId})`);
+  }
   if (caseId) params.set("id", `eq.${caseId}`);
   return `/rest/v1/travel_cases?${params}`;
 }
@@ -107,11 +112,11 @@ async function detailFromRow(config: StoreConfig, actor: ActorContext, row: Json
 export function createSupabaseTravelCaseStore(config: StoreConfig): SupabaseTravelCaseStore {
   return {
     async list(actor) {
-      const response = await request(config, caseQuery(actor.organisationId));
+      const response = await request(config, caseQuery(actor));
       return (await response.json() as JsonRecord[]).map(summary);
     },
     async detail(actor, caseId) {
-      const response = await request(config, caseQuery(actor.organisationId, caseId));
+      const response = await request(config, caseQuery(actor, caseId));
       const [row] = await response.json() as JsonRecord[];
       return row ? detailFromRow(config, actor, row) : null;
     },
@@ -187,6 +192,31 @@ export function createSupabaseTravelCaseStore(config: StoreConfig): SupabaseTrav
       const updated = await this.detail(actor, caseId);
       if (!updated) throw new TravelCaseOperationError("not_found");
       return updated;
+    },
+    async submit(actor, caseId, input) {
+      const response = await request(config, "/rest/v1/rpc/submit_travel_case", {
+        method: "POST",
+        body: JSON.stringify({
+          target_organisation_id: actor.organisationId,
+          target_case_id: caseId,
+          actor_user_id: actor.userId,
+          actor_membership_id: actor.membershipId,
+          expected_version: input.expectedVersion,
+          request_idempotency_key: input.idempotencyKey,
+          attestation: input.attestation,
+          case_type: input.caseType,
+          traveller_user_id: input.travellerUserId,
+          start_date: input.startDate,
+          end_date: input.endDate,
+          destination: input.destination,
+          funding: input.funding,
+          required_component_types: input.requiredComponentTypes,
+          correlation_id: actor.correlationId,
+        }),
+      });
+      const body = await response.json();
+      const row = Array.isArray(body) ? body[0] : body;
+      return detailFromRow(config, actor, row);
     },
   };
 }

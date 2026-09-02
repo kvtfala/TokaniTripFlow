@@ -51,6 +51,7 @@ function fakeStore(): SupabaseTravelCaseStore {
     createDraft: vi.fn().mockResolvedValue(detail),
     updateDraft: vi.fn().mockResolvedValue({ ...detail, version: 1 }),
     addComponent: vi.fn().mockResolvedValue({ ...detail, version: 1 }),
+    submit: vi.fn().mockResolvedValue({ ...detail, status: "submitted", version: 1 }),
   };
 }
 
@@ -147,5 +148,33 @@ describe("membership-authorized travel-case routes", () => {
     });
     expect(response.status).toBe(201);
     expect(store.addComponent).toHaveBeenCalledWith(expect.objectContaining({ organisationId }), caseId, payload);
+  });
+
+  it("rejects incomplete formal submissions", async () => {
+    const store = fakeStore(); const base = await appServer(store);
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/submission`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ expectedStatus: "draft", expectedVersion: 0, attestation: true, idempotencyKey: "00000000-0000-4000-8000-000000000040" }),
+    });
+    expect(response.status).toBe(422);
+    expect(store.submit).not.toHaveBeenCalled();
+  });
+
+  it("submits a complete case through the tenant-scoped transaction", async () => {
+    const store = fakeStore(); const base = await appServer(store);
+    const payload = {
+      expectedStatus: "draft", expectedVersion: 0,
+      idempotencyKey: "00000000-0000-4000-8000-000000000040", attestation: true,
+      caseType: "corporate", travellerUserId: "00000000-0000-4000-8000-000000000013",
+      startDate: "2026-10-01", endDate: "2026-10-02",
+      destination: { city: "Suva", country: "Fiji" },
+      funding: { costCentreId: "CC-1", purchaseOrderRequired: false },
+      requiredComponentTypes: ["flight"],
+    };
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/submission`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(200);
+    expect(store.submit).toHaveBeenCalledWith(expect.objectContaining({ organisationId }), caseId, payload);
   });
 });

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { addServiceComponentSchema, createTravelCaseDraftSchema, updateTravelCaseDraftSchema } from "@shared/contracts/travelCases";
+import { addServiceComponentSchema, createTravelCaseDraftSchema, submitTravelCaseSchema, updateTravelCaseDraftSchema } from "@shared/contracts/travelCases";
 import { TravelCaseOperationError, type SupabaseTravelCaseStore } from "./supabaseTravelCaseStore";
 
 function actor(request: Request) {
@@ -103,5 +103,15 @@ export function registerTravelCaseRoutes(app: Express, store: SupabaseTravelCase
     if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Invalid service component", parsed.error.flatten().fieldErrors as Record<string, string[]>));
     try { return response.status(201).json(await store.addComponent(context, request.params.caseId, parsed.data)); }
     catch (caught) { return operationError(request, response, caught, "Service component could not be added"); }
+  });
+
+  app.post("/api/v1/travel-cases/:caseId/submission", async (request, response) => {
+    const context = contextOrError(request, response);
+    if (!context) return;
+    if (!caseIdSchema.safeParse(request.params.caseId).success) return response.status(404).json(error(request, "not_found", "Travel case not found"));
+    const parsed = submitTravelCaseSchema.safeParse(request.body);
+    if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Travel case is not ready for submission", parsed.error.flatten().fieldErrors as Record<string, string[]>));
+    try { return response.json(await store.submit(context, request.params.caseId, parsed.data)); }
+    catch (caught) { return operationError(request, response, caught, "Travel case could not be submitted"); }
   });
 }

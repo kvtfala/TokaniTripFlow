@@ -10,7 +10,9 @@ Implemented endpoints:
 - `GET /api/v1/travel-cases/:caseId`
 - `POST /api/v1/travel-cases`
 
-Draft updates and initial service-component creation were added in B2.2. Submission, later component lifecycle changes, workflow transitions, and approvals remain intentionally outside this increment.
+Draft updates and initial service-component creation were added in B2.2. Later component lifecycle changes, review workflow transitions, and approvals remain intentionally outside that increment.
+
+B2.3 adds the first formal submission transition. Post-submission review, return-for-information, approval, authorisation, coordination, and component fulfilment remain outside this increment.
 
 ## Security design
 
@@ -27,6 +29,10 @@ Draft updates and initial service-component creation were added in B2.2. Submiss
 - Component creation requires an idempotency key, preventing duplicate services when a request is retried.
 - Every write function verifies that the authenticated user, membership and organisation belong together, providing database-level defence against an application-layer scoping mistake.
 - Users belonging to multiple organisations must explicitly select an organisation context; the server will not silently choose one.
+- Ordinary users can list only cases they own or are travelling on. Designated case-management roles can access the organisation queue.
+- Submission creates an immutable request-and-component snapshot, a status audit event, and one commercial usage event in the same transaction.
+- Submission retries use an idempotency key and cannot create duplicate snapshots or billable events.
+- Audit events and submission snapshots are protected from update and deletion by database triggers.
 - The Supabase secret key remains server-side and is never included in frontend code.
 
 These controls support the secure-development, identity, access-control, logging, and tenant-isolation objectives relevant to ISO/IEC 27001 and ISO/IEC 27002. They are implementation evidence, not a claim of ISO certification.
@@ -39,17 +45,24 @@ These controls support the secure-development, identity, access-control, logging
 - `public.create_travel_case_draft(...)`
 - `public.update_travel_case_draft(...)`
 - `public.add_service_component(...)`
+- `public.submit_travel_case(...)`
+- `public.travel_case_submission_snapshots`
+- `public.commercial_usage_events`
+- `public.organisation_submission_policies`
 
 Migration history:
 
 - `20260902031803_b2_1_travel_case_security_foundation`
 - `20260902031957_b2_1_travel_case_contract_alignment`
 - `20260902034827_b2_2_draft_component_transactions`
+- `20260902043033_b2_3_secure_submission_foundation`
+- `20260902043130_b2_3_immutable_evidence_hardening`
+- `20260902043401_b2_3_submission_advisor_hardening`
 
 ## Verification record
 
 - Strict TypeScript check: passed.
-- Automated tests: 58 passed across 15 files.
+- Automated tests: 62 passed across 16 files.
 - Production build: passed.
 - Supabase security advisor: zero findings after migration.
 - RLS: enabled and forced on all three tables.
@@ -65,4 +78,4 @@ All later travel-case endpoints must reuse the same request identity, strict con
 
 ## Next increment
 
-Implement submission as a separate atomic transition that records an immutable submission snapshot, validates tenant-configurable minimum fields, creates the formal submitted event, and prevents incomplete cases from appearing complete. Component update/removal rules must be finalised before post-submission coordination endpoints are introduced.
+Define and implement coordinator review, return-for-information, and component update/removal rules. Return-for-information must preserve every submission snapshot, while later material changes must create new versions and trigger revalidation rather than rewriting the original submission.
