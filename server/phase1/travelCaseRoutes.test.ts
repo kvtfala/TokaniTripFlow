@@ -17,6 +17,7 @@ const detail: TravelCaseDetail = {
   updatedAt: "2026-09-02T00:00:00.000Z", caseType: null,
   travellerUserId: null, destination: null, funding: null, components: [],
   coordinatorMembershipId: null, informationRequests: [],
+  approval: null,
   availableActions: ["edit", "submit"],
 };
 const servers: Array<ReturnType<typeof createServer>> = [];
@@ -47,6 +48,7 @@ async function appServer(
 
 function fakeStore(): SupabaseTravelCaseStore {
   return {
+    listApprovalWork: vi.fn().mockResolvedValue([]),
     list: vi.fn().mockResolvedValue([detail]),
     detail: vi.fn().mockResolvedValue(detail),
     createDraft: vi.fn().mockResolvedValue(detail),
@@ -56,10 +58,18 @@ function fakeStore(): SupabaseTravelCaseStore {
     submit: vi.fn().mockResolvedValue({ ...detail, status: "submitted", version: 1 }),
     claimReview: vi.fn().mockResolvedValue({ ...detail, status: "in_review", version: 2 }),
     requestInformation: vi.fn().mockResolvedValue({ ...detail, status: "information_required", version: 3 }),
+    completeReview: vi.fn().mockResolvedValue({ ...detail, status: "awaiting_approval", version: 3 }),
+    recordApprovalDecision: vi.fn().mockResolvedValue({ ...detail, status: "approved", version: 4 }),
   };
 }
 
 describe("membership-authorized travel-case routes", () => {
+  it("loads a tenant-scoped approval work queue", async () => {
+    const store = fakeStore(); const base = await appServer(store, true, [{ id: membershipId, organisationId, status: "active", role: "approver" }]);
+    const response = await fetch(`${base}/api/v1/approval-requirements`);
+    expect(response.status).toBe(200);
+    expect(store.listApprovalWork).toHaveBeenCalledWith(expect.objectContaining({ organisationId, role: "approver" }));
+  });
   it("derives tenant and membership from the server identity", async () => {
     const store = fakeStore(); const base = await appServer(store);
     const response = await fetch(`${base}/api/v1/travel-cases`);
@@ -215,5 +225,25 @@ describe("membership-authorized travel-case routes", () => {
     });
     expect(response.status).toBe(201);
     expect(store.requestInformation).toHaveBeenCalledWith(expect.objectContaining({ organisationId }), caseId, payload);
+  });
+
+  it("freezes the reviewed subject into an approval cycle", async () => {
+    const store = fakeStore(); const base = await appServer(store, true, [{ id: membershipId, organisationId, status: "active", role: "coordinator" }]);
+    const payload = { expectedVersion: 2, idempotencyKey: "00000000-0000-4000-8000-000000000052", policyEvaluation: { compliant: true }, notes: "Ready" };
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/review-outcome`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(201);
+    expect(store.completeReview).toHaveBeenCalledWith(expect.objectContaining({ role: "coordinator" }), caseId, payload);
+  });
+
+  it("records a structured approval decision", async () => {
+    const store = fakeStore(); const base = await appServer(store, true, [{ id: membershipId, organisationId, status: "active", role: "approver" }]);
+    const payload = { requirementId: "00000000-0000-4000-8000-000000000053", idempotencyKey: "00000000-0000-4000-8000-000000000054", decision: "approve", reason: "Purpose and policy evidence verified" };
+    const response = await fetch(`${base}/api/v1/travel-cases/${caseId}/approval-decisions`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(201);
+    expect(store.recordApprovalDecision).toHaveBeenCalledWith(expect.objectContaining({ role: "approver" }), caseId, payload);
   });
 });

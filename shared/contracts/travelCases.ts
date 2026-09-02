@@ -143,6 +143,28 @@ export const requestTravelCaseInformationSchema = z.object({
   dueDate: z.string().date().optional(),
 }).strict();
 
+export const completeTravelCaseReviewSchema = z.object({
+  expectedVersion: z.number().int().nonnegative(),
+  idempotencyKey: z.string().uuid(),
+  policyEvaluation: z.record(z.unknown()),
+  notes: z.string().trim().min(1).max(4_000).optional(),
+}).strict();
+
+export const approvalDecisionSchema = z.object({
+  requirementId: z.string().uuid(),
+  idempotencyKey: z.string().uuid(),
+  decision: z.enum(["approve", "reject", "return_for_information"]),
+  reason: z.string().trim().min(3).max(4_000),
+}).strict();
+
+export const approvalWorkItemSchema = z.object({
+  requirementId: z.string(), travelCaseId: z.string(), referenceNumber: z.string(), title: z.string(),
+  stageSequence: z.number().int().positive(), subject: z.string(),
+  requiredRole: z.enum(["approver", "manager", "finance_admin"]),
+  dueAt: z.string().datetime().nullable(), submissionSnapshotId: z.string(),
+  subjectVersion: z.record(z.unknown()),
+});
+
 export const travelCaseActionSchema = z.enum([
   "edit",
   "submit",
@@ -197,6 +219,17 @@ export const travelCaseDetailSchema = travelCaseSummarySchema.extend({
     requestedAt: z.string().datetime(),
     respondedAt: z.string().datetime().nullable(),
   })),
+  approval: z.object({
+    cycleId: z.string(),
+    cycleNumber: z.number().int().positive(),
+    status: z.enum(["pending", "approved", "rejected", "returned", "superseded"]),
+    requirements: z.array(z.object({
+      id: z.string(), stageSequence: z.number().int().positive(), subject: z.string(),
+      requiredRole: z.enum(["approver", "manager", "finance_admin"]),
+      status: z.enum(["pending", "approved", "rejected", "returned", "superseded"]),
+      dueAt: z.string().datetime().nullable(),
+    })),
+  }).nullable(),
   availableActions: z.array(travelCaseActionSchema),
 });
 
@@ -207,6 +240,9 @@ export type AddServiceComponent = z.infer<typeof addServiceComponentSchema>;
 export type UpdateServiceComponent = z.infer<typeof updateServiceComponentSchema>;
 export type ClaimTravelCaseReview = z.infer<typeof claimTravelCaseReviewSchema>;
 export type RequestTravelCaseInformation = z.infer<typeof requestTravelCaseInformationSchema>;
+export type CompleteTravelCaseReview = z.infer<typeof completeTravelCaseReviewSchema>;
+export type ApprovalDecision = z.infer<typeof approvalDecisionSchema>;
+export type ApprovalWorkItem = z.infer<typeof approvalWorkItemSchema>;
 export type TravelCaseAction = z.infer<typeof travelCaseActionSchema>;
 export type TravelCaseSummary = z.infer<typeof travelCaseSummarySchema>;
 export type TravelCaseDetail = z.infer<typeof travelCaseDetailSchema>;
@@ -221,4 +257,7 @@ export const phaseOneTravelCaseRoutes = {
   submit: { method: "POST", path: "/api/v1/travel-cases/:caseId/submission" },
   claimReview: { method: "POST", path: "/api/v1/travel-cases/:caseId/review-assignment" },
   requestInformation: { method: "POST", path: "/api/v1/travel-cases/:caseId/information-requests" },
+  completeReview: { method: "POST", path: "/api/v1/travel-cases/:caseId/review-outcome" },
+  recordApprovalDecision: { method: "POST", path: "/api/v1/travel-cases/:caseId/approval-decisions" },
+  approvalWork: { method: "GET", path: "/api/v1/approval-requirements" },
 } as const;

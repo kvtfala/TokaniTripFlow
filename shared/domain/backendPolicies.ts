@@ -1,6 +1,7 @@
 import type { CaseAction } from "./permissions";
 
 export const phaseOneRoutePolicies = [
+  { method: "GET", path: "/api/v1/approval-requirements", action: "case:approve", scope: "membership", neutralNotFound: false },
   { method: "GET", path: "/api/v1/travel-cases", action: "case:read", scope: "membership", neutralNotFound: false },
   { method: "POST", path: "/api/v1/travel-cases", action: "case:create", scope: "membership", neutralNotFound: false },
   { method: "GET", path: "/api/v1/travel-cases/:caseId", action: "case:read", scope: "case", neutralNotFound: true },
@@ -10,6 +11,8 @@ export const phaseOneRoutePolicies = [
   { method: "POST", path: "/api/v1/travel-cases/:caseId/submission", action: "case:submit", scope: "case", neutralNotFound: true },
   { method: "POST", path: "/api/v1/travel-cases/:caseId/review-assignment", action: "case:review", scope: "case", neutralNotFound: true },
   { method: "POST", path: "/api/v1/travel-cases/:caseId/information-requests", action: "case:request_information", scope: "case", neutralNotFound: true },
+  { method: "POST", path: "/api/v1/travel-cases/:caseId/review-outcome", action: "case:review", scope: "case", neutralNotFound: true },
+  { method: "POST", path: "/api/v1/travel-cases/:caseId/approval-decisions", action: "case:approve", scope: "case", neutralNotFound: true },
 ] as const satisfies readonly {
   method: "GET" | "POST" | "PATCH";
   path: string;
@@ -26,6 +29,8 @@ export const commandPolicies = {
   "case.submit": { auditEvent: "case.submitted", idempotency: "required", concurrency: "expected_version" },
   "case.claim_review": { auditEvent: "review.claimed", idempotency: "required", concurrency: "expected_version" },
   "case.request_information": { auditEvent: "review.information_requested", idempotency: "required", concurrency: "expected_version" },
+  "case.complete_review": { auditEvent: "review.completed", idempotency: "required", concurrency: "expected_version" },
+  "case.record_approval_decision": { auditEvent: "approval.decision_recorded", idempotency: "required", concurrency: "database_lock" },
 } as const;
 
 export type BackendCommand = keyof typeof commandPolicies;

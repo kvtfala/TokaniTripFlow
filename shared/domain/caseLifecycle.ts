@@ -3,6 +3,8 @@ export const caseStatuses = [
   "submitted",
   "in_review",
   "information_required",
+  "awaiting_approval",
+  "approved",
   "authorised",
   "coordinating",
   "ready_to_travel",
@@ -17,8 +19,10 @@ export function canTransitionCase(from: CaseStatus, to: CaseStatus): boolean {
   switch (from) {
     case "draft": return to === "submitted" || to === "cancelled";
     case "submitted": return to === "in_review" || to === "cancelled";
-    case "in_review": return to === "information_required" || to === "authorised" || to === "cancelled";
+    case "in_review": return to === "information_required" || to === "awaiting_approval" || to === "cancelled";
     case "information_required": return to === "submitted" || to === "cancelled";
+    case "awaiting_approval": return to === "approved" || to === "in_review" || to === "information_required" || to === "cancelled";
+    case "approved": return to === "authorised" || to === "in_review" || to === "cancelled";
     case "authorised": return to === "coordinating" || to === "cancelled";
     case "coordinating": return to === "ready_to_travel" || to === "cancelled";
     case "ready_to_travel": return to === "in_travel" || to === "cancelled";

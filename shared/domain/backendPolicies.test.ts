@@ -4,7 +4,7 @@ import { commandPolicies, phaseOneRoutePolicies } from "./backendPolicies";
 describe("Phase 1 backend policies", () => {
   it("defines every frontend route exactly once", () => {
     const keys = phaseOneRoutePolicies.map(({ method, path }) => `${method} ${path}`);
-    expect(keys).toHaveLength(9);
+    expect(keys).toHaveLength(12);
     expect(new Set(keys).size).toBe(keys.length);
   });
 

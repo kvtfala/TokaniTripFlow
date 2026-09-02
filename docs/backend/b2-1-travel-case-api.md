@@ -12,7 +12,7 @@ Implemented endpoints:
 
 Draft updates and initial service-component creation were added in B2.2. Later component lifecycle changes, review workflow transitions, and approvals remain intentionally outside that increment.
 
-B2.3 adds the first formal submission transition. B2.4 adds coordinator review assignment, structured return-for-information, corrective resubmission, and safe component amendment. Approval, authorisation, coordination, and component fulfilment remain outside this increment.
+B2.3 adds the first formal submission transition. B2.4 adds coordinator review assignment, structured return-for-information, corrective resubmission, and safe component amendment. B2.5 adds policy evaluation, immutable review outcomes, staged approval requirements, delegated-authority checks, append-only approval decisions, and a least-privilege approver work queue. Authority to Proceed, provider coordination, and component fulfilment remain outside this increment.
 
 ## Security design
 
@@ -41,6 +41,11 @@ B2.3 adds the first formal submission transition. B2.4 adds coordinator review a
 - Resubmission creates a new immutable snapshot and records material changes to traveller, dates, destination, funding, or required components.
 - A database uniqueness constraint limits commercial charging to one formal submission event per case, including after corrective resubmission.
 - Components are never hard-deleted after submission; they are amended or marked withdrawn with version and audit controls.
+- Review completion freezes the exact submission snapshot and approval-policy version used to calculate the route.
+- Approval decisions are append-only, stage-ordered, idempotent, and tied to authority evidence and the reviewed subject version.
+- Self-approval is denied by default; delegation is time-bound, role-scoped, amount-aware, and evaluated again when a decision is recorded.
+- `approved` does not mean a provider may act. The separate Authority to Proceed gate remains required before operational commitment.
+- Approvers receive a scoped work queue rather than broad tenant-wide case access.
 
 These controls support the secure-development, identity, access-control, logging, and tenant-isolation objectives relevant to ISO/IEC 27001 and ISO/IEC 27002. They are implementation evidence, not a claim of ISO certification.
 
@@ -61,6 +66,15 @@ These controls support the secure-development, identity, access-control, logging
 - `public.travel_case_information_responses`
 - `public.claim_travel_case_review(...)`
 - `public.request_travel_case_information(...)`
+- `public.complete_travel_case_review(...)`
+- `public.record_approval_decision(...)`
+- `public.list_pending_approval_work(...)`
+- `public.organisation_approval_policies`
+- `public.travel_case_review_outcomes`
+- `public.approval_cycles`
+- `public.approval_requirements`
+- `public.approval_delegations`
+- `public.approval_decisions`
 - `public.update_service_component(...)`
 
 Migration history:
@@ -74,6 +88,10 @@ Migration history:
 - `20260902044824_b2_4_coordinator_review_foundation`
 - `20260902084156_b2_4_review_advisor_hardening`
 - `20260902084414_b2_4_operational_role_separation`
+- `20260902113000_b2_5_approval_policy_foundation`
+- `20260902114500_b2_5_approval_index_hardening`
+- `20260902115000_b2_5_requirement_case_index`
+- `20260902120000_b2_5_approval_work_queue`
 
 ## Verification record
 
@@ -86,7 +104,7 @@ Migration history:
 - Draft RPC execution: limited to PostgreSQL administration and `service_role`.
 - Seeded travel cases, components, and events: zero.
 
-The dependency audit reports six moderate findings in transitive `uuid` dependencies. The available automated remediation requires a breaking `exceljs` downgrade, so it was not applied in this increment. This remains a tracked dependency-maintenance item and does not expose the new database authorization path.
+The dependency audit has no high or critical findings. Ten moderate transitive findings remain in development tooling and `uuid` dependency paths; the available automated remediations require breaking downgrades, so they were not forced into this increment. The non-breaking high-severity `browserslist` remediation was applied immediately.
 
 ## Forward-build rule
 
@@ -94,4 +112,4 @@ All later travel-case endpoints must reuse the same request identity, strict con
 
 ## Next increment
 
-Define the approval plan and policy-evaluation evidence model on top of the stable reviewed submission. Approval must reference an immutable submission snapshot, re-run when material fields change, enforce separation of duties, and support delegated or multi-stage approval without rewriting prior decisions.
+Build Authority to Proceed on top of a completed approval cycle. It must be explicit, scoped to provider/component/option version/amount, time-bounded, revocable or supersedable without rewriting history, and required before any provider instruction or commitment.

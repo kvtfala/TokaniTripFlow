@@ -37,6 +37,7 @@ describe("B0 travel case contracts", () => {
       components: [],
       coordinatorMembershipId: null,
       informationRequests: [],
+      approval: null,
       availableActions: ["edit", "submit", "cancel"],
     });
 

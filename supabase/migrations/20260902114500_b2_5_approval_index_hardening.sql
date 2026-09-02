@@ -1,0 +1,23 @@
+-- Cover approval-domain foreign keys before production data volume grows.
+create index approval_policies_creator on public.organisation_approval_policies (created_by_membership_id);
+create index approval_policies_org_creator on public.organisation_approval_policies (organisation_id, created_by_membership_id);
+create index review_outcomes_snapshot on public.travel_case_review_outcomes (submission_snapshot_id);
+create index review_outcomes_assignment on public.travel_case_review_outcomes (review_assignment_id);
+create index review_outcomes_reviewer on public.travel_case_review_outcomes (reviewed_by_membership_id);
+create index review_outcomes_policy on public.travel_case_review_outcomes (approval_policy_id);
+create index review_outcomes_org_reviewer on public.travel_case_review_outcomes (organisation_id, reviewed_by_membership_id);
+create index review_outcomes_org_policy on public.travel_case_review_outcomes (organisation_id, approval_policy_id);
+create index approval_cycles_policy on public.approval_cycles (policy_id);
+create index approval_cycles_org_policy on public.approval_cycles (organisation_id, policy_id);
+create index approval_requirements_assignee_all on public.approval_requirements (assigned_membership_id);
+create index approval_requirements_org_assignee on public.approval_requirements (organisation_id, assigned_membership_id);
+create index approval_delegations_delegator on public.approval_delegations (delegator_membership_id);
+create index approval_delegations_delegate on public.approval_delegations (delegate_membership_id);
+create index approval_delegations_creator on public.approval_delegations (created_by_membership_id);
+create index approval_delegations_revoker on public.approval_delegations (revoked_by_membership_id);
+create index approval_delegations_org_delegator on public.approval_delegations (organisation_id, delegator_membership_id);
+create index approval_delegations_org_creator on public.approval_delegations (organisation_id, created_by_membership_id);
+create index approval_delegations_org_revoker on public.approval_delegations (organisation_id, revoked_by_membership_id);
+create index approval_decisions_cycle on public.approval_decisions (approval_cycle_id);
+create index approval_decisions_actor on public.approval_decisions (actor_membership_id);
+create index approval_decisions_delegation on public.approval_decisions (delegation_id);

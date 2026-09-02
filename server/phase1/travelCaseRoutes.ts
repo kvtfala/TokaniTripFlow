@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { addServiceComponentSchema, claimTravelCaseReviewSchema, createTravelCaseDraftSchema, requestTravelCaseInformationSchema, submitTravelCaseSchema, updateServiceComponentSchema, updateTravelCaseDraftSchema } from "@shared/contracts/travelCases";
+import { addServiceComponentSchema, approvalDecisionSchema, claimTravelCaseReviewSchema, completeTravelCaseReviewSchema, createTravelCaseDraftSchema, requestTravelCaseInformationSchema, submitTravelCaseSchema, updateServiceComponentSchema, updateTravelCaseDraftSchema } from "@shared/contracts/travelCases";
 import { TravelCaseOperationError, type SupabaseTravelCaseStore } from "./supabaseTravelCaseStore";
 
 function actor(request: Request) {
@@ -56,6 +56,11 @@ function operationError(request: Request, response: any, caught: unknown, fallba
 const caseIdSchema = z.string().uuid();
 
 export function registerTravelCaseRoutes(app: Express, store: SupabaseTravelCaseStore) {
+  app.get("/api/v1/approval-requirements", async (request, response) => {
+    const context = contextOrError(request, response); if (!context) return;
+    try { return response.json(await store.listApprovalWork(context)); }
+    catch (caught) { return operationError(request, response, caught, "Approval work is temporarily unavailable"); }
+  });
   app.get("/api/v1/travel-cases", async (request, response) => {
     const context = contextOrError(request, response);
     if (!context) return;
@@ -143,5 +148,23 @@ export function registerTravelCaseRoutes(app: Express, store: SupabaseTravelCase
     if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Invalid information request", parsed.error.flatten().fieldErrors as Record<string, string[]>));
     try { return response.status(201).json(await store.requestInformation(context, request.params.caseId, parsed.data)); }
     catch (caught) { return operationError(request, response, caught, "Information request could not be created"); }
+  });
+
+  app.post("/api/v1/travel-cases/:caseId/review-outcome", async (request, response) => {
+    const context = contextOrError(request, response); if (!context) return;
+    if (!caseIdSchema.safeParse(request.params.caseId).success) return response.status(404).json(error(request, "not_found", "Travel case not found"));
+    const parsed = completeTravelCaseReviewSchema.safeParse(request.body);
+    if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Invalid review outcome", parsed.error.flatten().fieldErrors as Record<string, string[]>));
+    try { return response.status(201).json(await store.completeReview(context, request.params.caseId, parsed.data)); }
+    catch (caught) { return operationError(request, response, caught, "Travel case review could not be completed"); }
+  });
+
+  app.post("/api/v1/travel-cases/:caseId/approval-decisions", async (request, response) => {
+    const context = contextOrError(request, response); if (!context) return;
+    if (!caseIdSchema.safeParse(request.params.caseId).success) return response.status(404).json(error(request, "not_found", "Travel case not found"));
+    const parsed = approvalDecisionSchema.safeParse(request.body);
+    if (!parsed.success) return response.status(422).json(error(request, "validation_failed", "Invalid approval decision", parsed.error.flatten().fieldErrors as Record<string, string[]>));
+    try { return response.status(201).json(await store.recordApprovalDecision(context, request.params.caseId, parsed.data)); }
+    catch (caught) { return operationError(request, response, caught, "Approval decision could not be recorded"); }
   });
 }
