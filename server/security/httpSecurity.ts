@@ -90,6 +90,6 @@ export function registerHttpSecurity(app: Express): void {
   app.use(inMemoryRateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 10,
-    paths: ["/api/v1/auth/sign-in", "/api/v1/auth/password-reset", "/api/demo-login", "/api/token-approve"],
+    paths: ["/api/v1/auth/sign-in", "/api/v1/auth/password-reset", "/api/v1/auth/mfa", "/api/demo-login", "/api/token-approve"],
   }));
 }

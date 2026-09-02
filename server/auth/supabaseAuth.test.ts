@@ -10,6 +10,10 @@ const session = {
   user: { id: "00000000-0000-4000-8000-000000000001", email: "owner@example.com" },
 };
 
+function jwt(aal: "aal1" | "aal2") {
+  return `header.${Buffer.from(JSON.stringify({ aal })).toString("base64url")}.signature`;
+}
+
 const openServers: Array<ReturnType<typeof createServer>> = [];
 afterEach(async () => {
   await Promise.all(openServers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve()))));
@@ -87,5 +91,58 @@ describe("Supabase authentication boundary", () => {
     });
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ accepted: true });
+  });
+
+  it("returns only safe MFA factor metadata", async () => {
+    const factorId = "00000000-0000-4000-8000-000000000021";
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      if (String(input).endsWith("/auth/v1/factors")) return Response.json({ all: [{
+        id: factorId, factor_type: "totp", friendly_name: "Phone", status: "verified",
+        created_at: "2026-09-02T00:00:00Z", secret: "must-not-leak",
+      }] });
+      return new Response(null, { status: 404 });
+    }) as unknown as typeof fetch;
+    const baseUrl = await testServer(fetchImpl);
+    const response = await fetch(`${baseUrl}/api/v1/auth/mfa/factors`, {
+      headers: { cookie: `__Host-tripflow_access=${jwt("aal1")}` },
+    });
+    const body = await response.text();
+    expect(response.status).toBe(200);
+    expect(body).not.toContain("must-not-leak");
+    expect(JSON.parse(body)).toEqual({ factors: [{ id: factorId, type: "totp", friendlyName: "Phone", status: "verified", createdAt: "2026-09-02T00:00:00Z" }] });
+  });
+
+  it("enrolls, challenges, and promotes a verified session to AAL2", async () => {
+    const factorId = "00000000-0000-4000-8000-000000000021";
+    const challengeId = "00000000-0000-4000-8000-000000000022";
+    const aal2Session = { ...session, access_token: jwt("aal2") };
+    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/auth/v1/factors") && init?.method === "POST") return Response.json({
+        id: factorId, type: "totp", totp: { qr_code: "data:image/svg+xml,test", secret: "SETUPKEY", uri: "otpauth://totp/TripFlow" },
+      });
+      if (url.endsWith(`/auth/v1/factors/${factorId}/challenge`)) return Response.json({ id: challengeId });
+      if (url.endsWith(`/auth/v1/factors/${factorId}/verify`)) return Response.json(aal2Session);
+      if (url.endsWith("/auth/v1/user")) return Response.json(session.user);
+      if (url.includes("user_profiles")) return Response.json([{ display_name: "Trip Flow" }]);
+      if (url.includes("organisation_memberships")) return Response.json([{
+        id: "00000000-0000-4000-8000-000000000002", organisation_id: "00000000-0000-4000-8000-000000000003",
+        user_id: session.user.id, role: "super_admin", status: "active", activated_at: "2026-09-01T00:00:00Z",
+      }]);
+      return new Response(null, { status: 404 });
+    }) as unknown as typeof fetch;
+    const baseUrl = await testServer(fetchImpl);
+    const headers = { "content-type": "application/json", origin: baseUrl, cookie: `__Host-tripflow_access=${jwt("aal1")}` };
+    const enrollment = await fetch(`${baseUrl}/api/v1/auth/mfa/enroll`, { method: "POST", headers, body: "{}" });
+    expect(enrollment.status).toBe(201);
+    expect(await enrollment.json()).toMatchObject({ factorId, secret: "SETUPKEY" });
+    const challenge = await fetch(`${baseUrl}/api/v1/auth/mfa/challenge`, { method: "POST", headers, body: JSON.stringify({ factorId }) });
+    expect(await challenge.json()).toEqual({ challengeId });
+    const verification = await fetch(`${baseUrl}/api/v1/auth/mfa/verify`, {
+      method: "POST", headers, body: JSON.stringify({ factorId, challengeId, code: "123456" }),
+    });
+    expect(verification.status).toBe(200);
+    expect(await verification.json()).toMatchObject({ authenticatorAssuranceLevel: "aal2", mfaVerified: true });
+    expect(verification.headers.getSetCookie().every((cookie) => /HttpOnly/i.test(cookie))).toBe(true);
   });
 });

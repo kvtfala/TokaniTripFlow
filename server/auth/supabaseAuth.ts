@@ -12,6 +12,31 @@ const passwordResetSchema = z.object({
   email: z.string().trim().email().max(320).transform((value) => value.toLowerCase()),
 }).strict();
 
+const factorIdSchema = z.object({
+  factorId: z.string().uuid(),
+}).strict();
+
+const verifyMfaSchema = factorIdSchema.extend({
+  challengeId: z.string().uuid(),
+  code: z.string().regex(/^\d{6}$/),
+}).strict();
+
+const enrolledFactorSchema = z.object({
+  id: z.string().uuid(),
+  type: z.literal("totp").optional(),
+  factor_type: z.literal("totp").optional(),
+  friendly_name: z.string().nullable().optional(),
+  status: z.string().optional(),
+  created_at: z.string().optional(),
+  totp: z.object({
+    qr_code: z.string().min(1),
+    secret: z.string().min(1),
+    uri: z.string().min(1),
+  }).optional(),
+}).passthrough();
+
+const challengeSchema = z.object({ id: z.string().uuid() }).passthrough();
+
 const tokenResponseSchema = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
@@ -145,6 +170,22 @@ function assuranceLevel(accessToken: string): "aal1" | "aal2" {
   } catch {
     return "aal1";
   }
+}
+
+function accessTokenFromCookies(request: Request, config: SupabaseAuthConfig): string | undefined {
+  return cookieValue(request, cookieNames(config.production).access);
+}
+
+function safeFactor(value: unknown) {
+  const parsed = enrolledFactorSchema.safeParse(value);
+  if (!parsed.success) return null;
+  return {
+    id: parsed.data.id,
+    type: parsed.data.type ?? parsed.data.factor_type ?? "totp",
+    friendlyName: parsed.data.friendly_name ?? null,
+    status: parsed.data.status ?? "unverified",
+    createdAt: parsed.data.created_at ?? null,
+  };
 }
 
 async function safeIdentity(fetchImpl: Fetch, config: SupabaseAuthConfig, accessToken: string): Promise<TripFlowRequestIdentity | null> {
@@ -305,6 +346,97 @@ export function registerSupabaseAuthRoutes(app: Express, config: SupabaseAuthCon
       clearSessionCookies(response, config);
     }
     return response.status(204).send();
+  });
+
+  app.get("/api/v1/auth/mfa/factors", async (request, response) => {
+    const accessToken = accessTokenFromCookies(request, config);
+    if (!accessToken) return apiError(request, response, 401, "unauthenticated", "Authentication required");
+    try {
+      const upstream = await authRequest(fetchImpl, config, "/factors", {
+        method: "GET", headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!upstream.ok) return apiError(request, response, 401, "unauthenticated", "Authentication required");
+      const payload = await upstream.json() as unknown;
+      const candidates = Array.isArray(payload)
+        ? payload
+        : payload && typeof payload === "object" && "all" in payload && Array.isArray(payload.all)
+          ? payload.all
+          : [];
+      return response.json({ factors: candidates.map(safeFactor).filter(Boolean) });
+    } catch {
+      return apiError(request, response, 503, "service_unavailable", "Authentication service unavailable");
+    }
+  });
+
+  app.post("/api/v1/auth/mfa/enroll", async (request, response) => {
+    if (!originAllowed(request, config)) return apiError(request, response, 403, "forbidden", "Request origin is not allowed");
+    const accessToken = accessTokenFromCookies(request, config);
+    if (!accessToken) return apiError(request, response, 401, "unauthenticated", "Authentication required");
+    try {
+      const upstream = await authRequest(fetchImpl, config, "/factors", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ factor_type: "totp", friendly_name: "TripFlow Authenticator" }),
+      });
+      if (!upstream.ok) return apiError(request, response, 400, "mfa_enrollment_failed", "Authenticator setup could not be started");
+      const factor = enrolledFactorSchema.parse(await upstream.json());
+      if (!factor.totp) throw new Error("Missing TOTP enrollment data");
+      return response.status(201).json({
+        factorId: factor.id,
+        qrCode: factor.totp.qr_code,
+        secret: factor.totp.secret,
+        uri: factor.totp.uri,
+      });
+    } catch {
+      return apiError(request, response, 503, "service_unavailable", "Authentication service unavailable");
+    }
+  });
+
+  app.post("/api/v1/auth/mfa/challenge", async (request, response) => {
+    if (!originAllowed(request, config)) return apiError(request, response, 403, "forbidden", "Request origin is not allowed");
+    const parsed = factorIdSchema.safeParse(request.body);
+    if (!parsed.success) return apiError(request, response, 400, "validation_failed", "Invalid MFA challenge request");
+    const accessToken = accessTokenFromCookies(request, config);
+    if (!accessToken) return apiError(request, response, 401, "unauthenticated", "Authentication required");
+    try {
+      const upstream = await authRequest(fetchImpl, config, `/factors/${parsed.data.factorId}/challenge`, {
+        method: "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: "{}",
+      });
+      if (!upstream.ok) return apiError(request, response, 400, "mfa_challenge_failed", "Authenticator challenge could not be started");
+      const challenge = challengeSchema.parse(await upstream.json());
+      return response.json({ challengeId: challenge.id });
+    } catch {
+      return apiError(request, response, 503, "service_unavailable", "Authentication service unavailable");
+    }
+  });
+
+  app.post("/api/v1/auth/mfa/verify", async (request, response) => {
+    if (!originAllowed(request, config)) return apiError(request, response, 403, "forbidden", "Request origin is not allowed");
+    const parsed = verifyMfaSchema.safeParse(request.body);
+    if (!parsed.success) return apiError(request, response, 400, "validation_failed", "Enter a valid six-digit authentication code");
+    const accessToken = accessTokenFromCookies(request, config);
+    if (!accessToken) return apiError(request, response, 401, "unauthenticated", "Authentication required");
+    try {
+      const upstream = await authRequest(fetchImpl, config, `/factors/${parsed.data.factorId}/verify`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ challenge_id: parsed.data.challengeId, code: parsed.data.code }),
+      });
+      if (!upstream.ok) return apiError(request, response, 401, "mfa_verification_failed", "Authentication code is incorrect or expired");
+      const session = tokenResponseSchema.parse(await upstream.json());
+      if (assuranceLevel(session.access_token) !== "aal2") {
+        return apiError(request, response, 403, "mfa_verification_failed", "Multi-factor authentication was not completed");
+      }
+      setSessionCookies(response, config, session);
+      const identity = await safeIdentity(fetchImpl, config, session.access_token);
+      if (!identity?.isActive || !identity.mfaVerified) {
+        clearSessionCookies(response, config);
+        return apiError(request, response, 403, "forbidden", "No active TripFlow membership");
+      }
+      return response.json(identity);
+    } catch {
+      return apiError(request, response, 503, "service_unavailable", "Authentication service unavailable");
+    }
   });
 
   app.post("/api/v1/auth/password-reset", async (request, response) => {

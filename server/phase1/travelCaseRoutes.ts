@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Express, Request } from "express";
 import { z } from "zod";
 import { addServiceComponentSchema, approvalDecisionSchema, claimTravelCaseReviewSchema, completeTravelCaseReviewSchema, createTravelCaseDraftSchema, requestTravelCaseInformationSchema, submitTravelCaseSchema, updateServiceComponentSchema, updateTravelCaseDraftSchema } from "@shared/contracts/travelCases";
+import { isMfaRequiredForRole } from "../config/securityEnvironment";
 import { TravelCaseOperationError, type SupabaseTravelCaseStore } from "./supabaseTravelCaseStore";
 
 function actor(request: Request) {
@@ -18,6 +19,9 @@ function actor(request: Request) {
   const organisationId = requestedOrganisation ?? active[0]?.organisationId;
   const membership = active.find((item) => item.organisationId === organisationId);
   if (!membership || typeof membership.id !== "string" || typeof membership.role !== "string") return { failure: "forbidden" as const };
+  if (isMfaRequiredForRole(membership.role) && identity.authenticatorAssuranceLevel !== "aal2") {
+    return { failure: "mfa_required" as const };
+  }
   return { context: {
     userId: identity.id,
     organisationId,
@@ -36,6 +40,8 @@ function contextOrError(request: Request, response: any) {
   if ("context" in result) return result.context;
   if (result.failure === "organisation_context_required") {
     response.status(409).json(error(request, "organisation_context_required", "Select an organisation before continuing"));
+  } else if (result.failure === "mfa_required") {
+    response.status(403).json(error(request, "mfa_required", "Complete multi-factor authentication to continue"));
   } else if (result.failure === "forbidden") {
     response.status(403).json(error(request, "forbidden", "Organisation access is not permitted"));
   } else {

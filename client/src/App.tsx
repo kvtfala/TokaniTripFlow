@@ -60,6 +60,7 @@ import { UserAvatarMenu } from "@/components/layout/UserAvatarMenu";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { useRole } from "@/contexts/RoleContext";
 import { phaseOneTravelCasesEnabled } from "@/features/travel-cases/featureFlags";
+import { MfaGate } from "@/components/auth/MfaGate";
 
 const TravelCaseListPage = lazy(() => import("@/features/travel-cases/pages/TravelCaseListPage"));
 const CreateTravelCaseDraftPage = lazy(() => import("@/features/travel-cases/pages/CreateTravelCaseDraftPage"));
@@ -225,7 +226,7 @@ function AppHeader() {
 }
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(false);
 
   const style = {
@@ -260,6 +261,10 @@ function Router() {
         <Route component={LandingPage} />
       </Switch>
     );
+  }
+
+  if (!legacyDemoEnabled && user?.mfaRequired && !user.mfaVerified) {
+    return <MfaGate />;
   }
 
   if (showSplash) {

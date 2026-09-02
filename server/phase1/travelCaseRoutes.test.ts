@@ -27,6 +27,7 @@ async function appServer(
   store: SupabaseTravelCaseStore,
   authenticated = true,
   memberships: Array<Record<string, unknown>> = [{ id: membershipId, organisationId, status: "active", role: "employee" }],
+  assuranceLevel: "aal1" | "aal2" = "aal2",
 ) {
   const app = express();
   app.use(express.json());
@@ -36,6 +37,9 @@ async function appServer(
       firstName: "Trip", lastName: "User", profileImageUrl: null,
       role: "employee", companyCode: organisationId, isActive: true,
       memberships,
+      authenticatorAssuranceLevel: assuranceLevel,
+      mfaRequired: false,
+      mfaVerified: assuranceLevel === "aal2",
     };
     next();
   });
@@ -69,6 +73,14 @@ describe("membership-authorized travel-case routes", () => {
     const response = await fetch(`${base}/api/v1/approval-requirements`);
     expect(response.status).toBe(200);
     expect(store.listApprovalWork).toHaveBeenCalledWith(expect.objectContaining({ organisationId, role: "approver" }));
+  });
+  it("requires AAL2 for privileged organisation roles", async () => {
+    const store = fakeStore();
+    const base = await appServer(store, true, [{ id: membershipId, organisationId, status: "active", role: "approver" }], "aal1");
+    const response = await fetch(`${base}/api/v1/approval-requirements`);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ error: { code: "mfa_required" } });
+    expect(store.listApprovalWork).not.toHaveBeenCalled();
   });
   it("derives tenant and membership from the server identity", async () => {
     const store = fakeStore(); const base = await appServer(store);

@@ -52,7 +52,7 @@ export function getApprovalTokenSecret(
   return nonPlaceholderSecret.parse(environment.APPROVAL_TOKEN_SECRET);
 }
 
-export const PRIVILEGED_MFA_ROLES = ["coordinator", "manager", "finance_admin", "travel_admin", "super_admin"] as const;
+export const PRIVILEGED_MFA_ROLES = ["coordinator", "approver", "manager", "finance_admin", "travel_admin", "super_admin"] as const;
 
 export function isMfaRequiredForRole(role: string, environment: NodeJS.ProcessEnv = process.env): boolean {
   const configuredRoles = (environment.MFA_REQUIRED_ROLES ?? PRIVILEGED_MFA_ROLES.join(","))

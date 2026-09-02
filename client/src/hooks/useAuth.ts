@@ -4,9 +4,15 @@
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
+export type AuthenticatedUser = User & {
+  authenticatorAssuranceLevel?: "aal1" | "aal2";
+  mfaRequired?: boolean;
+  mfaVerified?: boolean;
+};
+
 export function useAuth() {
   const productionAuth = import.meta.env.VITE_AUTH_MODE === "supabase";
-  const { data: user, isLoading } = useQuery<User | null>({
+  const { data: user, isLoading } = useQuery<AuthenticatedUser | null>({
     queryKey: [productionAuth ? "/api/v1/auth/session" : "/api/auth/user"],
     queryFn: async () => {
       try {
